@@ -15,6 +15,9 @@ public class ProgramService {
 	@Transactional
 	public ProgramCreateResponseDto createProgram(long userId, ProgramCreateRequestDto requestDto) {
 
+		//유저 롤 검증
+
+		//체험 프로그램 생성
 		Program program = Program.builder()
 			.build();
 

@@ -19,9 +19,12 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 @Entity
 @Table(name = "experience_program")
@@ -86,15 +89,10 @@ public class Program extends BaseEntity {
 	@Column(nullable = false)
 	private DeletedStatus deletedStatus; //프로그램 삭제 여부
 
-	public Program() {
-
-	}
-
 	@Builder
 	public Program(AptitudeCategory aptitudeCategory, RegionCategory regionCategory, String businessName, String title, String description,
 		String location, BigDecimal price, BigDecimal percent, Integer capacity, LocalDate recruitmentPeriod, LocalDate startDate,
-		LocalDate endDate, LocalTime startTime, LocalTime endTime, Integer count, ProgramStatus programStatus,
-		DeletedStatus deletedStatus) {
+		LocalDate endDate, LocalTime startTime, LocalTime endTime) {
 		this.aptitudeCategory = aptitudeCategory;
 		this.regionCategory = regionCategory;
 		this.businessName = businessName;
