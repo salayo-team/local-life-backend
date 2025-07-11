@@ -1,4 +1,4 @@
-package com.salayo.locallifebackend.domain.user.enums;
+package com.salayo.locallifebackend.domain.member.enums;
 
 public enum MemberRole {
 
