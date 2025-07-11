@@ -8,10 +8,18 @@ import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import lombok.Builder;
 import lombok.Getter;
 
+@Builder
 @Getter
 public class ProgramCreateRequestDto {
+
+	@NotNull(message = "적성 카테고리는 필수값입니다.")
+	private Long aptitudeCategoryId; //적성 카테고리 고유 식별자
+
+	@NotNull(message = "지역 카테고리는 필수값입니다.")
+	private Long regionCategoryId; //지역 카테고리 고유 식별자
 
 	@NotNull(message = "체험 프로그램 제목은 필수값입니다.")
 	private String title; //프로그램 제목

@@ -2,6 +2,7 @@ package com.salayo.locallifebackend.domain.program.entity;
 
 import com.salayo.locallifebackend.domain.category.entity.AptitudeCategory;
 import com.salayo.locallifebackend.domain.category.entity.RegionCategory;
+import com.salayo.locallifebackend.domain.program.enums.IsLocalSpecialized;
 import com.salayo.locallifebackend.domain.program.enums.ProgramStatus;
 import com.salayo.locallifebackend.global.entity.BaseEntity;
 import com.salayo.locallifebackend.global.enums.DeletedStatus;
@@ -29,6 +30,8 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "experience_program")
 public class Program extends BaseEntity {
+
+	// TODO : 파일 연관관계 설정
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -60,6 +63,9 @@ public class Program extends BaseEntity {
 	@Column(nullable = true)
 	private BigDecimal percent; //체험 할인율
 
+	@Column(nullable = true)
+	private BigDecimal discountedPrice; //할인된 가격
+
 	@Column(nullable = false)
 	private Integer capacity; //체험 정원
 
@@ -83,6 +89,10 @@ public class Program extends BaseEntity {
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
+	private IsLocalSpecialized isLocalSpecialized; //지역특화 여부
+
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
 	private ProgramStatus programStatus; //프로그램 운영 상태
 
 	@Enumerated(EnumType.STRING)
@@ -90,9 +100,11 @@ public class Program extends BaseEntity {
 	private DeletedStatus deletedStatus; //프로그램 삭제 여부
 
 	@Builder
-	public Program(AptitudeCategory aptitudeCategory, RegionCategory regionCategory, String businessName, String title, String description,
-		String location, BigDecimal price, BigDecimal percent, Integer capacity, LocalDate recruitmentPeriod, LocalDate startDate,
-		LocalDate endDate, LocalTime startTime, LocalTime endTime) {
+	public Program(Long id, AptitudeCategory aptitudeCategory, RegionCategory regionCategory, String businessName, String title,
+		String description, String location, BigDecimal price, BigDecimal percent, BigDecimal discountedPrice, Integer capacity,
+		LocalDate recruitmentPeriod, LocalDate startDate, LocalDate endDate, LocalTime startTime, LocalTime endTime, Integer count,
+		ProgramStatus programStatus, DeletedStatus deletedStatus) {
+		this.id = id;
 		this.aptitudeCategory = aptitudeCategory;
 		this.regionCategory = regionCategory;
 		this.businessName = businessName;
@@ -101,6 +113,7 @@ public class Program extends BaseEntity {
 		this.location = location;
 		this.price = price;
 		this.percent = percent;
+		this.discountedPrice = discountedPrice;
 		this.capacity = capacity;
 		this.recruitmentPeriod = recruitmentPeriod;
 		this.startDate = startDate;
@@ -111,5 +124,4 @@ public class Program extends BaseEntity {
 		this.programStatus = programStatus;
 		this.deletedStatus = deletedStatus;
 	}
-
 }
