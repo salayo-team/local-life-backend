@@ -19,6 +19,7 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import lombok.Builder;
 import lombok.Getter;
 
 @Getter
@@ -83,5 +84,34 @@ public class Program extends BaseEntity {
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
-	private DeletedStatus  deletedStatus; //프로그램 삭제 여부
+	private DeletedStatus deletedStatus; //프로그램 삭제 여부
+
+	public Program() {
+
+	}
+
+	@Builder
+	public Program(AptitudeCategory aptitudeCategory, RegionCategory regionCategory, String businessName, String title, String description,
+		String location, BigDecimal price, BigDecimal percent, Integer capacity, LocalDate recruitmentPeriod, LocalDate startDate,
+		LocalDate endDate, LocalTime startTime, LocalTime endTime, Integer count, ProgramStatus programStatus,
+		DeletedStatus deletedStatus) {
+		this.aptitudeCategory = aptitudeCategory;
+		this.regionCategory = regionCategory;
+		this.businessName = businessName;
+		this.title = title;
+		this.description = description;
+		this.location = location;
+		this.price = price;
+		this.percent = percent;
+		this.capacity = capacity;
+		this.recruitmentPeriod = recruitmentPeriod;
+		this.startDate = startDate;
+		this.endDate = endDate;
+		this.startTime = startTime;
+		this.endTime = endTime;
+		this.count = count;
+		this.programStatus = programStatus;
+		this.deletedStatus = deletedStatus;
+	}
+
 }
