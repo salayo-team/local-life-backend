@@ -4,13 +4,15 @@ import com.salayo.locallifebackend.domain.category.entity.AptitudeCategory;
 import com.salayo.locallifebackend.domain.category.entity.RegionCategory;
 import com.salayo.locallifebackend.domain.category.repository.AptitudeCategoryRepository;
 import com.salayo.locallifebackend.domain.category.repository.RegionCategoryRepository;
+import com.salayo.locallifebackend.domain.file.repository.FileRepository;
+import com.salayo.locallifebackend.domain.localcreator.entity.LocalCreator;
+import com.salayo.locallifebackend.domain.member.entity.Member;
+import com.salayo.locallifebackend.domain.member.repository.MemberRepository;
 import com.salayo.locallifebackend.domain.program.dto.ProgramCreateRequestDto;
 import com.salayo.locallifebackend.domain.program.dto.ProgramCreateResponseDto;
 import com.salayo.locallifebackend.domain.program.entity.Program;
 import com.salayo.locallifebackend.domain.program.enums.ProgramStatus;
 import com.salayo.locallifebackend.domain.program.repository.ProgramRepository;
-import com.salayo.locallifebackend.domain.user.entity.Member;
-import com.salayo.locallifebackend.domain.user.repository.MemberRepository;
 import com.salayo.locallifebackend.global.enums.DeletedStatus;
 import java.math.BigDecimal;
 import org.springframework.stereotype.Service;
@@ -23,14 +25,16 @@ public class ProgramService {
 	private final RegionCategoryRepository regionCategoryRepository;
 	private final ProgramRepository programRepository;
 	private final MemberRepository memberRepository;
+	private final FileRepository fileRepository;
 
 	public ProgramService(AptitudeCategoryRepository aptitudeCategoryRepository, RegionCategoryRepository regionCategoryRepository,
 		ProgramRepository programRepository,
-		MemberRepository memberRepository) {
+		MemberRepository memberRepository, FileRepository fileRepository) {
 		this.aptitudeCategoryRepository = aptitudeCategoryRepository;
 		this.regionCategoryRepository = regionCategoryRepository;
 		this.programRepository = programRepository;
 		this.memberRepository = memberRepository;
+		this.fileRepository = fileRepository;
 	}
 
 	/**
