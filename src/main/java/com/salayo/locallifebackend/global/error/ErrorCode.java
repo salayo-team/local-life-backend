@@ -8,9 +8,15 @@ public enum ErrorCode {
 
     // 400 BAD_REQUEST
     INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "잘못된 입력입니다."),
+    DUPLICATE_LOGIN_DETECTED(HttpStatus.BAD_REQUEST, "다른 기기에서 로그인되어 자동 로그아웃 되었습니다."),
 
     // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
+    TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "만료된 토큰입니다."),
+    TOKEN_MALFORMED(HttpStatus.UNAUTHORIZED, "잘못된 형식의 토큰입니다."),
+    TOKEN_UNSUPPORTED(HttpStatus.UNAUTHORIZED, "지원하지 않는 토큰입니다."),
+    TOKEN_ILLEGAL(HttpStatus.UNAUTHORIZED, "토큰이 비어있거나 잘못되었습니다."),
+    TOKEN_SIGNATURE_INVALID(HttpStatus.UNAUTHORIZED, "토큰 서명이 유효하지 않습니다."),
 
     // 403 Forbidden
     FORBIDDEN_ACCESS(HttpStatus.FORBIDDEN, "접근이 거부됐습니다."),
