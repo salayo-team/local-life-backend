@@ -1,7 +1,7 @@
 package com.salayo.locallifebackend.global.security;
 
-import com.salayo.locallifebackend.domain.user.entity.Member;
-import com.salayo.locallifebackend.domain.user.enums.MemberRole;
+import com.salayo.locallifebackend.domain.member.entity.Member;
+import com.salayo.locallifebackend.domain.member.enums.MemberRole;
 import java.util.Collection;
 import java.util.List;
 import lombok.Getter;
