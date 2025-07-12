@@ -9,6 +9,9 @@ public enum ErrorCode {
     // 400 BAD_REQUEST
     INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "잘못된 입력입니다."),
     DUPLICATE_LOGIN_DETECTED(HttpStatus.BAD_REQUEST, "다른 기기에서 로그인되어 자동 로그아웃 되었습니다."),
+    INVALID_FILE_TYPE(HttpStatus.BAD_REQUEST, "지원되지 않는 파일 형식입니다."),
+    FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "파일 크기는 최대 10MB까지 가능합니다."),
+    FILE_EMPTY(HttpStatus.BAD_REQUEST, "파일이 비어 있습니다"),
 
     // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
@@ -31,7 +34,8 @@ public enum ErrorCode {
     TOO_MANY_REQUESTS(HttpStatus.TOO_MANY_REQUESTS, "요청 횟수를 초과했습니다."),
 
     // 500 INTERNAL_SERVER_ERROR
-    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "redis 서버에서 오류가 발생했습니다.");
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버에서 오류가 발생했습니다."),
+    FILE_UPLOAD_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "파일 업로드에 실패했습니다.");
 
     private final HttpStatus status;
     private final String message;
