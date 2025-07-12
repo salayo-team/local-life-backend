@@ -58,10 +58,10 @@ dependencies {
     implementation 'com.google.firebase:firebase-admin:9.2.0'
 
     // S3 File
-    implementation 'software.amazon.awssdk:s3'
-    implementation 'software.amazon.awssdk:auth'
+    implementation 'com.amazonaws:aws-java-sdk-s3:1.12.681'
     implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
     implementation 'commons-io:commons-io:2.11.0'
+    implementation 'javax.xml.bind:jaxb-api:2.3.1'
 
 }
 
