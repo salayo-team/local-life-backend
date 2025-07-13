@@ -11,8 +11,9 @@ public enum SuccessCode {
     UPDATE_SUCCESS(HttpStatus.OK, "성공적으로 수정되었습니다."),
     DELETE_SUCCESS(HttpStatus.OK, "성공적으로 삭제되었습니다."),
 
-    FILE_UPLOAD_SUCCESS(HttpStatus.OK, "파일 업로드 성공");
+    FILE_UPLOAD_SUCCESS(HttpStatus.OK, "파일 업로드 성공"),
 
+    EMAIL_SEND_SUCCESS(HttpStatus.OK,"이메일을 성공적으로 전송했습니다.");
 
     private final HttpStatus status;
     private final String message;

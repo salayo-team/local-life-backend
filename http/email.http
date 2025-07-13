@@ -1,0 +1,7 @@
+### 이메일 인증코드 전송
+POST http://localhost:8080/auth/email/send
+Content-Type: application/json
+
+{
+  "email": "rlawldbs9128@gmail.com"
+}
