@@ -1,5 +1,7 @@
 package com.salayo.locallifebackend.domain.email.service;
 
+import com.salayo.locallifebackend.global.error.ErrorCode;
+import com.salayo.locallifebackend.global.error.exception.CustomException;
 import java.time.Duration;
 import java.util.Random;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +46,27 @@ public class EmailService {
 
     public void clearVerifiedFlag(String email) {
         redisTemplate.delete("email_verified: " + email);
+    }
+
+    public void verifyEmailCode(String email, String code) {
+        String key = "email_code:" + email;
+        String savedCode = redisTemplate.opsForValue().get(key);
+
+        if (savedCode == null) {
+            throw new CustomException(ErrorCode.EMAIL_CODE_EXPIRED);
+        }
+
+        if (!savedCode.equals(code)) {
+            throw new CustomException(ErrorCode.INVALID_EMAIL_CODE);
+        }
+
+        /**
+         * 인증 성공 처리
+         * -인증 완료 플래그(email_verified:{email})를 Redis에 30분 동안 저장
+         * -인증 코드는 재사용 방지를 위해 즉시 삭제
+         */
+        redisTemplate.opsForValue().set("email_verified:" + email, "true", Duration.ofMinutes(30));
+        redisTemplate.delete(key);
     }
 
 }
