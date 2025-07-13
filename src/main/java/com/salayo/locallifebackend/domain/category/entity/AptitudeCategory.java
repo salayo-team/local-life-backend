@@ -11,7 +11,7 @@ import lombok.Getter;
 
 @Getter
 @Entity
-@Table(name = "experience_program")
+@Table(name = "aptitude_category")
 public class AptitudeCategory {
 
 	@Id

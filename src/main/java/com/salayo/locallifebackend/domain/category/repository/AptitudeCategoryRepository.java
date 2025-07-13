@@ -5,7 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface AptitudeCategoryRepository extends JpaRepository {
+public interface AptitudeCategoryRepository extends JpaRepository<AptitudeCategory, Long> {
 
-	AptitudeCategory findByIdOrElseThrow(Long aptitudeCategoryId);
 }

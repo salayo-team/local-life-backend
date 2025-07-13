@@ -6,7 +6,10 @@ import com.salayo.locallifebackend.domain.category.repository.RegionCategoryRepo
 import com.salayo.locallifebackend.domain.file.repository.FileRepository;
 import com.salayo.locallifebackend.domain.localcreator.repository.LocalCreatorRepository;
 import com.salayo.locallifebackend.domain.member.repository.MemberRepository;
+import com.salayo.locallifebackend.domain.program.dto.ProgramCreateRequestDto;
+import com.salayo.locallifebackend.domain.program.dto.ProgramCreateResponseDto;
 import com.salayo.locallifebackend.domain.program.repository.ProgramRepository;
+import jakarta.validation.Valid;
 import org.springframework.stereotype.Service;
 
 
@@ -35,5 +38,9 @@ public class ProgramService {
 	 * 체험 프로그램 생성 메서드
 	 * - TODO : 구현 예정
 	 */
+	public ProgramCreateResponseDto createProgram(long l, @Valid ProgramCreateRequestDto requestDto) {
+
+		return null;
+	}
 
 }

@@ -5,7 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface RegionCategoryRepository extends JpaRepository {
+public interface RegionCategoryRepository extends JpaRepository<RegionCategory, Long> {
 
-	RegionCategory findByIdOrElseThrow(Long regionCategoryId);
 }
