@@ -16,8 +16,6 @@ import org.springframework.stereotype.Service;
 public class EmailService {
 
     private final JavaMailSender mailSender;
-
-    @Qualifier("emailVerifiedRedisTemplate")
     private final RedisTemplate<String, String> redisTemplate;
 
     public EmailService(JavaMailSender mailSender,

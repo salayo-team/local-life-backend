@@ -22,8 +22,6 @@ public class JwtProvider {
 
     public static final String AUTH_HEADER = "Authorization";
     public static final String TOKEN_PREFIX = "Bearer ";
-
-    @Qualifier("blacklistRedisTemplate")
     private final RedisTemplate<String, String> redisTemplate;
 
     private final SecretKey key;
