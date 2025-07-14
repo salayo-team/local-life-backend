@@ -4,7 +4,6 @@ import com.salayo.locallifebackend.global.error.ErrorCode;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
 import java.time.Duration;
 import java.util.Random;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -14,13 +13,18 @@ import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class EmailService {
 
     private final JavaMailSender mailSender;
 
     @Qualifier("emailVerifiedRedisTemplate")
     private final RedisTemplate<String, String> redisTemplate;
+
+    public EmailService(JavaMailSender mailSender,
+        @Qualifier("emailVerifiedRedisTemplate") RedisTemplate<String, String> redisTemplate) {
+        this.mailSender = mailSender;
+        this.redisTemplate = redisTemplate;
+    }
 
     private static final long EXPIRE_TIME = 5 * 60L;
 
