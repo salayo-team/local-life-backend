@@ -3,6 +3,7 @@ package com.salayo.locallifebackend.domain.member.entity;
 import com.salayo.locallifebackend.domain.member.enums.Gender;
 import com.salayo.locallifebackend.domain.member.enums.MemberRole;
 import com.salayo.locallifebackend.domain.reservation.entity.Reservation;
+import com.salayo.locallifebackend.domain.paymenthistory.entity.PaymentHistory;
 import com.salayo.locallifebackend.global.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -52,5 +53,8 @@ public class Member extends BaseEntity {
 
     @OneToMany(mappedBy = "member")
     private List<Reservation> reservations = new ArrayList<Reservation>();
+
+    @OneToMany(mappedBy = "member")
+    private List<PaymentHistory> paymentHistoryList = new ArrayList<>();
 
 }
