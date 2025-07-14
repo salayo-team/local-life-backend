@@ -53,7 +53,7 @@ public class Program extends BaseEntity {
 	private RegionCategory regionCategory; //지역 카테고리 고유 식별자
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "original_program_id")
+	@JoinColumn(name = "original_program_id", nullable = true)
 	private Program originalProgram; //원본 프로그램 ID - 자기참조 FK
 
 	@Column(nullable = false, length = 100)
