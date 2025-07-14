@@ -3,6 +3,7 @@ package com.salayo.locallifebackend.domain.payment.entity;
 import com.salayo.locallifebackend.domain.payment.enums.PaymentStatus;
 import com.salayo.locallifebackend.domain.paymenthistory.entity.PaymentHistory;
 import com.salayo.locallifebackend.global.entity.BaseEntity;
+import com.salayo.locallifebackend.global.enums.DeletedStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -60,9 +61,13 @@ public class Payment extends BaseEntity {
 	@OneToOne(mappedBy = "payment", fetch = FetchType.LAZY)
 	private PaymentHistory paymentHistory;
 
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false, length = 50)
+	private DeletedStatus deletedStatus; //결제 삭제 상태
+
 	@Builder
 	public Payment(String pgTid, String impUid, BigDecimal paymentCost, String paymentCard, PaymentStatus paymentStatus,
-		LocalDateTime refundAttemptedAt, String refundFailedReason, LocalDateTime canceledAt) {
+		LocalDateTime refundAttemptedAt, String refundFailedReason, LocalDateTime canceledAt, DeletedStatus deletedStatus) {
 		this.pgTid = pgTid;
 		this.impUid = impUid;
 		this.paymentCost = paymentCost;
@@ -71,5 +76,6 @@ public class Payment extends BaseEntity {
 		this.refundAttemptedAt = refundAttemptedAt;
 		this.refundFailedReason = refundFailedReason;
 		this.canceledAt = canceledAt;
+		this.deletedStatus = deletedStatus;
 	}
 }

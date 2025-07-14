@@ -4,6 +4,7 @@ import com.salayo.locallifebackend.domain.member.entity.Member;
 import com.salayo.locallifebackend.domain.payment.entity.Payment;
 import com.salayo.locallifebackend.domain.paymenthistory.enums.PaymentHistoryStatus;
 import com.salayo.locallifebackend.global.entity.BaseEntity;
+import com.salayo.locallifebackend.global.enums.DeletedStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -63,11 +64,16 @@ public class PaymentHistory extends BaseEntity {
 	@Column(nullable = true)
 	private LocalDateTime canceledAt; //결제 취소일
 
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false, length = 50)
+	private DeletedStatus deletedStatus; //결제 내역 삭제 상태
+	
 	//TODO : ReviewStatus 추가하기
+	
 
 	@Builder
 	public PaymentHistory(Payment payment, Member member, String pgTid, String impUid, BigDecimal paymentCost, String paymentCard,
-		PaymentHistoryStatus paymentHistoryStatus, String refundReason, LocalDateTime canceledAt) {
+		PaymentHistoryStatus paymentHistoryStatus, String refundReason, LocalDateTime canceledAt, DeletedStatus deletedStatus) {
 		this.payment = payment;
 		this.member = member;
 		this.pgTid = pgTid;
@@ -77,5 +83,6 @@ public class PaymentHistory extends BaseEntity {
 		this.paymentHistoryStatus = paymentHistoryStatus;
 		this.refundReason = refundReason;
 		this.canceledAt = canceledAt;
+		this.deletedStatus = deletedStatus;
 	}
 }
