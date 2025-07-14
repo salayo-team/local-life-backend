@@ -1,0 +1,8 @@
+### 체험 프로그램 생성 API
+POST localhost:8080/programs
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=boundary
+
+{
+
+}
