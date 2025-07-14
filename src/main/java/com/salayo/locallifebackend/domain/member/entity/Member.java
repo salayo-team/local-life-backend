@@ -2,6 +2,7 @@ package com.salayo.locallifebackend.domain.member.entity;
 
 import com.salayo.locallifebackend.domain.member.enums.Gender;
 import com.salayo.locallifebackend.domain.member.enums.MemberRole;
+import com.salayo.locallifebackend.domain.paymenthistory.entity.PaymentHistory;
 import com.salayo.locallifebackend.global.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,7 +11,10 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Getter;
 
 @Entity
@@ -44,5 +48,8 @@ public class Member extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
     private MemberRole memberRole;
+
+    @OneToMany(mappedBy = "member")
+    private List<PaymentHistory> paymentHistoryList = new ArrayList<>();
 
 }
