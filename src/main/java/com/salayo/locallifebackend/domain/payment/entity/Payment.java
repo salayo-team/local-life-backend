@@ -2,6 +2,7 @@ package com.salayo.locallifebackend.domain.payment.entity;
 
 import com.salayo.locallifebackend.domain.payment.enums.PaymentStatus;
 import com.salayo.locallifebackend.domain.paymenthistory.entity.PaymentHistory;
+import com.salayo.locallifebackend.domain.reservation.entity.Reservation;
 import com.salayo.locallifebackend.global.entity.BaseEntity;
 import com.salayo.locallifebackend.global.enums.DeletedStatus;
 import jakarta.persistence.Column;
@@ -12,6 +13,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
@@ -31,7 +33,9 @@ public class Payment extends BaseEntity {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id; //결제 고유 식별자
 
-	//TODO : 예약이랑 연관관계 설정
+	@OneToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "reservation_id", nullable = false)
+	private Reservation reservation; //예약 고유 식별자
 
 	@Column(nullable = false, length = 100)
 	private String pgTid; //PG사 거래 고유 ID
@@ -66,8 +70,11 @@ public class Payment extends BaseEntity {
 	private DeletedStatus deletedStatus; //결제 삭제 상태
 
 	@Builder
-	public Payment(String pgTid, String impUid, BigDecimal paymentCost, String paymentCard, PaymentStatus paymentStatus,
-		LocalDateTime refundAttemptedAt, String refundFailedReason, LocalDateTime canceledAt, DeletedStatus deletedStatus) {
+
+	public Payment(Reservation reservation, String pgTid, String impUid, BigDecimal paymentCost, String paymentCard,
+		PaymentStatus paymentStatus, LocalDateTime refundAttemptedAt, String refundFailedReason, LocalDateTime canceledAt,
+		PaymentHistory paymentHistory, DeletedStatus deletedStatus) {
+		this.reservation = reservation;
 		this.pgTid = pgTid;
 		this.impUid = impUid;
 		this.paymentCost = paymentCost;
@@ -76,6 +83,7 @@ public class Payment extends BaseEntity {
 		this.refundAttemptedAt = refundAttemptedAt;
 		this.refundFailedReason = refundFailedReason;
 		this.canceledAt = canceledAt;
+		this.paymentHistory = paymentHistory;
 		this.deletedStatus = deletedStatus;
 	}
 }
