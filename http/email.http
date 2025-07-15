@@ -6,6 +6,22 @@ Content-Type: application/json
   "email": "rlawldbs9128@gmail.com"
 }
 
+### 이메일 인증코드 전송 test1
+POST http://localhost:8080/auth/email/send
+Content-Type: application/json
+
+{
+  "email": "testuser1@example.com"
+}
+
+### 이메일 인증코드 전송 test2
+POST http://localhost:8080/auth/email/send
+Content-Type: application/json
+
+{
+  "email": "testuser2@example.com"
+}
+
 ### 이메일 인증코드 확인
 POST http://localhost:8080/auth/email/verify
 Content-Type: application/json
@@ -13,4 +29,22 @@ Content-Type: application/json
 {
   "email": "rlawldbs9128@gmail.com",
   "code": "297352"
+}
+
+### 이메일 인증코드 확인 test1
+POST http://localhost:8080/auth/email/verify
+Content-Type: application/json
+
+{
+  "email": "testuser1@example.com",
+  "code": "164401"
+}
+
+### 이메일 인증코드 확인 test2
+POST http://localhost:8080/auth/email/verify
+Content-Type: application/json
+
+{
+  "email": "testuser2@example.com",
+  "code": "455278"
 }
