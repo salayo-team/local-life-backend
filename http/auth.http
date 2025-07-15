@@ -1,0 +1,24 @@
+### 일반 회원가입 테스트
+POST http://localhost:8080/auth/signup/user
+Content-Type: application/json
+
+{
+  "email": "testuser1@example.com",
+  "password": "test1234!",
+  "nickname": "테스트유저",
+  "birth": "1999"
+}
+
+### 일반 회원가입 테스트 - 닉네임 자동 생성 확인
+POST http://localhost:8080/auth/signup/user
+Content-Type: application/json
+
+{
+  "email": "testuser2@example.com",
+  "password": "Test1234!",
+  "nickname": "",
+  "birth": "1998"
+}
+
+
+

@@ -16,11 +16,15 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
 @Table(name = "member")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Member extends BaseEntity {
 
     @Id
@@ -56,4 +60,15 @@ public class Member extends BaseEntity {
     @OneToMany(mappedBy = "member")
     private List<PaymentHistory> paymentHistoryList = new ArrayList<>();
 
+    @Builder
+    public Member(String email, String encodedPassword, String phoneNumber, String birth,
+        String nickname, Gender gender, MemberRole memberRole) {
+        this.email = email;
+        this.password = encodedPassword;
+        this.phoneNumber = phoneNumber;
+        this.birth = birth;
+        this.nickname = nickname;
+        this.gender = gender;
+        this.memberRole = memberRole;
+    }
 }
