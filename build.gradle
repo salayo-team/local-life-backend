@@ -64,6 +64,12 @@ dependencies {
     implementation 'commons-io:commons-io:2.11.0'
     implementation 'javax.xml.bind:jaxb-api:2.3.1'
 
+    // Spring AI
+    implementation 'org.springframework.ai:spring-ai-openai-spring-boot-starter:1.0.0-M3'
+
+    // IDE 자동완성/검증용
+    implementation 'org.springframework.boot:spring-boot-configuration-processor'
+
 }
 
 tasks.named('test') {
