@@ -43,7 +43,7 @@ public class Member extends BaseEntity {
     @Column(nullable = false, length = 50)
     private String birth;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = true, unique = true)
     private String nickname;
 
     @Enumerated(EnumType.STRING)
