@@ -1,6 +1,8 @@
 package com.salayo.locallifebackend.domain.ai.prompt;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,7 +31,10 @@ public class PromptManager {
 	private String loadPrompt(PromptType type) {
 		try {
 			Resource resource = resourceLoader.getResource(basePath + type.getFileName());
-			return new String(Files.readAllBytes(resource.getFile().toPath()));
+
+			try (InputStream inputStream = resource.getInputStream()) {
+				return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+			}
 		} catch (IOException e) {
 			throw new RuntimeException("프롬프트 파일을 로드할 수 없습니다: " + type.getFileName(), e);
 		}
