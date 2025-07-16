@@ -29,6 +29,9 @@ public enum ErrorCode {
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 회원을 찾을 수 없습니다."),
     EMAIL_CODE_EXPIRED(HttpStatus.NOT_FOUND, "인증 코드가 만료되었거나 존재하지 않습니다."),
 
+    // 408 REQUEST_TIMEOUT
+    AI_TIMEOUT(HttpStatus.REQUEST_TIMEOUT, "AI 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요."),
+
     // 409 CONFLICT
     DUPLICATE_VALUE(HttpStatus.CONFLICT, "중복된 정보입니다."),
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, "이미 존재하는 이메일입니다."),
@@ -39,7 +42,9 @@ public enum ErrorCode {
 
     // 500 INTERNAL_SERVER_ERROR
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버에서 오류가 발생했습니다."),
-    FILE_UPLOAD_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "파일 업로드에 실패했습니다.");
+    FILE_UPLOAD_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "파일 업로드에 실패했습니다."),
+    AI_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "AI 처리 중 오류가 발생했습니다.");
+
 
     private final HttpStatus status;
     private final String message;
