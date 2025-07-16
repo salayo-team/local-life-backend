@@ -1,5 +1,10 @@
-### GET request to example server
-GET https://examples.http-client.intellij.net/get
-    ?generated-in=IntelliJ IDEA
+### AI 동작 체크
+GET http://localhost:8080/ai/test/health
+Accept: application/json
 
-###
+### AI 챗 테스트 (예: message 전달)
+POST http://localhost:8080/ai/test/chat
+Content-Type: application/json
+Accept: application/json
+
+"너는 어떤 AI니?"
