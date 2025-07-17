@@ -18,9 +18,12 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -41,7 +44,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         FilterChain filterChain)
         throws ServletException, IOException {
 
-        String token = jwtProvider.resolveToken(httpServletRequest.getHeader(JwtProvider.AUTH_HEADER));
+        String token = jwtProvider.resolveToken(
+            httpServletRequest.getHeader(JwtProvider.AUTH_HEADER));
 
         try {
             if (token != null) {
@@ -53,20 +57,29 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
                 if (member == null) {
                     log.warn("Member Not Found: {}", email);
-                    setErrorResponse(httpServletResponse, ErrorCode.MEMBER_NOT_FOUND, httpServletRequest);
+                    setErrorResponse(httpServletResponse, ErrorCode.MEMBER_NOT_FOUND,
+                        httpServletRequest);
                     return;
                 }
 
                 String storedAccessToken = redisUtil.getAccessToken(member.getId());
                 if (storedAccessToken != null && !storedAccessToken.equals(token)) {
                     log.warn("AccessToken mismatch: 다른 기기에서 로그인 되었습니다.");
-                    setErrorResponse(httpServletResponse, ErrorCode.DUPLICATE_LOGIN_DETECTED, httpServletRequest);
+                    setErrorResponse(httpServletResponse, ErrorCode.DUPLICATE_LOGIN_DETECTED,
+                        httpServletRequest);
                     return;
                 }
 
                 MemberDetails memberDetails = new MemberDetails(member);
 
-                UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(memberDetails, null, memberDetails.getAuthorities());
+                String role = jwtProvider.getRoleFromToken(token);
+
+                List<GrantedAuthority> authorities = List.of(
+                    new SimpleGrantedAuthority("ROLE_" + role)
+                );
+
+                UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                    memberDetails, null, authorities);
 
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
             }
@@ -88,18 +101,21 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         } catch (SecurityException e) {
             log.error("JWT signature does not match");
-            setErrorResponse(httpServletResponse, ErrorCode.TOKEN_SIGNATURE_INVALID, httpServletRequest);
+            setErrorResponse(httpServletResponse, ErrorCode.TOKEN_SIGNATURE_INVALID,
+                httpServletRequest);
             return;
         } catch (Exception e) {
             log.error("Failed to validate JWT token", e);
-            setErrorResponse(httpServletResponse, ErrorCode.INTERNAL_SERVER_ERROR, httpServletRequest);
+            setErrorResponse(httpServletResponse, ErrorCode.INTERNAL_SERVER_ERROR,
+                httpServletRequest);
             return;
         }
 
         filterChain.doFilter(httpServletRequest, httpServletResponse);
     }
 
-    private void setErrorResponse(HttpServletResponse httpServletResponse, ErrorCode errorCode, HttpServletRequest httpServletRequest) throws IOException {
+    private void setErrorResponse(HttpServletResponse httpServletResponse, ErrorCode errorCode,
+        HttpServletRequest httpServletRequest) throws IOException {
 
         httpServletResponse.setStatus(errorCode.getStatus().value());
         httpServletResponse.setContentType("application/json;charset=UTF-8");
