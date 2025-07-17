@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.salayo.locallifebackend.domain.file.enums.FilePurpose;
 import com.salayo.locallifebackend.domain.localcreator.dto.LocalCreatorSignupRequestDto;
 import com.salayo.locallifebackend.domain.localcreator.dto.LocalCreatorSignupResponseDto;
+import com.salayo.locallifebackend.domain.member.dto.LoginRequestDto;
+import com.salayo.locallifebackend.domain.member.dto.LoginResponseDto;
 import com.salayo.locallifebackend.domain.member.dto.UserSignupRequestDto;
 import com.salayo.locallifebackend.domain.member.dto.UserSignupResponseDto;
 import com.salayo.locallifebackend.domain.member.service.AuthService;
@@ -61,7 +63,8 @@ public class AuthController {
         ObjectMapper objectMapper = new ObjectMapper();
         LocalCreatorSignupRequestDto requestDto;
         try {
-            requestDto = objectMapper.readValue(requestDtoString, LocalCreatorSignupRequestDto.class);
+            requestDto = objectMapper.readValue(requestDtoString,
+                LocalCreatorSignupRequestDto.class);
         } catch (Exception e) {
             e.printStackTrace();
             throw new CustomException(ErrorCode.INVALID_PARAMETER);
@@ -76,6 +79,19 @@ public class AuthController {
 
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(CommonResponseDto.success(SuccessCode.SIGNUP_SUCCESS, responseDto));
+    }
+
+    @Operation(summary = "로그인", description = "일반회원/로컬크리에이터 로그인입니다.")
+    @PostMapping("/login")
+    public ResponseEntity<CommonResponseDto<LoginResponseDto>> login(
+        @RequestBody @Valid LoginRequestDto requestDto) {
+
+        LoginResponseDto responseDto = authService.login(requestDto);
+
+        return ResponseEntity.ok(
+            CommonResponseDto.success(SuccessCode.LOGIN_SUCCESS, responseDto)
+        );
+
     }
 
 }

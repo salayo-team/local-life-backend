@@ -11,6 +11,8 @@ import com.salayo.locallifebackend.domain.localcreator.dto.LocalCreatorSignupReq
 import com.salayo.locallifebackend.domain.localcreator.dto.LocalCreatorSignupResponseDto;
 import com.salayo.locallifebackend.domain.localcreator.entity.LocalCreator;
 import com.salayo.locallifebackend.domain.localcreator.repository.LocalCreatorRepository;
+import com.salayo.locallifebackend.domain.member.dto.LoginRequestDto;
+import com.salayo.locallifebackend.domain.member.dto.LoginResponseDto;
 import com.salayo.locallifebackend.domain.member.dto.UserSignupRequestDto;
 import com.salayo.locallifebackend.domain.member.dto.UserSignupResponseDto;
 import com.salayo.locallifebackend.domain.member.entity.Member;
@@ -20,6 +22,7 @@ import com.salayo.locallifebackend.domain.member.repository.MemberRepository;
 import com.salayo.locallifebackend.domain.member.util.NicknameGenerator;
 import com.salayo.locallifebackend.global.error.ErrorCode;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
+import com.salayo.locallifebackend.global.security.jwt.JwtProvider;
 import java.util.List;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -34,16 +37,19 @@ public class AuthService {
     private final S3Uploader s3Uploader;
     private final FileRepository fileRepository;
     private final FileMappingRepository fileMappingRepository;
+    private final JwtProvider jwtProvider;
 
     public AuthService(MemberRepository memberRepository, PasswordEncoder passwordEncoder,
         LocalCreatorRepository localCreatorRepository, S3Uploader s3Uploader,
-        FileRepository fileRepository, FileMappingRepository fileMappingRepository) {
+        FileRepository fileRepository, FileMappingRepository fileMappingRepository,
+        JwtProvider jwtProvider) {
         this.memberRepository = memberRepository;
         this.passwordEncoder = passwordEncoder;
         this.localCreatorRepository = localCreatorRepository;
         this.s3Uploader = s3Uploader;
         this.fileRepository = fileRepository;
         this.fileMappingRepository = fileMappingRepository;
+        this.jwtProvider = jwtProvider;
     }
 
     public UserSignupResponseDto signupUser(UserSignupRequestDto requestDto) {
@@ -139,5 +145,30 @@ public class AuthService {
         }
 
         return new LocalCreatorSignupResponseDto(localCreator.getBusinessName());
+    }
+
+    public LoginResponseDto login(LoginRequestDto requestDto) {
+        Member member = memberRepository.findByEmail(requestDto.getEmail())
+            .orElseThrow(() -> new CustomException(ErrorCode.INVALID_LOGIN));
+
+        if (!passwordEncoder.matches(requestDto.getPassword(), member.getPassword())) {
+            throw new CustomException(ErrorCode.INVALID_LOGIN);
+        }
+
+        if (member.getMemberRole() == MemberRole.LOCAL_CREATOR) {
+            LocalCreator creator = localCreatorRepository.findByMemberId(member.getId())
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_LOGIN));
+            if (!creator.isApproved()) {
+                throw new CustomException(ErrorCode.CREATOR_NOT_APPROVED);
+            }
+        }
+
+        String accessToken = jwtProvider.generateAccessToken(member.getEmail(), member.getMemberRole().name());
+        String refreshToken = jwtProvider.generateRefreshToken(member.getEmail(), member.getMemberRole().name());
+
+        return LoginResponseDto.builder()
+            .accessToken(accessToken)
+            .refreshToken(refreshToken)
+            .build();
     }
 }

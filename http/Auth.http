@@ -55,3 +55,30 @@ Content-Disposition: form-data; name="filePurposes"
 
 BUSINESS_REGISTRATION
 --MyBoundary--
+
+### 일반 사용자 로그인 1
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "email": "testuser1@example.com",
+  "password": "test1234!"
+}
+
+### 일반 사용자 로그인 2
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "email": "testuser2@example.com",
+  "password": "Test1234!"
+}
+
+### 로컬 크리에이터 로그인 (승인 여부 확인 포함)
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "email": "creator1@example.com",
+  "password": "Password123!"
+}
