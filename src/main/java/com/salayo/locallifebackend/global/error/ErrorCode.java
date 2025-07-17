@@ -13,6 +13,9 @@ public enum ErrorCode {
     FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "파일 크기는 최대 10MB까지 가능합니다."),
     FILE_EMPTY(HttpStatus.BAD_REQUEST, "파일이 비어 있습니다"),
     INVALID_EMAIL_CODE(HttpStatus.BAD_REQUEST, "인증 코드가 일치하지 않습니다."),
+    MISSING_REQUIRED_FILE(HttpStatus.BAD_REQUEST, "필수 파일이 누락되었습니다."),
+    INVALID_FILE_PURPOSE_MAPPING(HttpStatus.BAD_REQUEST, "파일 개수와 파일 목적 개수가 일치하지 않습니다."),
+    INVALID_PARAMETER(HttpStatus.BAD_REQUEST, "필수 입력값이 누락되었거나 잘못되었습니다."),
 
     // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
