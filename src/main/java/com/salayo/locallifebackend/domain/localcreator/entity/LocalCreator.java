@@ -14,11 +14,15 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
 @Table(name = "local_creator")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class LocalCreator extends BaseEntity {
 
     @Id
@@ -40,4 +44,17 @@ public class LocalCreator extends BaseEntity {
     private CreatorStatus creatorStatus;
 
     private String rejectedReason;
+
+    @Builder
+    public LocalCreator(Member member, String businessName, String businessAddress) {
+        this.member = member;
+        this.businessName = businessName;
+        this.businessAddress = businessAddress;
+        this.creatorStatus = CreatorStatus.PENDING;
+    }
+
+    public boolean isApproved() {
+        return this.creatorStatus == CreatorStatus.APPROVED;
+    }
+
 }

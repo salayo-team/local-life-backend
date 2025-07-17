@@ -1,0 +1,84 @@
+### 일반 회원가입 테스트
+POST http://localhost:8080/auth/signup/user
+Content-Type: application/json
+
+{
+  "email": "testuser1@example.com",
+  "password": "test1234!",
+  "nickname": "테스트유저",
+  "birth": "1999"
+}
+
+### 일반 회원가입 테스트 - 닉네임 자동 생성 확인
+POST http://localhost:8080/auth/signup/user
+Content-Type: application/json
+
+{
+  "email": "testuser2@example.com",
+  "password": "Test1234!",
+  "nickname": "",
+  "birth": "1998"
+}
+
+### 로컬 크리에이터 회원가입 요청 -> postman test, 이건 값 들어가는 예시
+POST http://localhost:8080/auth/signup/localcreator
+Content-Type: multipart/form-data; boundary=MyBoundary
+
+--MyBoundary
+Content-Disposition: form-data; name="data"
+Content-Type: application/json
+
+{
+  "email": "creator1@example.com",
+  "password": "Password123!",
+  "birth": "1990",
+  "phoneNumber": "01012345678",
+  "businessName": "로컬카페101",
+  "businessAddress": "서울시 강남구 어딘가 12"
+}
+--MyBoundary
+Content-Disposition: form-data; name="file"; filename="bank_account.png"
+Content-Type: image/png
+
+< bank_account.png
+--MyBoundary
+Content-Disposition: form-data; name="file"; filename="buisness_reg.png"
+Content-Type: image/png
+
+< buisness_reg.png
+--MyBoundary
+Content-Disposition: form-data; name="filePurposes"
+
+BANK_ACCOUNT_COPY
+--MyBoundary
+Content-Disposition: form-data; name="filePurposes"
+
+BUSINESS_REGISTRATION
+--MyBoundary--
+
+### 일반 사용자 로그인 1
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "email": "testuser1@example.com",
+  "password": "test1234!"
+}
+
+### 일반 사용자 로그인 2
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "email": "testuser2@example.com",
+  "password": "Test1234!"
+}
+
+### 로컬 크리에이터 로그인 (승인 여부 확인 포함)
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "email": "creator1@example.com",
+  "password": "Password123!"
+}
