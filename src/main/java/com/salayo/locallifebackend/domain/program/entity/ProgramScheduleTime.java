@@ -33,7 +33,7 @@ public class ProgramScheduleTime {
 	private Integer scheduleCount; //하루 스케줄 회차
 
 	@Column(name = "schedule_duration", nullable = false)
-	private LocalTime scheduleDuration; //스케줄 소요 시간
+	private Integer scheduleDuration; //스케줄 소요 시간
 
 	@Column(name = "start_time", nullable = false)
 	private LocalTime startTime; //스케줄 시작시간
@@ -42,7 +42,7 @@ public class ProgramScheduleTime {
 	private LocalTime endTime; //스케줄 종료 시간
 
 	@Builder
-	public ProgramScheduleTime(Program program, Integer scheduleCount, LocalTime scheduleDuration, LocalTime startTime, LocalTime endTime) {
+	public ProgramScheduleTime(Program program, Integer scheduleCount, Integer scheduleDuration, LocalTime startTime, LocalTime endTime) {
 		this.program = program;
 		this.scheduleCount = scheduleCount;
 		this.scheduleDuration = scheduleDuration;

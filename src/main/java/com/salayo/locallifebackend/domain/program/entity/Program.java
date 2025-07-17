@@ -87,9 +87,6 @@ public class Program extends BaseEntity {
 	private Integer minCapacity; //스케줄 최소 정원
 
 	@Column(nullable = false)
-	private LocalDate recruitmentPeriod; //모집 기간
-
-	@Column(nullable = false)
 	private LocalDate startDate; //체험 프로그램 시작일
 
 	@Column(nullable = false)
@@ -110,18 +107,18 @@ public class Program extends BaseEntity {
 	@Column(nullable = false, length = 50)
 	private DeletedStatus deletedStatus; //프로그램 삭제 여부
 
-	@OneToMany(mappedBy = "program", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToMany(mappedBy = "program", cascade = CascadeType.ALL, orphanRemoval = false)
 	private List<ProgramDay> programDays = new ArrayList<>(); //요일
 
-	@OneToMany(mappedBy = "program", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToMany(mappedBy = "program", cascade = CascadeType.ALL, orphanRemoval = false)
 	private List<ProgramScheduleTime> programScheduleTimes = new ArrayList<>();
 
 	@Builder
 	public Program(Member member, AptitudeCategory aptitudeCategory, RegionCategory regionCategory, Program originalProgram,
 		String businessName, String title, String description, String curriculumDescription, String location, BigDecimal price,
-		BigDecimal percent, BigDecimal discountedPrice, Integer maxCapacity, Integer minCapacity, LocalDate recruitmentPeriod,
-		LocalDate startDate, LocalDate endDate, Integer count, LocalSpecialized isLocalSpecialized, ProgramStatus programStatus,
-		DeletedStatus deletedStatus, List<ProgramDay> programDays, List<ProgramScheduleTime> programScheduleTimes) {
+		BigDecimal percent, BigDecimal discountedPrice, Integer maxCapacity, Integer minCapacity, LocalDate startDate,
+		LocalDate endDate, Integer count, LocalSpecialized isLocalSpecialized, ProgramStatus programStatus, DeletedStatus deletedStatus,
+		List<ProgramDay> programDays, List<ProgramScheduleTime> programScheduleTimes) {
 		this.member = member;
 		this.aptitudeCategory = aptitudeCategory;
 		this.regionCategory = regionCategory;
@@ -136,7 +133,6 @@ public class Program extends BaseEntity {
 		this.discountedPrice = discountedPrice;
 		this.maxCapacity = maxCapacity;
 		this.minCapacity = minCapacity;
-		this.recruitmentPeriod = recruitmentPeriod;
 		this.startDate = startDate;
 		this.endDate = endDate;
 		this.count = count;

@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface AptitudeCategoryRepository extends JpaRepository<AptitudeCategory, Long> {
 
+	AptitudeCategory findByIdOrElseThrow(Long aptitudeCategoryId);
 }

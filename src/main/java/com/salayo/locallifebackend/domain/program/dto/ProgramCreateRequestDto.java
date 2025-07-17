@@ -31,7 +31,7 @@ public class ProgramCreateRequestDto {
 	private String description; //프로그램 설명
 
 	@NotBlank(message = "체험 프로그램 커리큘럼 설명은 필수값입니다.")
-	private String curriculumDescription;
+	private String curriculumDescription; //커리큘럼 설명
 
 	@NotBlank(message = "체험 프로그램 위치는 필수값입니다.")
 	private String location; //체험 위치
