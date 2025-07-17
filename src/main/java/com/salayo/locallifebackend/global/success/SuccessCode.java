@@ -16,7 +16,8 @@ public enum SuccessCode {
     EMAIL_SEND_SUCCESS(HttpStatus.OK, "이메일을 성공적으로 전송했습니다."),
     EMAIL_VERIFY_SUCCESS(HttpStatus.OK, "이메일 인증에 성공했습니다."),
 
-    SIGNUP_SUCCESS(HttpStatus.CREATED, "회원가입이 완료되었습니다.");
+    SIGNUP_SUCCESS(HttpStatus.CREATED, "회원가입이 완료되었습니다."),
+    LOGIN_SUCCESS(HttpStatus.OK, "로그인이 완료되었습니다.");
 
     private final HttpStatus status;
     private final String message;
