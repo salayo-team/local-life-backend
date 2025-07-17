@@ -53,4 +53,8 @@ public class LocalCreator extends BaseEntity {
         this.creatorStatus = CreatorStatus.PENDING;
     }
 
+    public boolean isApproved() {
+        return this.creatorStatus == CreatorStatus.APPROVED;
+    }
+
 }
