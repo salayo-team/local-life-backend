@@ -44,11 +44,11 @@ public class Program extends BaseEntity {
 	@JoinColumn(name = "provider_id", nullable = false)
 	private Member member; //프로그램 제공자(로컬 크리에이터) 고유 식별자
 
-	@OneToOne(fetch = FetchType.LAZY)
+	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "aptitude_category_id", nullable = false)
 	private AptitudeCategory aptitudeCategory; //적성 카테고리 고유 식별자
 
-	@OneToOne(fetch = FetchType.LAZY)
+	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "region_category_id", nullable = false)
 	private RegionCategory regionCategory; //지역 카테고리 고유 식별자
 
@@ -146,12 +146,10 @@ public class Program extends BaseEntity {
 	}
 
 	public void addProgramDay(ProgramDay programDay) {
-		programDay.connectToProgram(this.id);
 		this.programDays.add(programDay);
 	}
 
 	public void addProgramScheduleTime(ProgramScheduleTime programScheduleTime) {
-		programScheduleTime.connectToProgram(this.id);
 		this.programScheduleTimes.add(programScheduleTime);
 	}
 

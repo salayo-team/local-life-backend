@@ -93,6 +93,7 @@ public class ProgramCreateResponseDto {
 				.toList())
 			.programScheduleTimes(program.getProgramScheduleTimes().stream()
 				.map(scheduleTime -> ProgramScheduleTimeResponseDto.builder()
+					.id(scheduleTime.getId())
 					.scheduleCount(scheduleTime.getScheduleCount())
 					.scheduleDuration(scheduleTime.getScheduleDuration())
 					.startTime(scheduleTime.getStartTime())

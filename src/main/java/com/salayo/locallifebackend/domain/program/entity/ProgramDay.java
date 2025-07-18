@@ -24,21 +24,14 @@ public class ProgramDay {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id; //체험 프로그램 요일 고유 식별자
 
-	@Column(name = "program_id", nullable = false)
-	private Long programId; //체험 프로그램 고유 식별자 fk
-
 	@Enumerated(EnumType.STRING)
 	@Column(name = "day_name", nullable = false, length = 50)
 	private DayName dayName; //요일명
 
 	@Builder
-	public ProgramDay(DayName dayName, Long programId) {
-
+	public ProgramDay(DayName dayName) {
 		this.dayName = dayName;
-		this.programId = programId;
+
 	}
 
-	public void connectToProgram(Long programId) {
-		this.programId = programId;
-	}
 }

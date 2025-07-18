@@ -1,8 +1,24 @@
 
-### 체험 프로그램 생성 API
+### 로컬 크리에이터 로그인 (승인 여부 확인 포함)
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "email": "creator1@example.com",
+  "password": "Password123!"
+}
+
+> {%
+  const json = response.body;
+  const accessToken = json.data.accessToken;
+  client.global.set("accessToken", accessToken);
+%}
+
+### 체험 프로그램 생성 API - file 첨부 제외
 POST http://localhost:8080/localcreator/programs
 Content-Type: application/json
-Authorization: Bearer {accessToken}
+Accept: application/json
+Authorization: Bearer {{accessToken}}
 
 {
   "aptitudeCategoryId": 1,
@@ -17,7 +33,11 @@ Authorization: Bearer {accessToken}
   "maxCapacity": 5,
   "startDate": "2025-07-26",
   "endDate": "2025-08-26",
-  "programDays": ["MONDAY", "WEDNESDAY", "FRIDAY"],
+  "programDays": [
+    "MONDAY",
+    "WEDNESDAY",
+    "FRIDAY"
+  ],
   "programScheduleTimes": [
     {
       "scheduleCount": 1,
@@ -31,4 +51,5 @@ Authorization: Bearer {accessToken}
     }
   ]
 }
+
 

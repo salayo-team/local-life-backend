@@ -18,9 +18,7 @@ import com.salayo.locallifebackend.domain.program.entity.ProgramDay;
 import com.salayo.locallifebackend.domain.program.entity.ProgramScheduleTime;
 import com.salayo.locallifebackend.domain.program.enums.LocalSpecialized;
 import com.salayo.locallifebackend.domain.program.enums.ProgramStatus;
-import com.salayo.locallifebackend.domain.program.repository.ProgramDayRepository;
 import com.salayo.locallifebackend.domain.program.repository.ProgramRepository;
-import com.salayo.locallifebackend.domain.program.repository.ProgramScheduleTimeRepository;
 import com.salayo.locallifebackend.global.enums.DeletedStatus;
 import com.salayo.locallifebackend.global.error.ErrorCode;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
@@ -55,30 +53,27 @@ public class ProgramService {
 	/**
 	 * 체험 프로그램 생성 메서드
 	 * - TODO : file 로직 추가
+	 * - TODO : 동일한 유저가 중복되는 스케줄 타임 생성시 예외처리
 	 */
 	public ProgramCreateResponseDto createProgram(long memberId, @Valid ProgramCreateRequestDto requestDto) {
-		//멤버 조회
+
 		Member member = memberRepository.findByIdOrElseThrow(memberId);
 
-		//사업자명, 승인상태 조회
 		LocalCreator localCreator = localCreatorRepository
 			.findByMemberIdAndCreatorStatus(member.getId(), CreatorStatus.APPROVED)
 			.orElseThrow(() -> new CustomException(ErrorCode.LOCAL_CREATOR_NOT_APPROVED));
 
 		String businessName = localCreator.getBusinessName();
 
-		//적성, 지역 카테고리 조회
 		Long aptitudeCategoryId = requestDto.getAptitudeCategoryId();
 		AptitudeCategory aptitudeCategory = aptitudeCategoryRepository.findByIdOrElseThrow(aptitudeCategoryId);
 
 		Long regionCategoryId = requestDto.getRegionCategoryId();
 		RegionCategory regionCategory = regionCategoryRepository.findByIdOrElseThrow(regionCategoryId);
 
-		//할인 가격 계산
 		BigDecimal price = requestDto.getPrice();
 		BigDecimal percent = requestDto.getPercent();
 
-		//가격 검증
 		if (price.compareTo(BigDecimal.ONE) < 0 || price.compareTo(new BigDecimal("5000000")) > 0) {
 			throw new CustomException(ErrorCode.INVALID_PRICE_RANGE);
 		}
@@ -90,7 +85,6 @@ public class ProgramService {
 			discountedPrice = price.multiply(discountRate);
 		}
 
-		//체험 정원 검증
 		Integer minCapacity = requestDto.getMinCapacity();
 		Integer maxCapacity = requestDto.getMaxCapacity();
 
@@ -98,14 +92,12 @@ public class ProgramService {
 			throw new CustomException(ErrorCode.INVALID_CAPACITY_RANGE);
 		}
 
-		//시작 날짜 검증
 		LocalDate startDate = requestDto.getStartDate();
 		validateStartDate(startDate);
-		//종료 날짜 검증
+
 		LocalDate endDate = requestDto.getEndDate();
 		validateEndDate(startDate, endDate);
 
-		//체험 프로그램 객체 생성
 		Program program = Program.builder()
 			.member(member)
 			.aptitudeCategory(aptitudeCategory)
@@ -128,7 +120,6 @@ public class ProgramService {
 			.deletedStatus(DeletedStatus.DISPLAYED)
 			.build();
 
-		//요일 추가
 		requestDto.getProgramDays().forEach(dayName -> {
 			ProgramDay programDay = ProgramDay.builder()
 				.dayName(dayName)
@@ -136,7 +127,6 @@ public class ProgramService {
 			program.addProgramDay(programDay);
 		});
 
-		//스케줄 시간 추가
 		requestDto.getProgramScheduleTimes().forEach(scheduleDto -> {
 			Integer scheduleDurationHours = scheduleDto.getScheduleDuration();
 			LocalTime startTime = scheduleDto.getStartTime();
@@ -185,6 +175,5 @@ public class ProgramService {
 			throw new CustomException(ErrorCode.INVALID_END_DATE);
 		}
 	}
-
 
 }
