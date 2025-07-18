@@ -25,9 +25,8 @@ public class ProgramScheduleTime {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id; //체험 프로그램 스케줄 시간 고유 식별자
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "program_id", nullable = false)
-	private Program program; //체험 프로그램 고유 식별자
+	@Column(name = "program_id", nullable = false)
+	private Long programId; //체험 프로그램 고유 식별자 fk
 
 	@Column(name = "schedule_count", nullable = false)
 	private Integer scheduleCount; //하루 스케줄 회차
@@ -42,12 +41,16 @@ public class ProgramScheduleTime {
 	private LocalTime endTime; //스케줄 종료 시간
 
 	@Builder
-	public ProgramScheduleTime(Program program, Integer scheduleCount, Integer scheduleDuration, LocalTime startTime, LocalTime endTime) {
-		this.program = program;
+	public ProgramScheduleTime(Long programId, Integer scheduleCount, Integer scheduleDuration, LocalTime startTime, LocalTime endTime) {
+		this.programId = programId;
 		this.scheduleCount = scheduleCount;
 		this.scheduleDuration = scheduleDuration;
 		this.startTime = startTime;
 		this.endTime = endTime;
+	}
+
+	public void connectToProgram(Long programId) {
+		this.programId = programId;
 	}
 
 }

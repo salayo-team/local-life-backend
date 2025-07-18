@@ -5,12 +5,9 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -25,19 +22,23 @@ public class ProgramDay {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id; //체험 프로그램 고유 식별자
+	private Long id; //체험 프로그램 요일 고유 식별자
+
+	@Column(name = "program_id", nullable = false)
+	private Long programId; //체험 프로그램 고유 식별자 fk
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "day_name", nullable = false, length = 50)
 	private DayName dayName; //요일명
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "program_id", nullable = false)
-	private Program program;
-
 	@Builder
-	public ProgramDay(DayName dayName, Program program) {
+	public ProgramDay(DayName dayName, Long programId) {
+
 		this.dayName = dayName;
-		this.program = program;
+		this.programId = programId;
+	}
+
+	public void connectToProgram(Long programId) {
+		this.programId = programId;
 	}
 }

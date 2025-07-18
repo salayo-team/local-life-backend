@@ -6,8 +6,9 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalTime;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-@Builder
+@NoArgsConstructor
 @Getter
 public class ProgramScheduleTimeRequestDto {
 

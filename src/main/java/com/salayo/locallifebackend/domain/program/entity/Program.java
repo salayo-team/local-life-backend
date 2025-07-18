@@ -107,11 +107,13 @@ public class Program extends BaseEntity {
 	@Column(nullable = false, length = 50)
 	private DeletedStatus deletedStatus; //프로그램 삭제 여부
 
-	@OneToMany(mappedBy = "program", cascade = CascadeType.ALL, orphanRemoval = false)
-	private List<ProgramDay> programDays = new ArrayList<>(); //요일
+	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = false)
+	@JoinColumn(name = "program_id")
+	private List<ProgramDay> programDays = new ArrayList<ProgramDay>(); //요일
 
-	@OneToMany(mappedBy = "program", cascade = CascadeType.ALL, orphanRemoval = false)
-	private List<ProgramScheduleTime> programScheduleTimes = new ArrayList<>();
+	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = false)
+	@JoinColumn(name = "program_id")
+	private List<ProgramScheduleTime> programScheduleTimes = new ArrayList<ProgramScheduleTime>(); //체험 프로그램 스케줄 시간
 
 	@Builder
 	public Program(Member member, AptitudeCategory aptitudeCategory, RegionCategory regionCategory, Program originalProgram,
@@ -142,5 +144,16 @@ public class Program extends BaseEntity {
 		this.programDays = programDays != null ? programDays : new ArrayList<ProgramDay>();
 		this.programScheduleTimes = programScheduleTimes != null ? programScheduleTimes : new ArrayList<ProgramScheduleTime>();
 	}
+
+	public void addProgramDay(ProgramDay programDay) {
+		programDay.connectToProgram(this.id);
+		this.programDays.add(programDay);
+	}
+
+	public void addProgramScheduleTime(ProgramScheduleTime programScheduleTime) {
+		programScheduleTime.connectToProgram(this.id);
+		this.programScheduleTimes.add(programScheduleTime);
+	}
+
 
 }

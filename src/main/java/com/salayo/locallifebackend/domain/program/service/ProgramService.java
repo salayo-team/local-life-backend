@@ -7,6 +7,7 @@ import com.salayo.locallifebackend.domain.category.repository.AptitudeCategoryRe
 import com.salayo.locallifebackend.domain.category.repository.RegionCategoryRepository;
 import com.salayo.locallifebackend.domain.file.repository.FileRepository;
 import com.salayo.locallifebackend.domain.localcreator.entity.LocalCreator;
+import com.salayo.locallifebackend.domain.localcreator.enums.CreatorStatus;
 import com.salayo.locallifebackend.domain.localcreator.repository.LocalCreatorRepository;
 import com.salayo.locallifebackend.domain.member.entity.Member;
 import com.salayo.locallifebackend.domain.member.repository.MemberRepository;
@@ -19,11 +20,14 @@ import com.salayo.locallifebackend.domain.program.enums.LocalSpecialized;
 import com.salayo.locallifebackend.domain.program.enums.ProgramStatus;
 import com.salayo.locallifebackend.domain.program.repository.ProgramDayRepository;
 import com.salayo.locallifebackend.domain.program.repository.ProgramRepository;
+import com.salayo.locallifebackend.domain.program.repository.ProgramScheduleTimeRepository;
 import com.salayo.locallifebackend.global.enums.DeletedStatus;
+import com.salayo.locallifebackend.global.error.ErrorCode;
+import com.salayo.locallifebackend.global.error.exception.CustomException;
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.List;
 import org.springframework.stereotype.Service;
 
 
@@ -50,30 +54,56 @@ public class ProgramService {
 
 	/**
 	 * 체험 프로그램 생성 메서드
-	 * - TODO : 하드 코드 값 수정(userId)
-	 * - file 로직 추가
+	 * - TODO : file 로직 추가
 	 */
-	public ProgramCreateResponseDto createProgram(long userId, @Valid ProgramCreateRequestDto requestDto) {
+	public ProgramCreateResponseDto createProgram(long memberId, @Valid ProgramCreateRequestDto requestDto) {
+		//멤버 조회
+		Member member = memberRepository.findByIdOrElseThrow(memberId);
 
-		Member member = memberRepository.findByIdOrElseThrow(userId);
+		//사업자명, 승인상태 조회
+		LocalCreator localCreator = localCreatorRepository
+			.findByMemberIdAndCreatorStatus(member.getId(), CreatorStatus.APPROVED)
+			.orElseThrow(() -> new CustomException(ErrorCode.LOCAL_CREATOR_NOT_APPROVED));
 
-		LocalCreator localCreator = localCreatorRepository.findByUserIdAndCreatorStatus(member.getId(), "APPROVED");
 		String businessName = localCreator.getBusinessName();
 
+		//적성, 지역 카테고리 조회
 		Long aptitudeCategoryId = requestDto.getAptitudeCategoryId();
 		AptitudeCategory aptitudeCategory = aptitudeCategoryRepository.findByIdOrElseThrow(aptitudeCategoryId);
 
 		Long regionCategoryId = requestDto.getRegionCategoryId();
 		RegionCategory regionCategory = regionCategoryRepository.findByIdOrElseThrow(regionCategoryId);
 
+		//할인 가격 계산
 		BigDecimal price = requestDto.getPrice();
 		BigDecimal percent = requestDto.getPercent();
+
+		//가격 검증
+		if (price.compareTo(BigDecimal.ONE) < 0 || price.compareTo(new BigDecimal("5000000")) > 0) {
+			throw new CustomException(ErrorCode.INVALID_PRICE_RANGE);
+		}
+
 		BigDecimal discountedPrice = null;
 
 		if (percent != null) {
 			BigDecimal discountRate = BigDecimal.ONE.subtract(percent.divide(BigDecimal.valueOf(100)));
 			discountedPrice = price.multiply(discountRate);
 		}
+
+		//체험 정원 검증
+		Integer minCapacity = requestDto.getMinCapacity();
+		Integer maxCapacity = requestDto.getMaxCapacity();
+
+		if (minCapacity < 1 || maxCapacity > 100 || minCapacity > maxCapacity) {
+			throw new CustomException(ErrorCode.INVALID_CAPACITY_RANGE);
+		}
+
+		//시작 날짜 검증
+		LocalDate startDate = requestDto.getStartDate();
+		validateStartDate(startDate);
+		//종료 날짜 검증
+		LocalDate endDate = requestDto.getEndDate();
+		validateEndDate(startDate, endDate);
 
 		//체험 프로그램 객체 생성
 		Program program = Program.builder()
@@ -88,52 +118,73 @@ public class ProgramService {
 			.price(price)
 			.percent(percent)
 			.discountedPrice(discountedPrice)
-			.minCapacity(requestDto.getMinCapacity())
-			.maxCapacity(requestDto.getMaxCapacity())
-			.startDate(requestDto.getStartDate())
-			.endDate(requestDto.getEndDate())
+			.minCapacity(minCapacity)
+			.maxCapacity(maxCapacity)
+			.startDate(startDate)
+			.endDate(endDate)
 			.count(0)
 			.isLocalSpecialized(LocalSpecialized.GENERAL)
 			.programStatus(ProgramStatus.REGISTERED)
 			.deletedStatus(DeletedStatus.DISPLAYED)
 			.build();
 
+		//요일 추가
+		requestDto.getProgramDays().forEach(dayName -> {
+			ProgramDay programDay = ProgramDay.builder()
+				.dayName(dayName)
+				.build();
+			program.addProgramDay(programDay);
+		});
+
+		//스케줄 시간 추가
+		requestDto.getProgramScheduleTimes().forEach(scheduleDto -> {
+			Integer scheduleDurationHours = scheduleDto.getScheduleDuration();
+			LocalTime startTime = scheduleDto.getStartTime();
+			LocalTime endTime = startTime.plusHours(scheduleDurationHours);
+
+			ProgramScheduleTime scheduleTime = ProgramScheduleTime.builder()
+				.scheduleCount(scheduleDto.getScheduleCount())
+				.scheduleDuration(scheduleDurationHours)
+				.startTime(startTime)
+				.endTime(endTime)
+				.build();
+			program.addProgramScheduleTime(scheduleTime);
+		});
+
 		programRepository.save(program);
 
-		//요일 매핑
-		List<ProgramDay> programDays = requestDto.getProgramDays().stream()
-			.map(dayName -> {
-				ProgramDay programDay = ProgramDay.builder()
-					.program(program)
-					.dayName(dayName)
-					.build();
-				program.getProgramDays().add(programDay);
-				return programDay;
-			})
-			.toList();
+		//TODO : 체험 프로그램 스케줄 생성 및 저장
 
-		//스케줄 시간 매핑 및 저장
-		List<ProgramScheduleTime> programScheduleTimes = requestDto.getProgramScheduleTimes().stream()
-			.map(scheduleDto -> {
-				Integer scheduleCount = scheduleDto.getScheduleCount();
-				Integer scheduleDurationHours = scheduleDto.getScheduleDuration();
-				LocalTime startTime = scheduleDto.getStartTime();
-				LocalTime endTime = startTime.plusHours(scheduleDurationHours);
-
-				ProgramScheduleTime scheduleTime = ProgramScheduleTime.builder()
-					.program(program)
-					.scheduleCount(scheduleCount)
-					.scheduleDuration(scheduleDurationHours)
-					.startTime(startTime)
-					.endTime(endTime)
-					.build();
-
-				program.getProgramScheduleTimes().add(scheduleTime);
-				return scheduleTime;
-			})
-			.toList();
-
-		return ProgramCreateResponseDto.builder().build();
+		return ProgramCreateResponseDto.from(program);
 	}
+
+	/**
+	 * 시작일 검증 메서드
+	 * - 시작일 현재 기준 7일 이후, max 1달 이내 검증
+	 */
+	private void validateStartDate(LocalDate startDate) {
+
+		LocalDate today = LocalDate.now();
+		if (startDate.isBefore(today.plusDays(7))) {
+			throw new CustomException(ErrorCode.INVALID_START_DATE);
+		}
+		if (startDate.isAfter(today.plusMonths(1))) {
+			throw new CustomException(ErrorCode.INVALID_START_DATE);
+		}
+	}
+
+	/**
+	 * 종료일 검증 메서드
+	 * - 종료일 시작일 기준 1주일 후, max 3달 이내 검증
+	 */
+	private void validateEndDate(LocalDate startDate, LocalDate endDate) {
+		if (endDate.isBefore(startDate.plusWeeks(1))) {
+			throw new CustomException(ErrorCode.INVALID_END_DATE);
+		}
+		if (endDate.isAfter(startDate.plusMonths(3))) {
+			throw new CustomException(ErrorCode.INVALID_END_DATE);
+		}
+	}
+
 
 }

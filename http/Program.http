@@ -1,8 +1,34 @@
+
 ### 체험 프로그램 생성 API
-POST localhost:8080/programs
-Authorization: Bearer {{token}}
-Content-Type: multipart/form-data; boundary=boundary
+POST http://localhost:8080/localcreator/programs
+Content-Type: application/json
+Authorization: Bearer {accessToken}
 
 {
-
+  "aptitudeCategoryId": 1,
+  "regionCategoryId": 1,
+  "title": "이천 도자기 만들기 체험",
+  "description": "이천 도자기를 직접 만들어보는 체험입니다.",
+  "curriculumDescription": "1. 도자기 이론 2. 실습 3. 결과물 포장",
+  "location": "경기도 이천시 경충대로2993번길",
+  "price": 40000,
+  "percent": 10,
+  "minCapacity": 2,
+  "maxCapacity": 5,
+  "startDate": "2025-07-26",
+  "endDate": "2025-08-26",
+  "programDays": ["MONDAY", "WEDNESDAY", "FRIDAY"],
+  "programScheduleTimes": [
+    {
+      "scheduleCount": 1,
+      "scheduleDuration": 3,
+      "startTime": "10:00"
+    },
+    {
+      "scheduleCount": 2,
+      "scheduleDuration": 3,
+      "startTime": "14:00"
+    }
+  ]
 }
+

@@ -7,6 +7,8 @@ import lombok.Getter;
 @Builder
 @Getter
 public class ProgramScheduleTimeResponseDto {
+	
+	private Long id; //체험 프로그램 스케줄 시간 고유 식별자
 
 	private Integer scheduleCount; //스케줄 회차
 
