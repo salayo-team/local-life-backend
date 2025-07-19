@@ -19,7 +19,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -78,7 +77,7 @@ public class Program extends BaseEntity {
 	private BigDecimal percent; //체험 할인율
 
 	@Column(nullable = true)
-	private BigDecimal discountedPrice; //할인된 가격
+	private BigDecimal finalPrice; //최종 가격
 
 	@Column(nullable = false)
 	private Integer maxCapacity; //스케줄 체험 정원
@@ -118,7 +117,7 @@ public class Program extends BaseEntity {
 	@Builder
 	public Program(Member member, AptitudeCategory aptitudeCategory, RegionCategory regionCategory, Program originalProgram,
 		String businessName, String title, String description, String curriculumDescription, String location, BigDecimal price,
-		BigDecimal percent, BigDecimal discountedPrice, Integer maxCapacity, Integer minCapacity, LocalDate startDate,
+		BigDecimal percent, BigDecimal finalPrice, Integer maxCapacity, Integer minCapacity, LocalDate startDate,
 		LocalDate endDate, Integer count, LocalSpecialized isLocalSpecialized, ProgramStatus programStatus, DeletedStatus deletedStatus,
 		List<ProgramDay> programDays, List<ProgramScheduleTime> programScheduleTimes) {
 		this.member = member;
@@ -132,7 +131,7 @@ public class Program extends BaseEntity {
 		this.location = location;
 		this.price = price;
 		this.percent = percent;
-		this.discountedPrice = discountedPrice;
+		this.finalPrice = finalPrice;
 		this.maxCapacity = maxCapacity;
 		this.minCapacity = minCapacity;
 		this.startDate = startDate;

@@ -18,4 +18,6 @@ public class AptitudeCategory {
 
 	private String aptitudeName; //적성 이름
 
+	private String aptitudeCode; //적성 코드
+
 }

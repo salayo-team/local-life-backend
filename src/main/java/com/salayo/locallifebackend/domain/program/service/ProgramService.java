@@ -54,6 +54,7 @@ public class ProgramService {
 	 * 체험 프로그램 생성 메서드
 	 * - TODO : file 로직 추가
 	 * - TODO : 동일한 유저가 중복되는 스케줄 타임 생성시 예외처리
+	 * - TODO : 예외처리 이후, 스케줄 종료시간 - 마지막 스케줄 시간을 설정할때 소요시간을 더 했을때 하루 넘어가면 안되도록 예외처리
 	 */
 	public ProgramCreateResponseDto createProgram(long memberId, @Valid ProgramCreateRequestDto requestDto) {
 
@@ -78,11 +79,11 @@ public class ProgramService {
 			throw new CustomException(ErrorCode.INVALID_PRICE_RANGE);
 		}
 
-		BigDecimal discountedPrice = null;
+		BigDecimal finalPrice = price;
 
 		if (percent != null) {
 			BigDecimal discountRate = BigDecimal.ONE.subtract(percent.divide(BigDecimal.valueOf(100)));
-			discountedPrice = price.multiply(discountRate);
+			finalPrice = price.multiply(discountRate);
 		}
 
 		Integer minCapacity = requestDto.getMinCapacity();
@@ -109,7 +110,7 @@ public class ProgramService {
 			.location(requestDto.getLocation())
 			.price(price)
 			.percent(percent)
-			.discountedPrice(discountedPrice)
+			.finalPrice(finalPrice)
 			.minCapacity(minCapacity)
 			.maxCapacity(maxCapacity)
 			.startDate(startDate)
