@@ -37,36 +37,33 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private final MemberRepository memberRepository;
     private final RedisUtil redisUtil;
 
+    private final ObjectMapper objectMapper = new ObjectMapper()
+        .registerModule(new JavaTimeModule())
+        .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
     @Override
-    protected void doFilterInternal(
-        HttpServletRequest httpServletRequest,
-        HttpServletResponse httpServletResponse,
-        FilterChain filterChain)
+    protected void doFilterInternal(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, FilterChain filterChain)
         throws ServletException, IOException {
 
-        String token = jwtProvider.resolveToken(
-            httpServletRequest.getHeader(JwtProvider.AUTH_HEADER));
+        String token = jwtProvider.resolveToken(httpServletRequest.getHeader(JwtProvider.AUTH_HEADER));
 
         try {
             if (token != null) {
                 jwtProvider.validateTokenOrThrow(token);
                 String email = jwtProvider.getUsernameFromToken(token);
 
-                Member member = memberRepository.findByEmail(email)
-                    .orElse(null);
+                Member member = memberRepository.findByEmail(email).orElse(null);
 
                 if (member == null) {
                     log.warn("Member Not Found: {}", email);
-                    setErrorResponse(httpServletResponse, ErrorCode.MEMBER_NOT_FOUND,
-                        httpServletRequest);
+                    setErrorResponse(httpServletResponse, ErrorCode.MEMBER_NOT_FOUND, httpServletRequest);
                     return;
                 }
 
                 String storedAccessToken = redisUtil.getAccessToken(member.getId());
                 if (storedAccessToken != null && !storedAccessToken.equals(token)) {
                     log.warn("AccessToken mismatch: 다른 기기에서 로그인 되었습니다.");
-                    setErrorResponse(httpServletResponse, ErrorCode.DUPLICATE_LOGIN_DETECTED,
-                        httpServletRequest);
+                    setErrorResponse(httpServletResponse, ErrorCode.DUPLICATE_LOGIN_DETECTED, httpServletRequest);
                     return;
                 }
 
@@ -74,9 +71,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
                 String role = jwtProvider.getRoleFromToken(token);
 
-                List<GrantedAuthority> authorities = List.of(
-                    new SimpleGrantedAuthority("ROLE_" + role)
-                );
+                List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
 
                 UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
                     memberDetails, null, authorities);
@@ -101,34 +96,24 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         } catch (SecurityException e) {
             log.error("JWT signature does not match");
-            setErrorResponse(httpServletResponse, ErrorCode.TOKEN_SIGNATURE_INVALID,
-                httpServletRequest);
+            setErrorResponse(httpServletResponse, ErrorCode.TOKEN_SIGNATURE_INVALID, httpServletRequest);
             return;
         } catch (Exception e) {
             log.error("Failed to validate JWT token", e);
-            setErrorResponse(httpServletResponse, ErrorCode.INTERNAL_SERVER_ERROR,
-                httpServletRequest);
+            setErrorResponse(httpServletResponse, ErrorCode.INTERNAL_SERVER_ERROR, httpServletRequest);
             return;
         }
 
         filterChain.doFilter(httpServletRequest, httpServletResponse);
     }
 
-    private void setErrorResponse(HttpServletResponse httpServletResponse, ErrorCode errorCode,
-        HttpServletRequest httpServletRequest) throws IOException {
+    private void setErrorResponse(HttpServletResponse httpServletResponse, ErrorCode errorCode, HttpServletRequest httpServletRequest)
+        throws IOException {
 
         httpServletResponse.setStatus(errorCode.getStatus().value());
         httpServletResponse.setContentType("application/json;charset=UTF-8");
 
-        ErrorResponse errorResponse = ErrorResponse.of(
-            errorCode,
-            httpServletRequest.getRequestURI(),
-            httpServletRequest.getMethod()
-        );
-
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
-        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        ErrorResponse errorResponse = ErrorResponse.of(errorCode, httpServletRequest.getRequestURI(), httpServletRequest.getMethod());
 
         String json = objectMapper.writeValueAsString(errorResponse);
         httpServletResponse.getWriter().write(json);
