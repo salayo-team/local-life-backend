@@ -17,6 +17,7 @@ public enum ErrorCode {
     INVALID_FILE_PURPOSE_MAPPING(HttpStatus.BAD_REQUEST, "파일 개수와 파일 목적 개수가 일치하지 않습니다."),
     INVALID_PARAMETER(HttpStatus.BAD_REQUEST, "필수 입력값이 누락되었거나 잘못되었습니다."),
     INVALID_LOGIN(HttpStatus.BAD_REQUEST, "이메일 또는 비밀번호가 일치하지 않습니다."),
+    INVALID_TOKEN(HttpStatus.BAD_REQUEST, "유효하지 않은 토큰입니다."),
 
     // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
