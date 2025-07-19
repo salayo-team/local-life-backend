@@ -31,7 +31,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/auth")
-@Tag(name = "Auth - 회원 관련", description = "회원 인증 관련 API")
+@Tag(name = "Auth", description = "회원 인증 관련 API")
 public class AuthController {
 
     private final AuthService authService;
