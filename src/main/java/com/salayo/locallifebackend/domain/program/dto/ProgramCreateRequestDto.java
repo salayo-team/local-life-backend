@@ -11,10 +11,10 @@ import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
-import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-@Builder
+@NoArgsConstructor
 @Getter
 public class ProgramCreateRequestDto {
 
@@ -24,16 +24,16 @@ public class ProgramCreateRequestDto {
 	@NotNull(message = "지역 카테고리는 필수값입니다.")
 	private Long regionCategoryId; //지역 카테고리 고유 식별자
 
-	@NotBlank(message = "체험 프로그램 제목은 필수값입니다.")
+	@NotNull(message = "체험 프로그램 제목은 필수값입니다.")
 	private String title; //프로그램 제목
 
-	@NotBlank(message = "체험 프로그램 설명은 필수값입니다.")
+	@NotNull(message = "체험 프로그램 설명은 필수값입니다.")
 	private String description; //프로그램 설명
 
-	@NotBlank(message = "체험 프로그램 커리큘럼 설명은 필수값입니다.")
-	private String curriculumDescription;
+	@NotNull(message = "체험 프로그램 커리큘럼 설명은 필수값입니다.")
+	private String curriculumDescription; //커리큘럼 설명
 
-	@NotBlank(message = "체험 프로그램 위치는 필수값입니다.")
+	@NotNull(message = "체험 프로그램 위치는 필수값입니다.")
 	private String location; //체험 위치
 
 	@NotNull(message = "체험 프로그램 가격은 필수값입니다.")
@@ -52,9 +52,6 @@ public class ProgramCreateRequestDto {
 	@Min(value = 1, message = "최소 정원은 {value}명 이상이어야 합니다.")
 	@Max(value = 100, message = "최소 정원은 {value}명 이하여야 합니다.")
 	private Integer minCapacity;
-
-	@NotNull(message = "체험 프로그램 모집 기간은 필수값입니다.")
-	private LocalDate recruitmentPeriod; //모집 기간
 
 	@NotNull(message = "체험 프로그램 시작일은 필수값입니다.")
 	private LocalDate startDate; //체험 시작일
