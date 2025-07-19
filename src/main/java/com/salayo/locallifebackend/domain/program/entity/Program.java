@@ -19,7 +19,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -44,11 +43,11 @@ public class Program extends BaseEntity {
 	@JoinColumn(name = "provider_id", nullable = false)
 	private Member member; //프로그램 제공자(로컬 크리에이터) 고유 식별자
 
-	@OneToOne(fetch = FetchType.LAZY)
+	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "aptitude_category_id", nullable = false)
 	private AptitudeCategory aptitudeCategory; //적성 카테고리 고유 식별자
 
-	@OneToOne(fetch = FetchType.LAZY)
+	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "region_category_id", nullable = false)
 	private RegionCategory regionCategory; //지역 카테고리 고유 식별자
 
@@ -78,16 +77,13 @@ public class Program extends BaseEntity {
 	private BigDecimal percent; //체험 할인율
 
 	@Column(nullable = true)
-	private BigDecimal discountedPrice; //할인된 가격
+	private BigDecimal finalPrice; //최종 가격
 
 	@Column(nullable = false)
 	private Integer maxCapacity; //스케줄 체험 정원
 
 	@Column(nullable = false)
 	private Integer minCapacity; //스케줄 최소 정원
-
-	@Column(nullable = false)
-	private LocalDate recruitmentPeriod; //모집 기간
 
 	@Column(nullable = false)
 	private LocalDate startDate; //체험 프로그램 시작일
@@ -110,18 +106,20 @@ public class Program extends BaseEntity {
 	@Column(nullable = false, length = 50)
 	private DeletedStatus deletedStatus; //프로그램 삭제 여부
 
-	@OneToMany(mappedBy = "program", cascade = CascadeType.ALL, orphanRemoval = true)
-	private List<ProgramDay> programDays = new ArrayList<>(); //요일
+	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = false)
+	@JoinColumn(name = "program_id")
+	private List<ProgramDay> programDays = new ArrayList<ProgramDay>(); //요일
 
-	@OneToMany(mappedBy = "program", cascade = CascadeType.ALL, orphanRemoval = true)
-	private List<ProgramScheduleTime> programScheduleTimes = new ArrayList<>();
+	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = false)
+	@JoinColumn(name = "program_id")
+	private List<ProgramScheduleTime> programScheduleTimes = new ArrayList<ProgramScheduleTime>(); //체험 프로그램 스케줄 시간
 
 	@Builder
 	public Program(Member member, AptitudeCategory aptitudeCategory, RegionCategory regionCategory, Program originalProgram,
 		String businessName, String title, String description, String curriculumDescription, String location, BigDecimal price,
-		BigDecimal percent, BigDecimal discountedPrice, Integer maxCapacity, Integer minCapacity, LocalDate recruitmentPeriod,
-		LocalDate startDate, LocalDate endDate, Integer count, LocalSpecialized isLocalSpecialized, ProgramStatus programStatus,
-		DeletedStatus deletedStatus, List<ProgramDay> programDays, List<ProgramScheduleTime> programScheduleTimes) {
+		BigDecimal percent, BigDecimal finalPrice, Integer maxCapacity, Integer minCapacity, LocalDate startDate,
+		LocalDate endDate, Integer count, LocalSpecialized isLocalSpecialized, ProgramStatus programStatus, DeletedStatus deletedStatus,
+		List<ProgramDay> programDays, List<ProgramScheduleTime> programScheduleTimes) {
 		this.member = member;
 		this.aptitudeCategory = aptitudeCategory;
 		this.regionCategory = regionCategory;
@@ -133,10 +131,9 @@ public class Program extends BaseEntity {
 		this.location = location;
 		this.price = price;
 		this.percent = percent;
-		this.discountedPrice = discountedPrice;
+		this.finalPrice = finalPrice;
 		this.maxCapacity = maxCapacity;
 		this.minCapacity = minCapacity;
-		this.recruitmentPeriod = recruitmentPeriod;
 		this.startDate = startDate;
 		this.endDate = endDate;
 		this.count = count;
@@ -146,5 +143,14 @@ public class Program extends BaseEntity {
 		this.programDays = programDays != null ? programDays : new ArrayList<ProgramDay>();
 		this.programScheduleTimes = programScheduleTimes != null ? programScheduleTimes : new ArrayList<ProgramScheduleTime>();
 	}
+
+	public void addProgramDay(ProgramDay programDay) {
+		this.programDays.add(programDay);
+	}
+
+	public void addProgramScheduleTime(ProgramScheduleTime programScheduleTime) {
+		this.programScheduleTimes.add(programScheduleTime);
+	}
+
 
 }

@@ -1,7 +1,7 @@
 package com.salayo.locallifebackend.domain.program.dto;
 
 
-import com.salayo.locallifebackend.domain.program.enums.DayName;
+import com.salayo.locallifebackend.domain.program.entity.Program;
 import com.salayo.locallifebackend.domain.program.enums.LocalSpecialized;
 import com.salayo.locallifebackend.domain.program.enums.ProgramStatus;
 import java.math.BigDecimal;
@@ -37,13 +37,11 @@ public class ProgramCreateResponseDto {
 
 	private BigDecimal percent; //체험 할인률
 
-	private BigDecimal discountedPrice; //할인된 가격
+	private BigDecimal finalPrice; //최종 가격
 
 	private Integer maxCapacity; //스케줄 최대 정원
 
 	private Integer minCapacity; //스케줄 최소 정원
-
-	private LocalDate recruitmentPeriod; //스케줄 모집 기간
 
 	private LocalDate startDate; //체험 프로그램 시작일
 
@@ -59,7 +57,50 @@ public class ProgramCreateResponseDto {
 
 	private LocalDateTime modifiedAt; //프로그램 수정일
 
-	private List<DayName> programDays; //운영 요일 리스트
+	private List<ProgramDayResponseDto> programDays; //운영 요일 리스트
 
 	private List<ProgramScheduleTimeResponseDto> programScheduleTimes; //스케줄 회차별 시간 리스트
+
+	public static ProgramCreateResponseDto from(Program program) {
+
+		return ProgramCreateResponseDto.builder()
+			.id(program.getId())
+			.providerId(program.getMember().getId())
+			.aptitudeCategoryId(program.getAptitudeCategory().getId())
+			.regionCategoryId(program.getRegionCategory().getId())
+			.businessName(program.getBusinessName())
+			.title(program.getTitle())
+			.description(program.getDescription())
+			.curriculumDescription(program.getCurriculumDescription())
+			.location(program.getLocation())
+			.price(program.getPrice())
+			.percent(program.getPercent())
+			.finalPrice(program.getFinalPrice())
+			.minCapacity(program.getMinCapacity())
+			.maxCapacity(program.getMaxCapacity())
+			.startDate(program.getStartDate())
+			.endDate(program.getEndDate())
+			.count(program.getCount())
+			.isLocalSpecialized(program.getIsLocalSpecialized())
+			.status(program.getProgramStatus())
+			.createdAt(program.getCreatedAt())
+			.modifiedAt(program.getModifiedAt())
+			.programDays(program.getProgramDays().stream()
+				.map(day -> ProgramDayResponseDto.builder()
+					.id(day.getId())
+					.dayName(day.getDayName())
+					.build())
+				.toList())
+			.programScheduleTimes(program.getProgramScheduleTimes().stream()
+				.map(scheduleTime -> ProgramScheduleTimeResponseDto.builder()
+					.id(scheduleTime.getId())
+					.scheduleCount(scheduleTime.getScheduleCount())
+					.scheduleDuration(scheduleTime.getScheduleDuration())
+					.startTime(scheduleTime.getStartTime())
+					.endTime(scheduleTime.getEndTime())
+					.build())
+				.toList())
+			.build();
+
+	}
 }
