@@ -21,7 +21,7 @@ public enum ErrorCode {
     INVALID_END_DATE(HttpStatus.BAD_REQUEST, "종료일 값이 잘못되었습니다."),
     INVALID_CAPACITY_RANGE(HttpStatus.BAD_REQUEST, "정원 값이 잘못되었습니다."),
     INVALID_PRICE_RANGE(HttpStatus.BAD_REQUEST, "가격 값이 잘못되었습니다."),
-
+    INVALID_TOKEN(HttpStatus.BAD_REQUEST, "유효하지 않은 토큰입니다."),
 
     // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
@@ -35,6 +35,7 @@ public enum ErrorCode {
     FORBIDDEN_ACCESS(HttpStatus.FORBIDDEN, "접근이 거부됐습니다."),
     CREATOR_NOT_APPROVED(HttpStatus.FORBIDDEN, "관리자 승인 후 로그인 가능합니다."),
     LOCAL_CREATOR_NOT_APPROVED(HttpStatus.FORBIDDEN, "로컬 크리에이터로 승인되지 않은 유저입니다."),
+
     // 404 NOT_FOUND
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 회원을 찾을 수 없습니다."),
     EMAIL_CODE_EXPIRED(HttpStatus.NOT_FOUND, "인증 코드가 만료되었거나 존재하지 않습니다."),
