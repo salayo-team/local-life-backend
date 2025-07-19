@@ -37,7 +37,7 @@ public class ProgramCreateResponseDto {
 
 	private BigDecimal percent; //체험 할인률
 
-	private BigDecimal discountedPrice; //할인된 가격
+	private BigDecimal finalPrice; //최종 가격
 
 	private Integer maxCapacity; //스케줄 최대 정원
 
@@ -75,7 +75,7 @@ public class ProgramCreateResponseDto {
 			.location(program.getLocation())
 			.price(program.getPrice())
 			.percent(program.getPercent())
-			.discountedPrice(program.getDiscountedPrice())
+			.finalPrice(program.getFinalPrice())
 			.minCapacity(program.getMinCapacity())
 			.maxCapacity(program.getMaxCapacity())
 			.startDate(program.getStartDate())
