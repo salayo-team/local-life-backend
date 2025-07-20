@@ -25,6 +25,7 @@ public enum ErrorCode {
     FILE_COUNT_EXCEEDED(HttpStatus.BAD_REQUEST, "업로드할 수 있는 파일 개수를 초과했습니다."),
     THUMBNAIL_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "썸네일 이미지는 1개만 등록할 수 있습니다."),
     THUMBNAIL_REQUIRED(HttpStatus.BAD_REQUEST, "썸네일 이미지는 필수입니다"),
+    ALREADY_PROCESSED_LOCALCREATOR(HttpStatus.BAD_REQUEST, "이미 승인된 로컬크리에이터입니다."),
 
     // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
@@ -44,6 +45,7 @@ public enum ErrorCode {
     EMAIL_CODE_EXPIRED(HttpStatus.NOT_FOUND, "인증 코드가 만료되었거나 존재하지 않습니다."),
     REGION_NOT_FOUND(HttpStatus.NOT_FOUND, "지역을 찾을 수 없습니다."),
     APTITUDE_NOT_FOUND(HttpStatus.NOT_FOUND, "적성을 찾을 수 없습니다." ),
+    LOCALCREATOR_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 회원을 찾을 수 없습니다."),
 
     // 408 REQUEST_TIMEOUT
     AI_TIMEOUT(HttpStatus.REQUEST_TIMEOUT, "AI 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요."),
