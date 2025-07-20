@@ -5,7 +5,13 @@ import com.salayo.locallifebackend.domain.category.entity.AptitudeCategory;
 import com.salayo.locallifebackend.domain.category.entity.RegionCategory;
 import com.salayo.locallifebackend.domain.category.repository.AptitudeCategoryRepository;
 import com.salayo.locallifebackend.domain.category.repository.RegionCategoryRepository;
+import com.salayo.locallifebackend.domain.file.entity.File;
+import com.salayo.locallifebackend.domain.file.entity.FileMapping;
+import com.salayo.locallifebackend.domain.file.enums.FileCategory;
+import com.salayo.locallifebackend.domain.file.enums.FilePurpose;
+import com.salayo.locallifebackend.domain.file.repository.FileMappingRepository;
 import com.salayo.locallifebackend.domain.file.repository.FileRepository;
+import com.salayo.locallifebackend.domain.file.util.S3Uploader;
 import com.salayo.locallifebackend.domain.localcreator.entity.LocalCreator;
 import com.salayo.locallifebackend.domain.localcreator.enums.CreatorStatus;
 import com.salayo.locallifebackend.domain.localcreator.repository.LocalCreatorRepository;
@@ -26,7 +32,9 @@ import jakarta.validation.Valid;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 
 @Service
@@ -38,25 +46,29 @@ public class ProgramService {
 	private final MemberRepository memberRepository;
 	private final LocalCreatorRepository localCreatorRepository;
 	private final FileRepository fileRepository;
+	private final S3Uploader s3Uploader;
+	private final FileMappingRepository fileMappingRepository;
 
 	public ProgramService(AptitudeCategoryRepository aptitudeCategoryRepository, RegionCategoryRepository regionCategoryRepository,
 		ProgramRepository programRepository, MemberRepository memberRepository, LocalCreatorRepository localCreatorRepository,
-		FileRepository fileRepository) {
+		FileRepository fileRepository, S3Uploader s3Uploader, FileMappingRepository fileMappingRepository) {
 		this.aptitudeCategoryRepository = aptitudeCategoryRepository;
 		this.regionCategoryRepository = regionCategoryRepository;
 		this.programRepository = programRepository;
 		this.memberRepository = memberRepository;
 		this.localCreatorRepository = localCreatorRepository;
 		this.fileRepository = fileRepository;
+		this.s3Uploader = s3Uploader;
+		this.fileMappingRepository = fileMappingRepository;
 	}
 
 	/**
 	 * 체험 프로그램 생성 메서드
-	 * - TODO : file 로직 추가
 	 * - TODO : 동일한 유저가 중복되는 스케줄 타임 생성시 예외처리
-	 * - TODO : 예외처리 이후, 스케줄 종료시간 - 마지막 스케줄 시간을 설정할때 소요시간을 더 했을때 하루 넘어가면 안되도록 예외처리
+	 * - TODO : 스케줄 종료시간 - 마지막 스케줄 시간 설정시, 소요시간 더해서 다음 날짜로 넘어가면 안되도록 예외처리
 	 */
-	public ProgramCreateResponseDto createProgram(long memberId, @Valid ProgramCreateRequestDto requestDto) {
+	public ProgramCreateResponseDto createProgram(long memberId, @Valid ProgramCreateRequestDto requestDto, List<MultipartFile> files,
+		List<FilePurpose> filePurposes) {
 
 		Member member = memberRepository.findByIdOrElseThrow(memberId);
 
@@ -144,6 +156,31 @@ public class ProgramService {
 
 		programRepository.save(program);
 
+		validateFileInputAndPurposes(files, filePurposes);
+
+		for (int i = 0; i < files.size(); i++) {
+			MultipartFile multipartFile = files.get(i);
+			FilePurpose filePurpose = filePurposes.get(i);
+
+			String storedFileUrl = s3Uploader.upload(multipartFile, "programs");
+
+			File fileEntity = File.builder()
+				.originalName(multipartFile.getOriginalFilename())
+				.storedFileName(storedFileUrl)
+				.build();
+
+			fileRepository.save(fileEntity);
+
+			FileMapping fileMapping = FileMapping.builder()
+				.file(fileEntity)
+				.fileCategory(FileCategory.PROGRAM)
+				.referenceId(program.getId())
+				.filePurpose(filePurpose)
+				.build();
+
+			fileMappingRepository.save(fileMapping);
+		}
+
 		//TODO : 체험 프로그램 스케줄 생성 및 저장
 
 		return ProgramCreateResponseDto.from(program);
@@ -177,4 +214,45 @@ public class ProgramService {
 		}
 	}
 
+	/**
+	 * 파일 검증 메서드
+	 * - 파일 타입, 파일 개수, 파일 목적, 썸네일 개수 검증
+	 */
+	private void validateFileInputAndPurposes(List<MultipartFile> files, List<FilePurpose> filePurposes) {
+		if (files == null || files.isEmpty() || filePurposes == null || files.size() != filePurposes.size()) {
+			throw new CustomException(ErrorCode.INVALID_FILE_PURPOSE_MAPPING);
+		}
+
+		if (files.size() > 10) {
+			throw new CustomException(ErrorCode.FILE_COUNT_EXCEEDED);
+		}
+
+		int thumbnailCount = 0;
+
+		for(int i = 0; i < files.size(); i++){
+			MultipartFile multipartFile = files.get(i);
+			FilePurpose filePurpose = filePurposes.get(i);
+
+			String fileType = multipartFile.getContentType();
+			if (!List.of("image/jpg", "image/jpeg", "image/png").contains(fileType)) {
+				throw new CustomException(ErrorCode.INVALID_FILE_TYPE);
+			}
+
+			if(filePurpose == FilePurpose.THUMBNAIL){
+				thumbnailCount++;
+
+				if(thumbnailCount > 1){
+					throw new CustomException(ErrorCode.THUMBNAIL_LIMIT_EXCEEDED);
+				}
+			}
+		}
+
+		if(thumbnailCount == 0){
+			throw new CustomException(ErrorCode.THUMBNAIL_REQUIRED);
+		}
+	}
+
 }
+
+
+
