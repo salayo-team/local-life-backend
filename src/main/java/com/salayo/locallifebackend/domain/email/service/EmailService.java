@@ -71,4 +71,21 @@ public class EmailService {
         redisTemplate.delete(key);
     }
 
+    public void sendRejectionMail(String email, String businessName, String rejectReason, String reapplyLink) {
+        String subject = "[LocalLife] 로컬 크리에이터 가입 거절 안내 및 재제출 요청";
+        String content = "안녕하세요." + businessName + "님\n\n"
+            + "아쉽게도 회원님의 로컬 크리에이터 신청이 아래 사유로 인해 거절되었습니다.\n"
+            + "거절 사유 : " + rejectReason + "\n\n"
+            + "서류 재제출을 원하신다면 아래 링크를 클릭해 안내에 따라 다시 신청해 주세요.\n"
+            + reapplyLink + "\n\n"
+            + "감사합니다.";
+
+        SimpleMailMessage message = new SimpleMailMessage();
+
+        message.setTo(email);
+        message.setSubject(subject);
+        message.setText(content);
+
+        mailSender.send(message);
+    }
 }
