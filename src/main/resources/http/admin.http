@@ -21,3 +21,12 @@ Authorization: Bearer {{accessToken}}
 PATCH http://localhost:8080/admin/localcreators/1/approve
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
+
+### 로컬 크리에이터 거절
+PATCH http://localhost:8080/admin/localcreators/2/reject
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "rejectReason": "사업자등록증 미첨부"
+}
