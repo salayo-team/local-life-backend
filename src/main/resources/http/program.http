@@ -31,8 +31,8 @@ Authorization: Bearer {{accessToken}}
   "percent": 10,
   "minCapacity": 2,
   "maxCapacity": 5,
-  "startDate": "2025-07-26",
-  "endDate": "2025-08-26",
+  "startDate": "2025-08-01",
+  "endDate": "2025-10-01",
   "programDays": [
     "MONDAY",
     "WEDNESDAY",
