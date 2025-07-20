@@ -1,5 +1,6 @@
 package com.salayo.locallifebackend.domain.program.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.salayo.locallifebackend.domain.program.enums.DayName;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
@@ -24,16 +25,16 @@ public class ProgramCreateRequestDto {
 	@NotNull(message = "지역 카테고리는 필수값입니다.")
 	private Long regionCategoryId; //지역 카테고리 고유 식별자
 
-	@NotNull(message = "체험 프로그램 제목은 필수값입니다.")
+	@NotBlank(message = "체험 프로그램 제목은 필수값입니다.")
 	private String title; //프로그램 제목
 
-	@NotNull(message = "체험 프로그램 설명은 필수값입니다.")
+	@NotBlank(message = "체험 프로그램 설명은 필수값입니다.")
 	private String description; //프로그램 설명
 
-	@NotNull(message = "체험 프로그램 커리큘럼 설명은 필수값입니다.")
+	@NotBlank(message = "체험 프로그램 커리큘럼 설명은 필수값입니다.")
 	private String curriculumDescription; //커리큘럼 설명
 
-	@NotNull(message = "체험 프로그램 위치는 필수값입니다.")
+	@NotBlank(message = "체험 프로그램 위치는 필수값입니다.")
 	private String location; //체험 위치
 
 	@NotNull(message = "체험 프로그램 가격은 필수값입니다.")
@@ -54,9 +55,11 @@ public class ProgramCreateRequestDto {
 	private Integer minCapacity;
 
 	@NotNull(message = "체험 프로그램 시작일은 필수값입니다.")
+	@JsonFormat(pattern = "yyyy-MM-dd")
 	private LocalDate startDate; //체험 시작일
 
 	@NotNull(message = "체험 프로그램 종료일은 필수값입니다.")
+	@JsonFormat(pattern = "yyyy-MM-dd")
 	private LocalDate endDate; //체험 종료일
 
 	@NotEmpty(message = "최소 한 개 이상의 요일이 필요합니다.")
