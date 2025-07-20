@@ -1,5 +1,6 @@
 package com.salayo.locallifebackend.domain.member.service;
 
+import com.salayo.locallifebackend.domain.email.service.EmailService;
 import com.salayo.locallifebackend.domain.file.entity.File;
 import com.salayo.locallifebackend.domain.file.entity.FileMapping;
 import com.salayo.locallifebackend.domain.file.enums.FileCategory;
@@ -24,9 +25,10 @@ import com.salayo.locallifebackend.global.error.ErrorCode;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
 import com.salayo.locallifebackend.global.security.jwt.JwtProvider;
 import com.salayo.locallifebackend.global.util.RedisUtil;
+import java.time.Duration;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
-import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -46,10 +48,13 @@ public class AuthService {
     private final JwtProvider jwtProvider;
     private final RedisUtil redisUtil;
     private final RedisTemplate<String, String> blacklistRedisTemplate;
+    private final RedisTemplate<Object, Object> redisTemplate;
+    private final EmailService emailService;
 
     public AuthService(MemberRepository memberRepository, PasswordEncoder passwordEncoder, LocalCreatorRepository localCreatorRepository,
         S3Uploader s3Uploader, FileRepository fileRepository, FileMappingRepository fileMappingRepository, JwtProvider jwtProvider,
-        RedisUtil redisUtil, @Qualifier("blacklistRedisTemplate") RedisTemplate<String, String> blacklistRedisTemplate) {
+        RedisUtil redisUtil, @Qualifier("blacklistRedisTemplate") RedisTemplate<String, String> blacklistRedisTemplate,
+        RedisTemplate<Object, Object> redisTemplate, EmailService emailService) {
         this.memberRepository = memberRepository;
         this.passwordEncoder = passwordEncoder;
         this.localCreatorRepository = localCreatorRepository;
@@ -59,6 +64,8 @@ public class AuthService {
         this.jwtProvider = jwtProvider;
         this.redisUtil = redisUtil;
         this.blacklistRedisTemplate = blacklistRedisTemplate;
+        this.redisTemplate = redisTemplate;
+        this.emailService = emailService;
     }
 
     public UserSignupResponseDto signupUser(UserSignupRequestDto requestDto) {
@@ -194,13 +201,22 @@ public class AuthService {
 
         String email = jwtProvider.getUsernameFromToken(accessToken);
 
-        Member member = memberRepository.findByEmail(email)
-            .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+        Member member = memberRepository.findByEmailOrThrow(email);
 
         redisUtil.deleteRefreshToken(member.getId());
         redisUtil.deleteAccessToken(member.getId());
 
         long expiration = jwtProvider.getExpiration(accessToken);
         blacklistRedisTemplate.opsForValue().set(accessToken, "logout", expiration, TimeUnit.MILLISECONDS);
+    }
+
+    public void sendPasswordResetCode(String email) {
+        Member member = memberRepository.findByEmailOrThrow(email);
+
+        String code = String.valueOf(new Random().nextInt(900_000) + 100_000);
+
+        redisTemplate.opsForValue().set("password_code:" + email, code, Duration.ofMinutes(5));
+
+        emailService.sendPasswordResetCode(email, code);
     }
 }
