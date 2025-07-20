@@ -211,7 +211,7 @@ public class AuthService {
     }
 
     public void sendPasswordResetCode(String email) {
-        Member member = memberRepository.findByEmailOrThrow(email);
+        memberRepository.findByEmailOrThrow(email);
 
         String code = String.valueOf(new Random().nextInt(900_000) + 100_000);
 
