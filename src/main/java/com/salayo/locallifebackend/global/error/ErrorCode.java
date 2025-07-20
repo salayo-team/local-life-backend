@@ -22,6 +22,9 @@ public enum ErrorCode {
     INVALID_CAPACITY_RANGE(HttpStatus.BAD_REQUEST, "정원 값이 잘못되었습니다."),
     INVALID_PRICE_RANGE(HttpStatus.BAD_REQUEST, "가격 값이 잘못되었습니다."),
     INVALID_TOKEN(HttpStatus.BAD_REQUEST, "유효하지 않은 토큰입니다."),
+    FILE_COUNT_EXCEEDED(HttpStatus.BAD_REQUEST, "업로드할 수 있는 파일 개수를 초과했습니다."),
+    THUMBNAIL_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "썸네일 이미지는 1개만 등록할 수 있습니다."),
+    THUMBNAIL_REQUIRED(HttpStatus.BAD_REQUEST, "썸네일 이미지는 필수입니다"),
 
     // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
