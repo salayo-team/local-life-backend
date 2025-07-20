@@ -65,6 +65,12 @@ Content-Type: application/json
   "password": "test1234!"
 }
 
+> {%
+  const json = response.body;
+  const accessToken = json.data.accessToken;
+  client.global.set("accessToken", accessToken);
+%}
+
 ### 일반 사용자 로그인 2
 POST http://localhost:8080/auth/login
 Content-Type: application/json
@@ -74,6 +80,12 @@ Content-Type: application/json
   "password": "Test1234!"
 }
 
+> {%
+  const json = response.body;
+  const accessToken = json.data.accessToken;
+  client.global.set("accessToken", accessToken);
+%}
+
 ### 로컬 크리에이터 로그인 (승인 여부 확인 포함)
 POST http://localhost:8080/auth/login
 Content-Type: application/json
@@ -82,3 +94,15 @@ Content-Type: application/json
   "email": "creator1@example.com",
   "password": "Password123!"
 }
+
+> {%
+  const json = response.body;
+  const accessToken = json.data.accessToken;
+  client.global.set("accessToken", accessToken);
+%}
+
+### 로그아웃
+POST http://localhost:8080/auth/logout
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+

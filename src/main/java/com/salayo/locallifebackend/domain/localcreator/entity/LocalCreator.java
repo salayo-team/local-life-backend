@@ -57,4 +57,8 @@ public class LocalCreator extends BaseEntity {
         return this.creatorStatus == CreatorStatus.APPROVED;
     }
 
+    public void approve() {
+        this.creatorStatus = CreatorStatus.APPROVED;
+    }
+
 }

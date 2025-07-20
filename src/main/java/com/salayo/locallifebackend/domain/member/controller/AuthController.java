@@ -12,9 +12,11 @@ import com.salayo.locallifebackend.domain.member.service.AuthService;
 import com.salayo.locallifebackend.global.dto.CommonResponseDto;
 import com.salayo.locallifebackend.global.error.ErrorCode;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
+import com.salayo.locallifebackend.global.security.jwt.JwtProvider;
 import com.salayo.locallifebackend.global.success.SuccessCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,9 +37,11 @@ import org.springframework.web.multipart.MultipartFile;
 public class AuthController {
 
     private final AuthService authService;
+    private final JwtProvider jwtProvider;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, JwtProvider jwtProvider) {
         this.authService = authService;
+        this.jwtProvider = jwtProvider;
     }
 
     @Operation(summary = "일반회원 회원가입", description = "일반 사용자의 회원가입입니다.")
@@ -47,8 +51,7 @@ public class AuthController {
 
         UserSignupResponseDto responseDto = authService.signupUser(userSignupRequestDto);
 
-        return ResponseEntity.status(HttpStatus.CREATED)
-            .body(CommonResponseDto.success(SuccessCode.SIGNUP_SUCCESS, responseDto));
+        return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponseDto.success(SuccessCode.SIGNUP_SUCCESS, responseDto));
     }
 
     @Operation(summary = "로컬크리에이터 회원가입", description = "로컬 크리에이터의 회원가입입니다.")
@@ -77,8 +80,7 @@ public class AuthController {
         LocalCreatorSignupResponseDto responseDto = authService.signupLocalCreator(requestDto,
             files, filePurposes);
 
-        return ResponseEntity.status(HttpStatus.CREATED)
-            .body(CommonResponseDto.success(SuccessCode.SIGNUP_SUCCESS, responseDto));
+        return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponseDto.success(SuccessCode.SIGNUP_SUCCESS, responseDto));
     }
 
     @Operation(summary = "로그인", description = "일반회원/로컬크리에이터 로그인입니다.")
@@ -88,10 +90,20 @@ public class AuthController {
 
         LoginResponseDto responseDto = authService.login(requestDto);
 
-        return ResponseEntity.ok(
-            CommonResponseDto.success(SuccessCode.LOGIN_SUCCESS, responseDto)
-        );
+        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.LOGIN_SUCCESS, responseDto));
 
+    }
+
+    @Operation(summary = "로그아웃", description = "JWT 액세스 토큰을 블랙리스트에 등록하여 로그아웃 처리합니다.")
+    @PostMapping("/logout")
+    public ResponseEntity<CommonResponseDto<Void>> logout(HttpServletRequest httpServletRequest) {
+
+        String bearerToken = httpServletRequest.getHeader(JwtProvider.AUTH_HEADER);
+        String accessToken = jwtProvider.resolveToken(bearerToken);
+
+        authService.logout(accessToken);
+
+        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.LOGOUT_SUCCESS, null));
     }
 
 }

@@ -63,4 +63,8 @@ public class ProgramSchedule extends BaseEntity {
 		this.programScheduleStatus = programScheduleStatus;
 		this.deletedStatus = deletedStatus;
 	}
+
+	public void connectToProgram(Program program) {
+		this.program = program;
+	}
 }
