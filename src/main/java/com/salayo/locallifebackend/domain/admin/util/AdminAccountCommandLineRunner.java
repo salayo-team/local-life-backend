@@ -1,6 +1,7 @@
 package com.salayo.locallifebackend.domain.admin.util;
 
 import com.salayo.locallifebackend.domain.admin.service.AdminAccountService;
+import com.salayo.locallifebackend.global.error.exception.CustomException;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
@@ -42,8 +43,11 @@ public class AdminAccountCommandLineRunner implements CommandLineRunner {
             try {
                 adminAccountService.createAdmin(email, pw, nickname);
                 System.out.println("관리자 계정 생성 : " + email + "(" + nickname + ")");
-            } catch (Exception e) {
+            } catch (CustomException e) {
                 System.out.println(email + "계정 생성 실패 : " + e.getMessage());
+            } catch (Exception e) {
+                System.out.println(email + " 계정 생성 중 예상치 못한 오류 발생: " + e.getMessage());
+                e.printStackTrace();
             }
         }
     }
