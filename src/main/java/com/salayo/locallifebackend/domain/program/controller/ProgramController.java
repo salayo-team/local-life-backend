@@ -1,6 +1,7 @@
 package com.salayo.locallifebackend.domain.program.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.salayo.locallifebackend.domain.file.enums.FilePurpose;
 import com.salayo.locallifebackend.domain.program.dto.ProgramCreateRequestDto;
 import com.salayo.locallifebackend.domain.program.dto.ProgramCreateResponseDto;
 import com.salayo.locallifebackend.domain.program.service.ProgramService;
@@ -12,8 +13,8 @@ import com.salayo.locallifebackend.global.success.SuccessCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -21,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -51,6 +53,7 @@ public class ProgramController {
 	public ResponseEntity<CommonResponseDto<ProgramCreateResponseDto>> createProgram(
 		@RequestPart("data") String requestDtoString,
 		@RequestPart("file") List<MultipartFile> files,
+		@RequestParam("filePurposes") List<String> filePurposesStrings,
 		@AuthenticationPrincipal MemberDetails memberDetails) {
 
 		ProgramCreateRequestDto requestDto;
@@ -60,8 +63,13 @@ public class ProgramController {
 		} catch (Exception e) {
 			throw new CustomException(ErrorCode.INVALID_PARAMETER);
 		}
+
+		List<FilePurpose> filePurposes = filePurposesStrings.stream()
+			.map(FilePurpose::valueOf)
+			.collect(Collectors.toList());
+
 		Long memberId = memberDetails.getMember().getId();
-		ProgramCreateResponseDto responseDto = programService.createProgram(memberId, requestDto, files);
+		ProgramCreateResponseDto responseDto = programService.createProgram(memberId, requestDto, files, filePurposes);
 
 		return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponseDto.success(SuccessCode.CREATE_SUCCESS, responseDto));
 	}
