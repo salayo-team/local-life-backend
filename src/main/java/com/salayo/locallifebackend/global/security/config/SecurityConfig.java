@@ -32,11 +32,15 @@ public class SecurityConfig {
             .httpBasic(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
-                    "/auth/**",
+                    "/auth/login",
+                    "/auth/signup/**",
+                    "/auth/email/**",
+                    "/auth/password/**",
                     "/swagger-ui/**",
                     "/api-docs/**",
                     "/swagger-ui.html"
                 ).permitAll()
+                .requestMatchers("/auth/logout").authenticated()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/localcreator/**").hasRole("LOCAL_CREATOR")
                 .anyRequest().authenticated()

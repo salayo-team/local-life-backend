@@ -1,0 +1,40 @@
+### 일반 사용자 로그인 testuser2
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "email": "testuser2@example.com",
+  "password": "Test1234!"
+}
+
+> {%
+  const json = response.body;
+  const accessToken = json.data.accessToken;
+  client.global.set("accessToken", accessToken);
+%}
+
+### 적성 테스트 시작
+POST http://localhost:8080/ai/aptitude/test/start
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+### 적성 테스트 답변 제출
+POST http://localhost:8080/ai/aptitude/test/answer
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "step": 1,
+  "questionText": "너가 제일 좋아하는 활동은 뭐야?",
+  "answer": "나는 자연 속에서 산책하는 것을 가장 좋아해. 특히 숲길을 걸으면서 새소리를 듣고 나무들을 관찰하는 게 좋아."
+}
+
+### 적성 수동 선택
+POST http://localhost:8080/ai/aptitude/select?aptitudeType=NATURE
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+### 재검사 가능 여부 확인
+GET http://localhost:8080/ai/aptitude/can-retake
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
