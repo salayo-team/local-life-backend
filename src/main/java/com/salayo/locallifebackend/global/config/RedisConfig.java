@@ -50,7 +50,6 @@ public class RedisConfig {
 	}
 
 	@Bean(name = "aiAptitudeRedisTemplate")
-	// @Primary // 우선적으로? redisTemplate 이름 명시해야함
 	public RedisTemplate<String, String> aiAptitudeRedisTemplate(RedisConnectionFactory redisConnectionFactory) {
 		RedisTemplate<String, String> redisTemplate = new RedisTemplate<>();
 		redisTemplate.setConnectionFactory(redisConnectionFactory);
