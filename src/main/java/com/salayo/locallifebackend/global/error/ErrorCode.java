@@ -27,6 +27,7 @@ public enum ErrorCode {
     THUMBNAIL_REQUIRED(HttpStatus.BAD_REQUEST, "썸네일 이미지는 필수입니다"),
     ALREADY_PROCESSED_LOCALCREATOR(HttpStatus.BAD_REQUEST, "이미 승인된 로컬크리에이터입니다."),
     SAME_AS_OLD_PASSWORD(HttpStatus.BAD_REQUEST, "이전과 동일한 비밀번호는 사용할 수 없습니다."),
+    INVALID_PASSWORD(HttpStatus.BAD_REQUEST, "현재 비밀번호가 일치하지 않습니다."),
 
     // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
