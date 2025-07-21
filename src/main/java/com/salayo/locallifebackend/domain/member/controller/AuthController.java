@@ -7,6 +7,7 @@ import com.salayo.locallifebackend.domain.localcreator.dto.LocalCreatorSignupRes
 import com.salayo.locallifebackend.domain.member.dto.LoginRequestDto;
 import com.salayo.locallifebackend.domain.member.dto.LoginResponseDto;
 import com.salayo.locallifebackend.domain.member.dto.PasswordResetRequestDto;
+import com.salayo.locallifebackend.domain.member.dto.PasswordResetVerifyRequestDto;
 import com.salayo.locallifebackend.domain.member.dto.UserSignupRequestDto;
 import com.salayo.locallifebackend.domain.member.dto.UserSignupResponseDto;
 import com.salayo.locallifebackend.domain.member.service.AuthService;
@@ -113,6 +114,14 @@ public class AuthController {
         authService.sendPasswordResetCode(resetRequestDto.getEmail());
 
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.EMAIL_SEND_SUCCESS, null));
+    }
+
+    @Operation(summary = "비밀번호를 모르는 경우 비밀번호 재설정", description = "이메일로 받은 인증코드와 새 비밀번호를 입력해 비밀번호를 재설정합니다.")
+    @PostMapping("/password/reset")
+    public ResponseEntity<CommonResponseDto<Void>> resetPassword(@RequestBody @Valid PasswordResetVerifyRequestDto resetVerifyRequestDto) {
+        authService.resetPassword(resetVerifyRequestDto);
+
+        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.UPDATE_SUCCESS, null));
     }
 
 }
