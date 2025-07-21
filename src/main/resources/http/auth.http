@@ -62,7 +62,7 @@ Content-Type: application/json
 
 {
   "email": "testuser1@example.com",
-  "password": "newpass1@"
+  "password": "pass123!"
 }
 
 > {%

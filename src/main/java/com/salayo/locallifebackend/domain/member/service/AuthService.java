@@ -185,6 +185,9 @@ public class AuthService {
         String refreshToken = jwtProvider.generateRefreshToken(member.getEmail(),
             member.getMemberRole().name());
 
+        long accessTokenExpiration = jwtProvider.getExpiration(accessToken);
+        redisUtil.saveAccessToken(member.getId(), accessToken, accessTokenExpiration);
+
         return LoginResponseDto.builder()
             .accessToken(accessToken)
             .refreshToken(refreshToken)
