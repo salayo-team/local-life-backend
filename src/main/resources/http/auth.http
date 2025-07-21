@@ -62,7 +62,7 @@ Content-Type: application/json
 
 {
   "email": "testuser1@example.com",
-  "password": "test1234!"
+  "password": "newpass1@"
 }
 
 > {%
@@ -113,4 +113,15 @@ Content-Type: application/json
 {
   "email": "testuser1@example.com"
 }
+
+### 비밀번호 재설정 - 비밀번호를 모르는 경우(인증코드 받아서 비밀번호 변경)
+POST http://localhost:8080/auth/password/reset
+Content-Type: application/json
+
+{
+  "email": "testuser1@example.com",
+  "code": "847748",
+  "newPassword": "newpass1@"
+}
+
 

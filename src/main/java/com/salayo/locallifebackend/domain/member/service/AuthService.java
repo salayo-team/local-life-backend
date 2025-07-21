@@ -14,6 +14,7 @@ import com.salayo.locallifebackend.domain.localcreator.entity.LocalCreator;
 import com.salayo.locallifebackend.domain.localcreator.repository.LocalCreatorRepository;
 import com.salayo.locallifebackend.domain.member.dto.LoginRequestDto;
 import com.salayo.locallifebackend.domain.member.dto.LoginResponseDto;
+import com.salayo.locallifebackend.domain.member.dto.PasswordResetVerifyRequestDto;
 import com.salayo.locallifebackend.domain.member.dto.UserSignupRequestDto;
 import com.salayo.locallifebackend.domain.member.dto.UserSignupResponseDto;
 import com.salayo.locallifebackend.domain.member.entity.Member;
@@ -48,13 +49,13 @@ public class AuthService {
     private final JwtProvider jwtProvider;
     private final RedisUtil redisUtil;
     private final RedisTemplate<String, String> blacklistRedisTemplate;
-    private final RedisTemplate<Object, Object> redisTemplate;
+    private final RedisTemplate<String, String> emailVerifiedRedisTemplate;
     private final EmailService emailService;
 
     public AuthService(MemberRepository memberRepository, PasswordEncoder passwordEncoder, LocalCreatorRepository localCreatorRepository,
         S3Uploader s3Uploader, FileRepository fileRepository, FileMappingRepository fileMappingRepository, JwtProvider jwtProvider,
         RedisUtil redisUtil, @Qualifier("blacklistRedisTemplate") RedisTemplate<String, String> blacklistRedisTemplate,
-        RedisTemplate<Object, Object> redisTemplate, EmailService emailService) {
+        RedisTemplate<String, String> emailVerifiedRedisTemplate, EmailService emailService) {
         this.memberRepository = memberRepository;
         this.passwordEncoder = passwordEncoder;
         this.localCreatorRepository = localCreatorRepository;
@@ -64,7 +65,7 @@ public class AuthService {
         this.jwtProvider = jwtProvider;
         this.redisUtil = redisUtil;
         this.blacklistRedisTemplate = blacklistRedisTemplate;
-        this.redisTemplate = redisTemplate;
+        this.emailVerifiedRedisTemplate = emailVerifiedRedisTemplate;
         this.emailService = emailService;
     }
 
@@ -215,8 +216,28 @@ public class AuthService {
 
         String code = String.valueOf(new Random().nextInt(900_000) + 100_000);
 
-        redisTemplate.opsForValue().set("password_code:" + email, code, Duration.ofMinutes(5));
+        emailVerifiedRedisTemplate.opsForValue().set("password_code:" + email, code, Duration.ofMinutes(5));
 
         emailService.sendPasswordResetCode(email, code);
+    }
+
+    @Transactional
+    public void resetPassword(PasswordResetVerifyRequestDto resetVerifyRequestDto) {
+        String key = "password_code:" + resetVerifyRequestDto.getEmail();
+        String savedCode = emailVerifiedRedisTemplate.opsForValue().get(key);
+
+        if (savedCode == null) throw new CustomException(ErrorCode.EMAIL_CODE_EXPIRED);
+        if (!savedCode.equals(resetVerifyRequestDto.getCode())) throw new CustomException(ErrorCode.INVALID_EMAIL_CODE);
+
+        Member member = memberRepository.findByEmailOrThrow(resetVerifyRequestDto.getEmail());
+
+        if (passwordEncoder.matches(resetVerifyRequestDto.getNewPassword(), member.getPassword())) {
+            throw new CustomException(ErrorCode.SAME_AS_OLD_PASSWORD);
+        }
+
+        String encodedPassword = passwordEncoder.encode(resetVerifyRequestDto.getNewPassword());
+        member.updatePassword(encodedPassword);
+
+        emailVerifiedRedisTemplate.delete(key);
     }
 }
