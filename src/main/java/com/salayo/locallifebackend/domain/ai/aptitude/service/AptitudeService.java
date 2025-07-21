@@ -15,10 +15,14 @@ import com.salayo.locallifebackend.domain.member.entity.Member;
 import com.salayo.locallifebackend.domain.member.repository.MemberRepository;
 import com.salayo.locallifebackend.global.error.ErrorCode;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -52,7 +56,7 @@ public class AptitudeService {
 		// 테스트 가능 여부 확인
 		UserAptitude userAptitude = userAptitudeRepository.findByMember(member).orElse(null);
 		if (userAptitude != null && userAptitude.getTestCount() >= MAX_TEST_COUNT) {
-			throw new CustomException(ErrorCode.TOO_MANY_REQUESTS, "적성 검사는 최대 5회까지만 가능합니다.");
+			throw new CustomException(ErrorCode.TOO_MANY_REQUESTS);
 		}
 
 		/**
@@ -80,7 +84,7 @@ public class AptitudeService {
 		String redisKey = REDIS_KEY_PREFIX + memberId;
 		String currentStepStr = aiAptitudeRedisTemplate.opsForValue().get(redisKey);
 		if (currentStepStr == null) {
-			throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "진행 중인 테스트가 없습니다.");
+			throw new CustomException(ErrorCode.NOT_FOUND_TEST_PROGRESS);
 		}
 
 		// 답변 분석
@@ -186,14 +190,28 @@ public class AptitudeService {
 			scores.put(type, 0);
 		}
 
+		/**
+		 * 정규식 패턴 생성 - 모든 적성 타입을 OR로 연결
+		 * TODO : HashMap 최적화
+		 */
+		String pattern = Arrays.stream(AptitudeType.values())
+			.map(type -> type.name() + "|" + type.getTitle())
+			.collect(Collectors.joining("|"));
+		Pattern aptitudePattern = Pattern.compile("(" + pattern + ")");
+
 		// AI 응답에서 적성 키워드 추출 및 점수 계산
 		for (AptitudeTestHistory history : histories) {
 			String aiResponse = history.getAiResponse();
 			if (aiResponse != null) {
-				// 간단한 키워드 매칭 방식 (실제로는 AI 서비스에서 더 정교하게 처리)
-				for (AptitudeType type : AptitudeType.values()) {
-					if (aiResponse.contains(type.getTitle()) || aiResponse.contains(type.name())) {
-						scores.put(type, scores.get(type) + 1);
+				Matcher matcher = aptitudePattern.matcher(aiResponse);
+				while (matcher.find()) {
+					String matchedCode = matcher.group();
+					// 매칭된 코드가 어떤 적성 타입인지 확인
+					for (AptitudeType type : AptitudeType.values()) {
+						if (matchedCode.equals(type.name()) || matchedCode.equals(type.getTitle())) {
+							scores.put(type, scores.get(type) + 1);
+							break;
+						}
 					}
 				}
 			}
