@@ -88,4 +88,17 @@ public class EmailService {
 
         mailSender.send(message);
     }
+
+    public void sendPasswordResetCode(String email, String code) {
+        String subject = "[LocalLife] 비밀번호 재설정 인증 코드 안내";
+        String content = "비밀번호 재설정 인증코드 : " + code + "\n" + "본 코드는 5분간 유효합니다.";
+
+        SimpleMailMessage message = new SimpleMailMessage();
+
+        message.setTo(email);
+        message.setSubject(subject);
+        message.setText(content);
+
+        mailSender.send(message);
+    }
 }
