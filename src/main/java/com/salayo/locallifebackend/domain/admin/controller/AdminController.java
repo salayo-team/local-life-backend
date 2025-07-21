@@ -3,6 +3,8 @@ package com.salayo.locallifebackend.domain.admin.controller;
 import com.salayo.locallifebackend.domain.admin.dto.CreatorPendingResponseDto;
 import com.salayo.locallifebackend.domain.admin.dto.RejectReasonRequestDto;
 import com.salayo.locallifebackend.domain.admin.service.AdminService;
+import com.salayo.locallifebackend.domain.localcreator.dto.LocalCreatorDetailResponseDto;
+import com.salayo.locallifebackend.domain.localcreator.service.LocalCreatorService;
 import com.salayo.locallifebackend.global.dto.CommonResponseDto;
 import com.salayo.locallifebackend.global.success.SuccessCode;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,9 +26,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminController {
 
     private final AdminService adminService;
+    private final LocalCreatorService localCreatorService;
 
-    public AdminController(AdminService adminService) {
+    public AdminController(AdminService adminService, LocalCreatorService localCreatorService) {
         this.adminService = adminService;
+        this.localCreatorService = localCreatorService;
     }
 
     @Operation(summary = "승인 대기 로컬 크리에이터 목록 조회", description = "관리자가 승인 대기 중인 로컬 크리에이터의 목록을 볼 수 있습니다.")
@@ -59,6 +63,15 @@ public class AdminController {
         @RequestBody @Valid RejectReasonRequestDto requestDto) {
         adminService.rejectCreator(localcreatorId, requestDto.getRejectReason());
 
-        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.UPDATE_SUCCESS,null));
+        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.UPDATE_SUCCESS, null));
+    }
+
+    @Operation(summary = "로컬 크리에이터 신청 상세조회", description = "관리자가 로컬 크리에이터 회원가입 신청자의 기본정보 및 증빙파일(presigned URL 포함)을 조회합니다.")
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/localcreators/{localcreatorId}")
+    public ResponseEntity<CommonResponseDto<LocalCreatorDetailResponseDto>> getLocalCreatorDetail(@PathVariable Long localcreatorId) {
+        LocalCreatorDetailResponseDto responseDto = localCreatorService.getLocalCreatorDetail(localcreatorId);
+
+        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS,responseDto));
     }
 }
