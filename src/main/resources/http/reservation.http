@@ -4,8 +4,8 @@ POST http://localhost:8080/auth/login
 Content-Type: application/json
 
 {
-  "email": "testuser1@example.com",
-  "password": "test1234!"
+  "email": "testuser2@example.com",
+  "password": "Test1234!"
 }
 
 > {%
@@ -14,20 +14,10 @@ Content-Type: application/json
   client.global.set("accessToken", accessToken);
 %}
 
-### 체험 프로그램 스케줄 예약 (임시 테스트용)
+### 체험 프로그램 스케줄 예약
 POST http://localhost:8080/reservation
 Content-Type: application/json
-Authorization: Bearer {{accessToken}}
 
 {
-  "reservationCreateRequestDto": {
-    "programScheduleId": 1
-  },
-  "paymentCreateRequestDto": {
-    "pgTid": "pg_test_1234567890",
-    "impUid": "imp_test_1234567890",
-    "paymentCost": 1000,
-    "paymentCard": "신한카드",
-    "paymentMethodType": "CARD"
-  }
+
 }
