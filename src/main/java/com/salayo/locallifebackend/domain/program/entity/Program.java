@@ -56,6 +56,10 @@ public class Program extends BaseEntity {
 	@JoinColumn(name = "original_program_id", nullable = true)
 	private Program originalProgram; //원본 프로그램 ID - 자기참조 FK
 
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "program_group_id", nullable = true)
+	private ProgramGroup programGroup; //체험 프로그램 그룹 고유 식별자
+
 	@Column(nullable = false, length = 100)
 	private String businessName; //상호명
 
@@ -120,6 +124,7 @@ public class Program extends BaseEntity {
 
 	@Builder
 	public Program(Member member, AptitudeCategory aptitudeCategory, RegionCategory regionCategory, Program originalProgram,
+		ProgramGroup programGroup,
 		String businessName, String title, String description, String curriculumDescription, String location, BigDecimal price,
 		BigDecimal percent, BigDecimal finalPrice, Integer maxCapacity, Integer minCapacity, LocalDate startDate,
 		LocalDate endDate, Integer count, LocalSpecialized isLocalSpecialized, ProgramStatus programStatus, DeletedStatus deletedStatus,
@@ -128,6 +133,7 @@ public class Program extends BaseEntity {
 		this.aptitudeCategory = aptitudeCategory;
 		this.regionCategory = regionCategory;
 		this.originalProgram = originalProgram;
+		this.programGroup = programGroup;
 		this.businessName = businessName;
 		this.title = title;
 		this.description = description;
@@ -157,7 +163,7 @@ public class Program extends BaseEntity {
 		this.programScheduleTimes.add(programScheduleTime);
 	}
 
-	public void addProgramSchedule(ProgramSchedule programSchedule){
+	public void addProgramSchedule(ProgramSchedule programSchedule) {
 		this.programSchedules.add(programSchedule);
 		programSchedule.connectToProgram(this);
 	}
