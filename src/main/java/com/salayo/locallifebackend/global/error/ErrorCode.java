@@ -26,6 +26,8 @@ public enum ErrorCode {
     THUMBNAIL_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "썸네일 이미지는 1개만 등록할 수 있습니다."),
     THUMBNAIL_REQUIRED(HttpStatus.BAD_REQUEST, "썸네일 이미지는 필수입니다"),
     ALREADY_PROCESSED_LOCALCREATOR(HttpStatus.BAD_REQUEST, "이미 승인된 로컬크리에이터입니다."),
+    SAME_AS_OLD_PASSWORD(HttpStatus.BAD_REQUEST, "이전과 동일한 비밀번호는 사용할 수 없습니다."),
+    INVALID_PASSWORD(HttpStatus.BAD_REQUEST, "현재 비밀번호가 일치하지 않습니다."),
     MISSING_API_KEY(HttpStatus.BAD_REQUEST, "API KEY 값이 누락 되었습니다."),
 
     // 401 Unauthorized
@@ -48,6 +50,7 @@ public enum ErrorCode {
     REGION_NOT_FOUND(HttpStatus.NOT_FOUND, "지역을 찾을 수 없습니다."),
     APTITUDE_NOT_FOUND(HttpStatus.NOT_FOUND, "적성을 찾을 수 없습니다." ),
     LOCALCREATOR_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 회원을 찾을 수 없습니다."),
+    NOT_FOUND_TEST_PROGRESS(HttpStatus.NOT_FOUND,"진행 중인 테스트가 없습니다."),
     PROGRAM_SCHEDULE_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 프로그램 스케줄을 찾을 수 없습니다."),
 
     // 408 REQUEST_TIMEOUT
@@ -59,7 +62,7 @@ public enum ErrorCode {
     DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "이미 존재하는 닉네임입니다."),
 
     // 429 TOO_MANY_REQUESTS
-    TOO_MANY_REQUESTS(HttpStatus.TOO_MANY_REQUESTS, "요청 횟수를 초과했습니다."),
+    TOO_MANY_REQUESTS(HttpStatus.TOO_MANY_REQUESTS, "적성 검사는 최대 5회까지만 가능합니다."),
 
     // 500 INTERNAL_SERVER_ERROR
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버에서 오류가 발생했습니다."),
