@@ -47,25 +47,48 @@ public class Reservation extends BaseEntity {
 	@Column(nullable = true, columnDefinition = "TEXT")
 	private String rejectedReason; //예약(신청) 거절 사유
 
+	@Column(nullable = true, columnDefinition = "TEXT")
+	private String cancelReason; //예약 취소 사유
+
 	@Column(nullable = true)
 	private LocalDateTime canceledAt; //예약 취소 일시
 
 	@Column(nullable = true)
 	private LocalDateTime rejectedAt; //예약 거절 일시
 
+	@Column(nullable = true)
+	private LocalDateTime expiredAt; //예약 만료 일시
+
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 50)
-	private DeletedStatus deletedStatus; //예약 삭제 여부
+	private DeletedStatus deletedStatus; //예약 삭제 상태
 
 	@Builder
 	public Reservation(Member member, ProgramSchedule programSchedule, ReservationStatus reservationStatus, String rejectedReason,
-		LocalDateTime canceledAt, LocalDateTime rejectedAt, DeletedStatus deletedStatus) {
+		String cancelReason, LocalDateTime canceledAt, LocalDateTime rejectedAt, LocalDateTime expiredAt, DeletedStatus deletedStatus) {
 		this.member = member;
 		this.programSchedule = programSchedule;
 		this.reservationStatus = reservationStatus;
 		this.rejectedReason = rejectedReason;
+		this.cancelReason = cancelReason;
 		this.canceledAt = canceledAt;
 		this.rejectedAt = rejectedAt;
+		this.expiredAt = expiredAt;
 		this.deletedStatus = deletedStatus;
+	}
+
+	/**
+	 * 예약 상태 변경
+	 */
+	public void updateReservationStatus(ReservationStatus reservationStatus) {
+		this.reservationStatus = reservationStatus;
+	}
+
+	/**
+	 * 예약 만료 상태 변경 & 시점 기록
+	 */
+	public void expireReservation(){
+		this.reservationStatus = ReservationStatus.EXPIRED;
+		this.expiredAt = LocalDateTime.now();
 	}
 }
