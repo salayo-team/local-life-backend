@@ -8,6 +8,8 @@ import com.salayo.locallifebackend.domain.payment.repository.PaymentRepository;
 import com.salayo.locallifebackend.domain.reservation.entity.Reservation;
 import com.salayo.locallifebackend.domain.reservation.enums.ReservationStatus;
 import com.salayo.locallifebackend.global.enums.DeletedStatus;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -60,7 +62,9 @@ public class PaymentService {
 		String merchantUid;
 
 		do {
-			merchantUid = "res-" + reservationId + "-" + UUID.randomUUID().toString().replace("-", "").substring(0, 10);
+			String date = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
+			String randomStr = UUID.randomUUID().toString().replace("-", "").substring(0, 10);
+			merchantUid = "res-" + date + "-" + reservationId + "-" + randomStr;
 		} while (paymentRepository.existsByMerchantUid(merchantUid));
 
 		return merchantUid;
