@@ -32,21 +32,28 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class AptitudeService {
 
 	private final UserAptitudeRepository userAptitudeRepository;
 	private final AptitudeTestHistoryRepository aptitudeTestHistoryRepository;
 	private final MemberRepository memberRepository;
 	private final AptitudeAiService aptitudeAiService;
-
-	@Qualifier("aiAptitudeRedisTemplate")
 	private final RedisTemplate<String, String> aiAptitudeRedisTemplate;
 
 	private static final int MAX_TEST_COUNT = 5;
 	private static final int TOTAL_QUESTIONS = 5;
 	private static final String REDIS_KEY_PREFIX = "aptitude:test:";
 	private static final long REDIS_TTL_HOURS = 24;
+
+	public AptitudeService(UserAptitudeRepository userAptitudeRepository, AptitudeTestHistoryRepository aptitudeTestHistoryRepository,
+		MemberRepository memberRepository, AptitudeAiService aptitudeAiService,
+		@Qualifier("aiAptitudeRedisTemplate") RedisTemplate<String, String> aiAptitudeRedisTemplate) {
+		this.userAptitudeRepository = userAptitudeRepository;
+		this.aptitudeTestHistoryRepository = aptitudeTestHistoryRepository;
+		this.memberRepository = memberRepository;
+		this.aptitudeAiService = aptitudeAiService;
+		this.aiAptitudeRedisTemplate = aiAptitudeRedisTemplate;
+	}
 
 	@Transactional
 	public AptitudeTestStartResponseDto startTest(Long memberId) {
