@@ -12,4 +12,6 @@ public interface AptitudeCategoryRepository extends JpaRepository<AptitudeCatego
 	default AptitudeCategory findByIdOrElseThrow(Long aptitudeCategoryId){
 		return findById(aptitudeCategoryId).orElseThrow(() -> new CustomException(ErrorCode.APTITUDE_NOT_FOUND));
 	};
+
+	boolean existsByAptitudeCode(String aptitudeCode);
 }
