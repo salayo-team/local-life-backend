@@ -79,6 +79,6 @@ public class Review extends BaseEntity {
 	}
 
 	public boolean isModified() {
-		return getUpdatedAt() != null && getUpdatedAt().isAfter(getCreatedAt());
+		return getModifiedAt() != null && getModifiedAt().isAfter(getCreatedAt());
 	}
 }
