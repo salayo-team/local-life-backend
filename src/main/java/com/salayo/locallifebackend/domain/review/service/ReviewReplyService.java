@@ -11,6 +11,7 @@ import com.salayo.locallifebackend.domain.review.repository.ReviewRepository;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
 import com.salayo.locallifebackend.global.error.ErrorCode;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,12 +22,12 @@ public class ReviewReplyService {
 
 	private final ReviewRepository reviewRepository;
 	private final ReviewReplyRepository reviewReplyRepository;
-	private final RedisTemplate<String, Object> redisTemplate;
+	private final RedisTemplate<String, String> redisTemplate;
 
 	private static final String REVIEW_CACHE_KEY = "review:program:";
 
 	public ReviewReplyService(ReviewRepository reviewRepository, ReviewReplyRepository reviewReplyRepository,
-		RedisTemplate<String, Object> redisTemplate) {
+		@Qualifier("reviewRedisTemplate") RedisTemplate<String, String> redisTemplate) {
 		this.reviewRepository = reviewRepository;
 		this.reviewReplyRepository = reviewReplyRepository;
 		this.redisTemplate = redisTemplate;

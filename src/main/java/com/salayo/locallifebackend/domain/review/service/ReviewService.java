@@ -17,6 +17,7 @@ import java.time.LocalDate;
 import lombok.extern.slf4j.Slf4j;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,14 +30,14 @@ public class ReviewService {
 	private final ReviewReplyRepository reviewReplyRepository;
 	private final ProgramRepository programRepository;
 	private final ReservationRepository reservationRepository;
-	private final RedisTemplate<String, Object> redisTemplate;
+	private final RedisTemplate<String, String> redisTemplate;
 
 	private static final String REVIEW_CACHE_KEY = "review:program:";
 	private static final long CACHE_TTL = 60; // 60분
 
 	public ReviewService(ReviewRepository reviewRepository, ReviewReplyRepository reviewReplyRepository,
 		ProgramRepository programRepository, ReservationRepository reservationRepository,
-		RedisTemplate<String, Object> redisTemplate) {
+		@Qualifier("reviewRedisTemplate") RedisTemplate<String, String> redisTemplate) {
 		this.reviewRepository = reviewRepository;
 		this.reviewReplyRepository = reviewReplyRepository;
 		this.programRepository = programRepository;
