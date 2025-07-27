@@ -40,13 +40,13 @@ public class ReviewReplyService {
 		// validateContentLength(requestDto.getContent());
 
 		// 리뷰 존재 확인
-		Review review = reviewRepository.findByIdAndStatusOrThrow(reviewId, ReviewStatus.DISPLAYED);
+		Review review = reviewRepository.findByIdAndReviewStatusOrThrow(reviewId, ReviewStatus.DISPLAYED);
 
 		// 프로그램 소유권 확인
 		validateProgramOwnership(review, creator);
 
 		// 답글 중복 체크
-		if (reviewReplyRepository.existsByReviewAndStatus(review, ReviewStatus.DISPLAYED)) {
+		if (reviewReplyRepository.existsByReviewAndReviewStatus(review, ReviewStatus.DISPLAYED)) {
 			throw new CustomException(ErrorCode.DUPLICATE_REVIEW_REPLY);
 		}
 

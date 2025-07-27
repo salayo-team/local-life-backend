@@ -43,7 +43,7 @@ public class ReviewReply extends BaseEntity {
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "reply_status", nullable = false)
-	private ReviewStatus status = ReviewStatus.DISPLAYED;
+	private ReviewStatus reviewStatus = ReviewStatus.DISPLAYED;
 
 	@Column(name = "deleted_at")
 	private LocalDateTime deletedAt;
@@ -53,11 +53,11 @@ public class ReviewReply extends BaseEntity {
 		this.review = review;
 		this.member = member;
 		this.content = content;
-		this.status = ReviewStatus.DISPLAYED;
+		this.reviewStatus = ReviewStatus.DISPLAYED;
 	}
 
 	public void deleteReply() {
-		this.status = ReviewStatus.DELETED;
+		this.reviewStatus = ReviewStatus.DELETED;
 		this.deletedAt = LocalDateTime.now();
 	}
 }

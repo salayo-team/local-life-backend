@@ -66,7 +66,7 @@ public class ReviewService {
 		// validateContentLength(requestDto.getContent());
 
 		// 중복 리뷰 체크
-		if (reviewRepository.existsByMemberAndProgramAndStatus(member, program, ReviewStatus.DISPLAYED)) {
+		if (reviewRepository.existsByMemberAndProgramAndReviewStatus(member, program, ReviewStatus.DISPLAYED)) {
 			throw new CustomException(ErrorCode.DUPLICATE_REVIEW);
 		}
 
@@ -89,7 +89,7 @@ public class ReviewService {
 	public List<ReviewResponseDto> getMyReviews(Member member) {
 		log.info("내 리뷰 조회 - memberId: {}", member.getId());
 
-		List<Review> reviews = reviewRepository.findByMemberAndStatus(member, ReviewStatus.DISPLAYED);
+		List<Review> reviews = reviewRepository.findByMemberAndReviewStatus(member, ReviewStatus.DISPLAYED);
 
 		return reviews.stream()
 			.map(ReviewResponseDto::new)
@@ -103,7 +103,7 @@ public class ReviewService {
 		Program program = programRepository.findById(programId)
 			.orElseThrow(() -> new CustomException(ErrorCode.PROGRAM_NOT_FOUND));
 
-		List<Review> reviews = reviewRepository.findByProgramAndStatus(program, ReviewStatus.DISPLAYED);
+		List<Review> reviews = reviewRepository.findByProgramAndReviewStatus(program, ReviewStatus.DISPLAYED);
 
 		return reviews.stream()
 			.map(ReviewResponseDto::new)
@@ -114,7 +114,7 @@ public class ReviewService {
 	public List<ReviewResponseDto> getAllReviews() {
 		log.info("전체 리뷰 조회");
 
-		List<Review> reviews = reviewRepository.findAllByStatus(ReviewStatus.DISPLAYED);
+		List<Review> reviews = reviewRepository.findAllByReviewStatus(ReviewStatus.DISPLAYED);
 
 		return reviews.stream()
 			.map(ReviewResponseDto::new)
@@ -128,7 +128,7 @@ public class ReviewService {
 		// 글자수 제한 검증 - DTO @Valid로 이미 검증됨
 		// validateContentLength(requestDto.getContent());
 
-		Review review = reviewRepository.findByIdAndStatusOrThrow(reviewId, ReviewStatus.DISPLAYED);
+		Review review = reviewRepository.findByIdAndReviewStatusOrThrow(reviewId, ReviewStatus.DISPLAYED);
 
 		// 본인 확인
 		if (!review.getMember().getId().equals(member.getId())) {
@@ -136,7 +136,7 @@ public class ReviewService {
 		}
 
 		// 답글 존재 여부 확인
-		if (reviewReplyRepository.existsByReviewAndStatus(review, ReviewStatus.DISPLAYED)) {
+		if (reviewReplyRepository.existsByReviewAndReviewStatus(review, ReviewStatus.DISPLAYED)) {
 			throw new CustomException(ErrorCode.CANNOT_UPDATE_REVIEW_WITH_REPLY);
 		}
 
@@ -152,7 +152,7 @@ public class ReviewService {
 	public void deleteReview(Long reviewId, Member member) {
 		log.info("리뷰 삭제 - reviewId: {}, memberId: {}", reviewId, member.getId());
 
-		Review review = reviewRepository.findByIdAndStatusOrThrow(reviewId, ReviewStatus.DISPLAYED);
+		Review review = reviewRepository.findByIdAndReviewStatusOrThrow(reviewId, ReviewStatus.DISPLAYED);
 
 		// 본인 확인
 		if (!review.getMember().getId().equals(member.getId())) {

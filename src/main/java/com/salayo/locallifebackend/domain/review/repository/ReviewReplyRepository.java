@@ -13,12 +13,12 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ReviewReplyRepository extends JpaRepository<ReviewReply, Long> {
 
-	boolean existsByReviewAndStatus(Review review, ReviewStatus status);
+	boolean existsByReviewAndReviewStatus(Review review, ReviewStatus reviewStatus);
 
-	Optional<ReviewReply> findByReviewAndStatus(Review review, ReviewStatus status);
+	Optional<ReviewReply> findByReviewAndReviewStatus(Review review, ReviewStatus reviewStatus);
 
 	@Modifying
-	@Query("UPDATE ReviewReply r SET r.status = com.salayo.locallifebackend.domain.review.enums.ReviewStatus.DELETED, r.deletedAt = CURRENT_TIMESTAMP WHERE r.review = :review")
+	@Query("UPDATE ReviewReply r SET r.reviewStatus = com.salayo.locallifebackend.domain.review.enums.ReviewStatus.DELETED, r.deletedAt = CURRENT_TIMESTAMP WHERE r.review = :review")
 	void softDeleteByReview(@Param("review") Review review);
 
 }

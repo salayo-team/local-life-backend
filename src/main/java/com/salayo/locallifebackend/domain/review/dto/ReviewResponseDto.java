@@ -28,7 +28,7 @@ public class ReviewResponseDto {
 		this.isModified = review.isModified();
 		this.createdAt = review.getCreatedAt();
 		this.replies = review.getReplies().stream()
-			.filter(reply -> reply.getStatus() == ReviewStatus.DISPLAYED)
+			.filter(reply -> reply.getReviewStatus() == ReviewStatus.DISPLAYED)
 			.map(ReviewReplyResponseDto::new)
 			.collect(Collectors.toList());
 	}
