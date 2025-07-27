@@ -1,0 +1,196 @@
+package com.salayo.locallifebackend.domain.review.service;
+
+import com.salayo.locallifebackend.domain.member.entity.Member;
+import com.salayo.locallifebackend.domain.program.entity.Program;
+import com.salayo.locallifebackend.domain.program.repository.ProgramRepository;
+import com.salayo.locallifebackend.domain.reservation.entity.Reservation;
+import com.salayo.locallifebackend.domain.reservation.repository.ReservationRepository;
+import com.salayo.locallifebackend.domain.review.dto.ReviewRequestDto;
+import com.salayo.locallifebackend.domain.review.dto.ReviewResponseDto;
+import com.salayo.locallifebackend.domain.review.entity.Review;
+import com.salayo.locallifebackend.domain.review.enums.ReviewStatus;
+import com.salayo.locallifebackend.domain.review.repository.ReviewReplyRepository;
+import com.salayo.locallifebackend.domain.review.repository.ReviewRepository;
+import com.salayo.locallifebackend.global.error.exception.CustomException;
+import com.salayo.locallifebackend.global.error.ErrorCode;
+import java.time.LocalDate;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Slf4j
+@Service
+public class ReviewService {
+
+	private final ReviewRepository reviewRepository;
+	private final ReviewReplyRepository reviewReplyRepository;
+	private final ProgramRepository programRepository;
+	private final ReservationRepository reservationRepository;
+	private final RedisTemplate<String, Object> redisTemplate;
+
+	private static final String REVIEW_CACHE_KEY = "review:program:";
+	private static final long CACHE_TTL = 60; // 60분
+
+	public ReviewService(ReviewRepository reviewRepository, ReviewReplyRepository reviewReplyRepository,
+		ProgramRepository programRepository, ReservationRepository reservationRepository,
+		RedisTemplate<String, Object> redisTemplate) {
+		this.reviewRepository = reviewRepository;
+		this.reviewReplyRepository = reviewReplyRepository;
+		this.programRepository = programRepository;
+		this.reservationRepository = reservationRepository;
+		this.redisTemplate = redisTemplate;
+	}
+
+	@Transactional
+	public ReviewResponseDto createReview(ReviewRequestDto requestDto, Member member, Long programId, Long reservationId) {
+		log.info("리뷰 작성 시작 - memberId: {}, programId: {}", member.getId(), programId);
+
+		// 프로그램, 예약 조회
+		Program program = programRepository.findById(programId)
+			.orElseThrow(() -> new CustomException(ErrorCode.PROGRAM_NOT_FOUND));
+		
+		Reservation reservation = reservationRepository.findById(reservationId)
+			.orElseThrow(() -> new CustomException(ErrorCode.RESERVATION_NOT_FOUND));
+
+		// 체험 완료 확인
+		validateCompletedReservation(reservation, member);
+		
+		// 30일 이내 작성 가능 체크
+		validateReviewPeriod(reservation.getEndDate());
+
+		// 글자수 제한 검증
+		validateContentLength(requestDto.getContent());
+
+		// 중복 리뷰 체크
+		if (reviewRepository.existsByMemberAndProgramAndStatus(member, program, ReviewStatus.DISPLAYED)) {
+			throw new CustomException(ErrorCode.DUPLICATE_REVIEW);
+		}
+
+		Review review = Review.builder()
+			.member(member)
+			.program(program)
+			.reservation(reservation)
+			.content(requestDto.getContent())
+			.build();
+
+		Review savedReview = reviewRepository.save(review);
+
+		// 캐시 무효화
+		invalidateReviewCache(programId);
+
+		return new ReviewResponseDto(savedReview);
+	}
+
+	@Transactional(readOnly = true)
+	public Page<ReviewResponseDto> getMyReviews(Member member, Pageable pageable) {
+		log.info("내 리뷰 조회 - memberId: {}", member.getId());
+
+		Page<Review> reviews = reviewRepository.findByMemberAndStatus(member, ReviewStatus.DISPLAYED, pageable);
+
+		return reviews.map(ReviewResponseDto::new);
+	}
+
+	@Transactional(readOnly = true)
+	public Page<ReviewResponseDto> getProgramReviews(Long programId, Pageable pageable) {
+		log.info("프로그램 리뷰 조회 - programId: {}", programId);
+
+		Program program = programRepository.findById(programId)
+			.orElseThrow(() -> new CustomException(ErrorCode.PROGRAM_NOT_FOUND));
+
+		Page<Review> reviews = reviewRepository.findByProgramAndStatus(program, ReviewStatus.DISPLAYED, pageable);
+
+		return reviews.map(ReviewResponseDto::new);
+	}
+
+	@Transactional(readOnly = true)
+	public Page<ReviewResponseDto> getAllReviews(Pageable pageable) {
+		log.info("전체 리뷰 조회");
+
+		Page<Review> reviews = reviewRepository.findAllByStatus(ReviewStatus.DISPLAYED, pageable);
+
+		return reviews.map(ReviewResponseDto::new);
+	}
+
+	@Transactional
+	public ReviewResponseDto updateReview(Long reviewId, ReviewRequestDto requestDto, Member member) {
+		log.info("리뷰 수정 - reviewId: {}, memberId: {}", reviewId, member.getId());
+
+		// 글자수 제한 검증
+		validateContentLength(requestDto.getContent());
+
+		Review review = reviewRepository.findByIdAndStatusOrThrow(reviewId, ReviewStatus.DISPLAYED);
+
+		// 본인 확인
+		if (!review.getMember().getId().equals(member.getId())) {
+			throw new CustomException(ErrorCode.UNAUTHORIZED);
+		}
+
+		// 답글 존재 여부 확인
+		if (reviewReplyRepository.existsByReviewAndStatus(review, ReviewStatus.DISPLAYED)) {
+			throw new CustomException(ErrorCode.CANNOT_UPDATE_REVIEW_WITH_REPLY);
+		}
+
+		review.updateContent(requestDto.getContent());
+
+		// 캐시 무효화
+		invalidateReviewCache(review.getProgram().getId());
+
+		return new ReviewResponseDto(review);
+	}
+
+	@Transactional
+	public void deleteReview(Long reviewId, Member member) {
+		log.info("리뷰 삭제 - reviewId: {}, memberId: {}", reviewId, member.getId());
+
+		Review review = reviewRepository.findByIdAndStatusOrThrow(reviewId, ReviewStatus.DISPLAYED);
+
+		// 본인 확인
+		if (!review.getMember().getId().equals(member.getId())) {
+			throw new CustomException(ErrorCode.UNAUTHORIZED);
+		}
+
+		// Soft delete
+		review.deleteReview();
+
+		// 답글도 함께 soft delete
+		reviewReplyRepository.softDeleteByReview(review);
+
+		// 캐시 무효화
+		invalidateReviewCache(review.getProgram().getId());
+	}
+
+	private void validateCompletedReservation(Reservation reservation, Member member) {
+		if (!reservation.getMember().getId().equals(member.getId())) {
+			throw new CustomException(ErrorCode.UNAUTHORIZED);
+		}
+		
+		// TODO: 예약 상태가 완료인지 확인하는 로직 추가
+		// if (reservation.getStatus() != ReservationStatus.COMPLETED) {
+		//     throw new CustomException(ErrorCode.REVIEW_NOT_ALLOWED);
+		// }
+	}
+
+	private void validateReviewPeriod(LocalDate experienceEndDate) {
+		if (experienceEndDate.plusDays(30).isBefore(LocalDate.now())) {
+			throw new CustomException(ErrorCode.REVIEW_PERIOD_EXPIRED);
+		}
+	}
+
+	private void validateContentLength(String content) {
+		if (content == null || content.trim().isEmpty()) {
+			throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+		}
+
+		if (content.length() > 500) {
+			throw new CustomException(ErrorCode.REVIEW_CONTENT_TOO_LONG);
+		}
+	}
+
+	private void invalidateReviewCache(Long programId) {
+		String cacheKey = REVIEW_CACHE_KEY + programId;
+		redisTemplate.delete(cacheKey);
+	}
+}
