@@ -36,8 +36,8 @@ public class ReviewReplyService {
 	public ReviewReplyResponseDto createReviewReply(Long reviewId, ReviewReplyRequestDto requestDto, Member creator) {
 		log.info("리뷰 답글 작성 시작 - reviewId: {}, creatorId: {}", reviewId, creator.getId());
 
-		// 글자수 제한 검증
-		validateContentLength(requestDto.getContent());
+		// 글자수 제한 검증 - DTO @Valid로 이미 검증됨
+		// validateContentLength(requestDto.getContent());
 
 		// 리뷰 존재 확인
 		Review review = reviewRepository.findByIdAndStatusOrThrow(reviewId, ReviewStatus.DISPLAYED);
@@ -72,15 +72,6 @@ public class ReviewReplyService {
 		}
 	}
 
-	private void validateContentLength(String content) {
-		if (content == null || content.trim().isEmpty()) {
-			throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
-		}
-
-		if (content.length() > 500) {
-			throw new CustomException(ErrorCode.REVIEW_CONTENT_TOO_LONG);
-		}
-	}
 
 	private void invalidateReviewCache(Long programId) {
 		String cacheKey = REVIEW_CACHE_KEY + programId;

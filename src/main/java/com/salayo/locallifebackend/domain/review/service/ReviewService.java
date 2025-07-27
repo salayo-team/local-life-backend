@@ -62,8 +62,8 @@ public class ReviewService {
 		// TODO: ProgramSchedule의 종료일 또는 Program의 종료일 기준으로 변경 필요
 		validateReviewPeriod(LocalDate.now());
 
-		// 글자수 제한 검증
-		validateContentLength(requestDto.getContent());
+		// 글자수 제한 검증 - DTO @Valid로 이미 검증됨
+		// validateContentLength(requestDto.getContent());
 
 		// 중복 리뷰 체크
 		if (reviewRepository.existsByMemberAndProgramAndStatus(member, program, ReviewStatus.DISPLAYED)) {
@@ -125,8 +125,8 @@ public class ReviewService {
 	public ReviewResponseDto updateReview(Long reviewId, ReviewRequestDto requestDto, Member member) {
 		log.info("리뷰 수정 - reviewId: {}, memberId: {}", reviewId, member.getId());
 
-		// 글자수 제한 검증
-		validateContentLength(requestDto.getContent());
+		// 글자수 제한 검증 - DTO @Valid로 이미 검증됨
+		// validateContentLength(requestDto.getContent());
 
 		Review review = reviewRepository.findByIdAndStatusOrThrow(reviewId, ReviewStatus.DISPLAYED);
 
@@ -195,15 +195,6 @@ public class ReviewService {
 		// }
 	}
 
-	private void validateContentLength(String content) {
-		if (content == null || content.trim().isEmpty()) {
-			throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
-		}
-
-		if (content.length() > 500) {
-			throw new CustomException(ErrorCode.REVIEW_CONTENT_TOO_LONG);
-		}
-	}
 
 	private void invalidateReviewCache(Long programId) {
 		String cacheKey = REVIEW_CACHE_KEY + programId;
