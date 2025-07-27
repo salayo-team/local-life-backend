@@ -70,6 +70,7 @@ public class AuthService {
 	}
 
 	public UserSignupResponseDto signupUser(UserSignupRequestDto requestDto) {
+		checkEmailVerifiedOrThrow(requestDto.getEmail());
 
 		if (memberRepository.existsByEmail(requestDto.getEmail())) {
 			throw new CustomException(ErrorCode.DUPLICATE_EMAIL);
@@ -102,6 +103,7 @@ public class AuthService {
 	public LocalCreatorSignupResponseDto signupLocalCreator(
 		LocalCreatorSignupRequestDto requestDto, List<MultipartFile> files,
 		List<FilePurpose> filePurposes) {
+		checkEmailVerifiedOrThrow(requestDto.getEmail());
 
 		if (memberRepository.existsByEmail(requestDto.getEmail())) {
 			throw new CustomException(ErrorCode.DUPLICATE_EMAIL);
@@ -162,6 +164,14 @@ public class AuthService {
 		}
 
 		return new LocalCreatorSignupResponseDto(localCreator.getBusinessName());
+	}
+
+	public void checkEmailVerifiedOrThrow(String email) {
+		String flag = emailVerifiedRedisTemplate.opsForValue().get("email_verified:" + email);
+
+		if (!"true".equals(flag)) {
+			throw new CustomException(ErrorCode.EMAIL_NOT_VERIFIED);
+		}
 	}
 
 	public LoginResponseDto login(LoginRequestDto requestDto) {

@@ -29,6 +29,7 @@ public enum ErrorCode {
     SAME_AS_OLD_PASSWORD(HttpStatus.BAD_REQUEST, "이전과 동일한 비밀번호는 사용할 수 없습니다."),
     INVALID_PASSWORD(HttpStatus.BAD_REQUEST, "현재 비밀번호가 일치하지 않습니다."),
     MISSING_API_KEY(HttpStatus.BAD_REQUEST, "API KEY 값이 누락 되었습니다."),
+    EMAIL_NOT_VERIFIED(HttpStatus.BAD_REQUEST, "이메일 인증이 완료되지 않았습니다."),
     INVALID_SORT_TYPE(HttpStatus.BAD_REQUEST, "정렬 조건이 올바르지 않습니다."),
 
     // 401 Unauthorized
