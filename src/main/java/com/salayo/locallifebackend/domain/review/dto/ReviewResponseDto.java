@@ -23,7 +23,7 @@ public class ReviewResponseDto {
 		this.reviewId = review.getId();
 		this.memberNickname = review.getMember().getNickname();
 		this.programTitle = review.getProgram().getTitle();
-		this.experienceEndDate = review.getReservation().getEndDate();
+		this.experienceEndDate = review.getProgram().getEndDate();
 		this.content = review.getContent();
 		this.isModified = review.isModified();
 		this.createdAt = review.getCreatedAt();
