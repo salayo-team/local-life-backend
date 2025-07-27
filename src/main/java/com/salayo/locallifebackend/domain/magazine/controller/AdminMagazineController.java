@@ -2,6 +2,7 @@ package com.salayo.locallifebackend.domain.magazine.controller;
 
 import com.salayo.locallifebackend.domain.file.enums.FilePurpose;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineCreateRequestDto;
+import com.salayo.locallifebackend.domain.magazine.dto.MagazineDraftListResponseDto;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineFileUploadResponseDto;
 import com.salayo.locallifebackend.domain.magazine.service.MagazineFileService;
 import com.salayo.locallifebackend.domain.magazine.service.MagazineService;
@@ -18,6 +19,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,7 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/admin/magazines")
-@Tag(name = "Admin Magazine", description = "관리자 매거진 관리 API")
+@Tag(name = "Magazine | Admin", description = "관리자 매거진 관리 API")
 public class AdminMagazineController {
 
     private final MagazineService magazineService;
@@ -61,5 +63,14 @@ public class AdminMagazineController {
         List<MagazineFileUploadResponseDto> uploadResponseDto = magazineFileService.uploadFiles(files, filePurpose);
 
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FILE_UPLOAD_SUCCESS, uploadResponseDto));
+    }
+
+    @Operation(summary = "1차등록(임시등록) 매거진 목록 조회", description = "관리자가 1차등록 매거진 목록을 조회")
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping
+    public ResponseEntity<CommonResponseDto<List<MagazineDraftListResponseDto>>> getDraftMagazines() {
+        List<MagazineDraftListResponseDto> draftList = magazineService.getDraftMagazines();
+
+        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, draftList));
     }
 }

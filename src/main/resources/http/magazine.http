@@ -3,7 +3,7 @@ POST http://localhost:8080/auth/login
 Content-Type: application/json
 
 {
-  "email": "Admin002@salayo.com",
+  "email": "Admin001@salayo.com",
   "password": "Adminpass1@"
 }
 
@@ -54,3 +54,7 @@ Content-Type: image/jpeg
 
 < ./img2.jpg
 --boundary--
+
+### 임시등록 매거진 목록 조회 (DRAFT 리스트)
+GET http://localhost:8080/admin/magazines
+Authorization: Bearer {{accessToken}}
