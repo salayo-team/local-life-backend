@@ -6,6 +6,7 @@ import com.salayo.locallifebackend.domain.review.service.ReviewService;
 import com.salayo.locallifebackend.global.dto.CommonResponseDto;
 import com.salayo.locallifebackend.global.security.MemberDetails;
 import com.salayo.locallifebackend.global.success.SuccessCode;
+import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -15,12 +16,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api")
 public class ReviewController {
 
 	private final ReviewService reviewService;
@@ -34,7 +33,7 @@ public class ReviewController {
 	public CommonResponseDto<ReviewResponseDto> createReview(
 		@PathVariable Long programId,
 		@RequestParam Long reservationId,
-		@RequestBody ReviewRequestDto requestDto,
+		@Valid @RequestBody ReviewRequestDto requestDto,
 		@AuthenticationPrincipal MemberDetails memberDetails) {
 
 		ReviewResponseDto responseDto = reviewService.createReview(
@@ -81,7 +80,7 @@ public class ReviewController {
 	@PreAuthorize("hasRole('USER')")
 	public CommonResponseDto<ReviewResponseDto> updateReview(
 		@PathVariable Long reviewId,
-		@RequestBody ReviewRequestDto requestDto,
+		@Valid @RequestBody ReviewRequestDto requestDto,
 		@AuthenticationPrincipal MemberDetails memberDetails) {
 
 		ReviewResponseDto responseDto = reviewService.updateReview(

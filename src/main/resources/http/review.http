@@ -1,5 +1,5 @@
 ### 리뷰 작성
-POST http://localhost:8080/api/programs/1/reviews?reservationId=1
+POST http://localhost:8080/programs/1/reviews?reservationId=1
 Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
@@ -8,7 +8,7 @@ Authorization: Bearer {{authToken}}
 }
 
 ### 리뷰 답글 작성
-POST http://localhost:8080/api/reviews/1/replies
+POST http://localhost:8080/reviews/1/replies
 Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
@@ -17,14 +17,18 @@ Authorization: Bearer {{authToken}}
 }
 
 ### 내 리뷰 조회
-GET http://localhost:8080/api/mypage/reviews
+GET http://localhost:8080/mypage/reviews
 Authorization: Bearer {{authToken}}
 
 ### 프로그램 리뷰 조회
-GET http://localhost:8080/api/programs/1/reviews
+GET http://localhost:8080/programs/1/reviews
+
+### 관리자 전체 리뷰 조회
+GET http://localhost:8080/admin/reviews
+Authorization: Bearer {{authToken}}
 
 ### 리뷰 수정
-PUT http://localhost:8080/api/reviews/1
+PUT http://localhost:8080/reviews/1
 Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
@@ -33,5 +37,5 @@ Authorization: Bearer {{authToken}}
 }
 
 ### 리뷰 삭제
-DELETE http://localhost:8080/api/reviews/1
+DELETE http://localhost:8080/reviews/1
 Authorization: Bearer {{authToken}}
