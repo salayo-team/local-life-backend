@@ -1,17 +1,12 @@
 package com.salayo.locallifebackend.domain.review.controller;
 
-import com.salayo.locallifebackend.domain.program.repository.ProgramRepository;
-import com.salayo.locallifebackend.domain.reservation.repository.ReservationRepository;
-import com.salayo.locallifebackend.domain.reservation.service.ReservationService;
 import com.salayo.locallifebackend.domain.review.dto.ReviewRequestDto;
 import com.salayo.locallifebackend.domain.review.dto.ReviewResponseDto;
 import com.salayo.locallifebackend.domain.review.service.ReviewService;
 import com.salayo.locallifebackend.global.dto.CommonResponseDto;
 import com.salayo.locallifebackend.global.security.MemberDetails;
 import com.salayo.locallifebackend.global.success.SuccessCode;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
+import java.util.List;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -29,16 +24,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class ReviewController {
 
 	private final ReviewService reviewService;
-	private final ReservationService reservationService;
-	private final ProgramRepository programRepository;
-	private final ReservationRepository reservationRepository;
 
-	public ReviewController(ReviewService reviewService, ReservationService reservationService,
-							ProgramRepository programRepository, ReservationRepository reservationRepository) {
+	public ReviewController(ReviewService reviewService) {
 		this.reviewService = reviewService;
-		this.reservationService = reservationService;
-		this.programRepository = programRepository;
-		this.reservationRepository = reservationRepository;
 	}
 
 	@PostMapping("/programs/{programId}/reviews")
@@ -61,34 +49,30 @@ public class ReviewController {
 
 	@GetMapping("/mypage/reviews")
 	@PreAuthorize("hasRole('USER')")
-	public CommonResponseDto<Page<ReviewResponseDto>> getMyReviews(
-		@AuthenticationPrincipal MemberDetails memberDetails,
-		@PageableDefault(size = 10) Pageable pageable) {
+	public CommonResponseDto<List<ReviewResponseDto>> getMyReviews(
+		@AuthenticationPrincipal MemberDetails memberDetails) {
 
-		Page<ReviewResponseDto> reviews = reviewService.getMyReviews(
-			memberDetails.getMember(),
-			pageable
+		List<ReviewResponseDto> reviews = reviewService.getMyReviews(
+			memberDetails.getMember()
 		);
 
 		return CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, reviews);
 	}
 
 	@GetMapping("/programs/{programId}/reviews")
-	public CommonResponseDto<Page<ReviewResponseDto>> getProgramReviews(
-		@PathVariable Long programId,
-		@PageableDefault(size = 10) Pageable pageable) {
+	public CommonResponseDto<List<ReviewResponseDto>> getProgramReviews(
+		@PathVariable Long programId) {
 
-		Page<ReviewResponseDto> reviews = reviewService.getProgramReviews(programId, pageable);
+		List<ReviewResponseDto> reviews = reviewService.getProgramReviews(programId);
 
 		return CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, reviews);
 	}
 
 	@GetMapping("/admin/reviews")
 	@PreAuthorize("hasRole('ADMIN')")
-	public CommonResponseDto<Page<ReviewResponseDto>> getAllReviews(
-		@PageableDefault(size = 10) Pageable pageable) {
+	public CommonResponseDto<List<ReviewResponseDto>> getAllReviews() {
 
-		Page<ReviewResponseDto> reviews = reviewService.getAllReviews(pageable);
+		List<ReviewResponseDto> reviews = reviewService.getAllReviews();
 
 		return CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, reviews);
 	}

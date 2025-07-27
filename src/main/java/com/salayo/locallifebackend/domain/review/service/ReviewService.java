@@ -15,8 +15,8 @@ import com.salayo.locallifebackend.global.error.exception.CustomException;
 import com.salayo.locallifebackend.global.error.ErrorCode;
 import java.time.LocalDate;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -85,33 +85,39 @@ public class ReviewService {
 	}
 
 	@Transactional(readOnly = true)
-	public Page<ReviewResponseDto> getMyReviews(Member member, Pageable pageable) {
+	public List<ReviewResponseDto> getMyReviews(Member member) {
 		log.info("내 리뷰 조회 - memberId: {}", member.getId());
 
-		Page<Review> reviews = reviewRepository.findByMemberAndStatus(member, ReviewStatus.DISPLAYED, pageable);
+		List<Review> reviews = reviewRepository.findByMemberAndStatus(member, ReviewStatus.DISPLAYED);
 
-		return reviews.map(ReviewResponseDto::new);
+		return reviews.stream()
+			.map(ReviewResponseDto::new)
+			.collect(Collectors.toList());
 	}
 
 	@Transactional(readOnly = true)
-	public Page<ReviewResponseDto> getProgramReviews(Long programId, Pageable pageable) {
+	public List<ReviewResponseDto> getProgramReviews(Long programId) {
 		log.info("프로그램 리뷰 조회 - programId: {}", programId);
 
 		Program program = programRepository.findById(programId)
 			.orElseThrow(() -> new CustomException(ErrorCode.PROGRAM_NOT_FOUND));
 
-		Page<Review> reviews = reviewRepository.findByProgramAndStatus(program, ReviewStatus.DISPLAYED, pageable);
+		List<Review> reviews = reviewRepository.findByProgramAndStatus(program, ReviewStatus.DISPLAYED);
 
-		return reviews.map(ReviewResponseDto::new);
+		return reviews.stream()
+			.map(ReviewResponseDto::new)
+			.collect(Collectors.toList());
 	}
 
 	@Transactional(readOnly = true)
-	public Page<ReviewResponseDto> getAllReviews(Pageable pageable) {
+	public List<ReviewResponseDto> getAllReviews() {
 		log.info("전체 리뷰 조회");
 
-		Page<Review> reviews = reviewRepository.findAllByStatus(ReviewStatus.DISPLAYED, pageable);
+		List<Review> reviews = reviewRepository.findAllByStatus(ReviewStatus.DISPLAYED);
 
-		return reviews.map(ReviewResponseDto::new);
+		return reviews.stream()
+			.map(ReviewResponseDto::new)
+			.collect(Collectors.toList());
 	}
 
 	@Transactional
