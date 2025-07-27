@@ -4,14 +4,12 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
-import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-@Builder
+@NoArgsConstructor
 @Getter
 public class PaymentCreateRequestDto {
-
-	//TODO : 예약 고유 식별자 추가
 
 	@NotBlank(message = "PG사 거래 ID는 필수값입니다.")
 	private String pgTid;
@@ -24,5 +22,7 @@ public class PaymentCreateRequestDto {
 
 	@NotBlank(message = "결제 카드 정보는 필수값입니다.")
 	private String paymentCard;
+
+	private String paymentMethodType;
 
 }

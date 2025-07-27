@@ -23,6 +23,7 @@ repositories {
     mavenCentral()
     maven { url 'https://repo.spring.io/milestone' }
     maven { url 'https://repo.spring.io/snapshot' }
+    maven { url 'https://jitpack.io' }//JitPack 저장소 - Iamport
 }
 
 dependencies {
@@ -76,6 +77,9 @@ dependencies {
 
     // IDE 자동완성/검증용
     implementation 'org.springframework.boot:spring-boot-configuration-processor'
+    
+    //PortOne
+    implementation 'com.github.iamport:iamport-rest-client-java:0.2.23'
 
 }
 
