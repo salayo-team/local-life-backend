@@ -30,6 +30,7 @@ public enum ErrorCode {
     INVALID_PASSWORD(HttpStatus.BAD_REQUEST, "현재 비밀번호가 일치하지 않습니다."),
     MISSING_API_KEY(HttpStatus.BAD_REQUEST, "API KEY 값이 누락 되었습니다."),
     EMAIL_NOT_VERIFIED(HttpStatus.BAD_REQUEST, "이메일 인증이 완료되지 않았습니다."),
+    INVALID_SORT_TYPE(HttpStatus.BAD_REQUEST, "정렬 조건이 올바르지 않습니다."),
     DUPLICATE_REVIEW(HttpStatus.BAD_REQUEST, "이미 리뷰를 작성하셨습니다."),
     DUPLICATE_REVIEW_REPLY(HttpStatus.BAD_REQUEST, "이미 답글을 작성하셨습니다."),
     REVIEW_CONTENT_TOO_LONG(HttpStatus.BAD_REQUEST, "리뷰는 최대 500자까지 작성 가능합니다."),
