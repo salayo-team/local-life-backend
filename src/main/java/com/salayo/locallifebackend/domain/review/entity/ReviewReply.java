@@ -1,7 +1,6 @@
 package com.salayo.locallifebackend.domain.review.entity;
 
 import com.salayo.locallifebackend.domain.member.entity.Member;
-import com.salayo.locallifebackend.domain.review.enums.ReviewStatus;
 import com.salayo.locallifebackend.global.entity.BaseEntity;
 import com.salayo.locallifebackend.global.enums.DeletedStatus;
 import jakarta.persistence.Column;
@@ -57,6 +56,7 @@ public class ReviewReply extends BaseEntity {
 		this.deletedStatus = DeletedStatus.DISPLAYED;
 	}
 
+	// 답글 개별 삭제 기능 확장을 대비해 남겨 둠
 	public void deleteReply() {
 		this.deletedStatus = DeletedStatus.DELETED;
 		this.deletedAt = LocalDateTime.now();

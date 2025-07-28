@@ -13,6 +13,7 @@ import com.salayo.locallifebackend.domain.review.repository.ReviewReplyRepositor
 import com.salayo.locallifebackend.domain.review.repository.ReviewRepository;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
 import com.salayo.locallifebackend.global.error.ErrorCode;
+import jakarta.persistence.EntityManager;
 import java.time.LocalDate;
 import lombok.extern.slf4j.Slf4j;
 import java.util.List;
@@ -29,17 +30,19 @@ public class ReviewService {
 	private final ProgramRepository programRepository;
 	private final ReservationRepository reservationRepository;
 	private final ReviewCacheService reviewCacheService;
+	private final EntityManager entityManager;
 
 	private static final long CACHE_TTL = 60; // 60분
 
 	public ReviewService(ReviewRepository reviewRepository, ReviewReplyRepository reviewReplyRepository,
 		ProgramRepository programRepository, ReservationRepository reservationRepository,
-		ReviewCacheService reviewCacheService) {
+		ReviewCacheService reviewCacheService, EntityManager entityManager) {
 		this.reviewRepository = reviewRepository;
 		this.reviewReplyRepository = reviewReplyRepository;
 		this.programRepository = programRepository;
 		this.reservationRepository = reservationRepository;
 		this.reviewCacheService = reviewCacheService;
+		this.entityManager = entityManager;
 	}
 
 	@Transactional
@@ -162,6 +165,13 @@ public class ReviewService {
 
 		// 답글도 함께 soft delete
 		reviewReplyRepository.softDeleteByReview(review);
+
+		/**
+		 * 영속성 컨텍스트를 최신 DB 상태로 동기화
+		 * JPQL UPDATE 쿼리는 영속성 컨텍스트를 거치지 않으므로,
+		 * 같은 트랜잭션에서 review.getReplies()를 다시 사용할 경우를 대비
+		 */
+		entityManager.refresh(review);
 
 		// 캐시 무효화
 		reviewCacheService.invalidateReviewCacheByPattern(review.getProgram().getId());
