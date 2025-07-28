@@ -46,7 +46,7 @@ public class ProgramRepositoryCustomImpl implements ProgramRepositoryCustom {
 			conditions.add(program.aptitudeCategory.id.in(requestDto.getAptitudeIds()));
 		}
 
-		OrderSpecifier<?> sortOrder = getSortOrder(requestDto.getSort(), program);
+		OrderSpecifier<? extends Comparable<?>> sortOrder = getSortOrder(requestDto.getSort(), program);
 
 		List<Program> content = jpaQueryFactory.selectFrom(program)
 			.where(conditions.toArray(
@@ -74,11 +74,12 @@ public class ProgramRepositoryCustomImpl implements ProgramRepositoryCustom {
 	/**
 	 * 정렬 조건 설정
 	 */
-	private OrderSpecifier<?> getSortOrder(SortType sortType, QProgram program) {
-		OrderSpecifier<?> orderSpecifier;
+	private OrderSpecifier<? extends Comparable<?>> getSortOrder(SortType sortType, QProgram program) {
+		OrderSpecifier<? extends Comparable<?>> orderSpecifier;
 
 		if (sortType == null) {
-			throw new CustomException(ErrorCode.INVALID_SORT_TYPE);
+			orderSpecifier = program.createdAt.desc();
+			return orderSpecifier;
 		}
 
 		switch (sortType) {

@@ -67,7 +67,7 @@ Authorization: Bearer {{accessToken}}
 }
 
 ### 체험 프로그램 전체 조회 API
-GET http://localhost:8080/program/search?sort=PRICE_ASC
+GET http://localhost:8080/program/search?sort=PRICE_DESC
 Accept: application/json
 Authorization: Bearer {{accessToken}}
 

@@ -50,8 +50,7 @@ public class ProgramController {
 	 */
 	@Operation(
 		summary = "체험 프로그램 생성",
-		description = "로컬 크리에이터 유저가 체험 프로그램을 생성합니다.",
-		security = @SecurityRequirement(name = "bearerAuth")
+		description = "로컬 크리에이터 유저가 체험 프로그램을 생성합니다."
 	)
 	@PreAuthorize("hasRole('LOCAL_CREATOR')")
 	@PostMapping(value = "/localcreator/programs", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -84,8 +83,7 @@ public class ProgramController {
 	 */
 	@Operation(
 		summary = "체험 프로그램 조회",
-		description = "유저가 정렬 조건을 설정하여 체험 프로그램을 조회 할 수 있습니다.",
-		security = @SecurityRequirement(name = "bearerAuth")
+		description = "유저가 정렬 조건을 설정하여 체험 프로그램을 조회 할 수 있습니다."
 	)
 	@GetMapping(value = "/program/search")
 	public ResponseEntity<CommonResponseDto<PaginationResponseDto<ProgramCreateResponseDto>>> searchProgram(
@@ -96,15 +94,7 @@ public class ProgramController {
 
 		PaginationResponseDto<ProgramCreateResponseDto> responsePage = programService.searchProgram(requestDto, memberId);
 
-		PaginationResponseDto<ProgramCreateResponseDto> pagination = new PaginationResponseDto<ProgramCreateResponseDto>(
-			responsePage.getContent(),
-			responsePage.getPage(),
-			responsePage.getSize(),
-			responsePage.getTotalElements(),
-			responsePage.getTotalPages()
-		);
-
-		return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, pagination));
+		return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, responsePage));
 	}
 
 }
