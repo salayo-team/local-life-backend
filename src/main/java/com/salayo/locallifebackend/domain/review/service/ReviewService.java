@@ -8,7 +8,7 @@ import com.salayo.locallifebackend.domain.reservation.repository.ReservationRepo
 import com.salayo.locallifebackend.domain.review.dto.ReviewRequestDto;
 import com.salayo.locallifebackend.domain.review.dto.ReviewResponseDto;
 import com.salayo.locallifebackend.domain.review.entity.Review;
-import com.salayo.locallifebackend.domain.review.enums.ReviewStatus;
+import com.salayo.locallifebackend.global.enums.DeletedStatus;
 import com.salayo.locallifebackend.domain.review.repository.ReviewReplyRepository;
 import com.salayo.locallifebackend.domain.review.repository.ReviewRepository;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
@@ -64,7 +64,7 @@ public class ReviewService {
 		// validateContentLength(requestDto.getContent());
 
 		// 중복 리뷰 체크
-		if (reviewRepository.existsByMemberAndProgramAndReviewStatus(member, program, ReviewStatus.DISPLAYED)) {
+		if (reviewRepository.existsByMemberAndProgramAndDeletedStatus(member, program, DeletedStatus.DISPLAYED)) {
 			throw new CustomException(ErrorCode.DUPLICATE_REVIEW);
 		}
 
@@ -87,7 +87,7 @@ public class ReviewService {
 	public List<ReviewResponseDto> getMyReviews(Member member) {
 		log.info("내 리뷰 조회 - memberId: {}", member.getId());
 
-		List<Review> reviews = reviewRepository.findByMemberAndReviewStatus(member, ReviewStatus.DISPLAYED);
+		List<Review> reviews = reviewRepository.findByMemberAndDeletedStatus(member, DeletedStatus.DISPLAYED);
 
 		return reviews.stream()
 			.map(ReviewResponseDto::new)
@@ -101,7 +101,7 @@ public class ReviewService {
 		Program program = programRepository.findById(programId)
 			.orElseThrow(() -> new CustomException(ErrorCode.PROGRAM_NOT_FOUND));
 
-		List<Review> reviews = reviewRepository.findByProgramAndReviewStatus(program, ReviewStatus.DISPLAYED);
+		List<Review> reviews = reviewRepository.findByProgramAndDeletedStatus(program, DeletedStatus.DISPLAYED);
 
 		return reviews.stream()
 			.map(ReviewResponseDto::new)
@@ -112,7 +112,7 @@ public class ReviewService {
 	public List<ReviewResponseDto> getAllReviews() {
 		log.info("전체 리뷰 조회");
 
-		List<Review> reviews = reviewRepository.findAllByReviewStatus(ReviewStatus.DISPLAYED);
+		List<Review> reviews = reviewRepository.findAllByDeletedStatus(DeletedStatus.DISPLAYED);
 
 		return reviews.stream()
 			.map(ReviewResponseDto::new)
@@ -126,7 +126,7 @@ public class ReviewService {
 		// 글자수 제한 검증 - DTO @Valid로 이미 검증됨
 		// validateContentLength(requestDto.getContent());
 
-		Review review = reviewRepository.findByIdAndReviewStatusOrThrow(reviewId, ReviewStatus.DISPLAYED);
+		Review review = reviewRepository.findByIdAndDeletedStatusOrThrow(reviewId, DeletedStatus.DISPLAYED);
 
 		// 본인 확인
 		if (!review.getMember().getId().equals(member.getId())) {
@@ -134,7 +134,7 @@ public class ReviewService {
 		}
 
 		// 답글 존재 여부 확인
-		if (reviewReplyRepository.existsByReviewAndReviewStatus(review, ReviewStatus.DISPLAYED)) {
+		if (reviewReplyRepository.existsByReviewAndDeletedStatus(review, DeletedStatus.DISPLAYED)) {
 			throw new CustomException(ErrorCode.CANNOT_UPDATE_REVIEW_WITH_REPLY);
 		}
 
@@ -150,7 +150,7 @@ public class ReviewService {
 	public void deleteReview(Long reviewId, Member member) {
 		log.info("리뷰 삭제 - reviewId: {}, memberId: {}", reviewId, member.getId());
 
-		Review review = reviewRepository.findByIdAndReviewStatusOrThrow(reviewId, ReviewStatus.DISPLAYED);
+		Review review = reviewRepository.findByIdAndDeletedStatusOrThrow(reviewId, DeletedStatus.DISPLAYED);
 
 		// 본인 확인
 		if (!review.getMember().getId().equals(member.getId())) {

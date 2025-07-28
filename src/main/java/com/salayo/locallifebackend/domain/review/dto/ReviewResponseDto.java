@@ -1,7 +1,7 @@
 package com.salayo.locallifebackend.domain.review.dto;
 
 import com.salayo.locallifebackend.domain.review.entity.Review;
-import com.salayo.locallifebackend.domain.review.enums.ReviewStatus;
+import com.salayo.locallifebackend.global.enums.DeletedStatus;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -10,6 +10,7 @@ import lombok.Getter;
 
 @Getter
 public class ReviewResponseDto {
+
 	private final Long reviewId;
 	private final String memberNickname;
 	private final String programTitle;
@@ -28,7 +29,7 @@ public class ReviewResponseDto {
 		this.isModified = review.isModified();
 		this.createdAt = review.getCreatedAt();
 		this.replies = review.getReplies().stream()
-			.filter(reply -> reply.getReviewStatus() == ReviewStatus.DISPLAYED)
+			.filter(reply -> reply.getDeletedStatus() == DeletedStatus.DISPLAYED)
 			.map(ReviewReplyResponseDto::new)
 			.collect(Collectors.toList());
 	}

@@ -3,6 +3,7 @@ package com.salayo.locallifebackend.domain.review.entity;
 import com.salayo.locallifebackend.domain.member.entity.Member;
 import com.salayo.locallifebackend.domain.review.enums.ReviewStatus;
 import com.salayo.locallifebackend.global.entity.BaseEntity;
+import com.salayo.locallifebackend.global.enums.DeletedStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -42,8 +43,8 @@ public class ReviewReply extends BaseEntity {
 	private String content;
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "reply_status", nullable = false)
-	private ReviewStatus reviewStatus = ReviewStatus.DISPLAYED;
+	@Column(name = "deleted_status", nullable = false)
+	private DeletedStatus deletedStatus = DeletedStatus.DISPLAYED;
 
 	@Column(name = "deleted_at")
 	private LocalDateTime deletedAt;
@@ -53,11 +54,11 @@ public class ReviewReply extends BaseEntity {
 		this.review = review;
 		this.member = member;
 		this.content = content;
-		this.reviewStatus = ReviewStatus.DISPLAYED;
+		this.deletedStatus = DeletedStatus.DISPLAYED;
 	}
 
 	public void deleteReply() {
-		this.reviewStatus = ReviewStatus.DELETED;
+		this.deletedStatus = DeletedStatus.DELETED;
 		this.deletedAt = LocalDateTime.now();
 	}
 }

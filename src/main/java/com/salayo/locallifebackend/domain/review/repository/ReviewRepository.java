@@ -3,7 +3,7 @@ package com.salayo.locallifebackend.domain.review.repository;
 import com.salayo.locallifebackend.domain.member.entity.Member;
 import com.salayo.locallifebackend.domain.program.entity.Program;
 import com.salayo.locallifebackend.domain.review.entity.Review;
-import com.salayo.locallifebackend.domain.review.enums.ReviewStatus;
+import com.salayo.locallifebackend.global.enums.DeletedStatus;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
 import com.salayo.locallifebackend.global.error.ErrorCode;
 import java.util.List;
@@ -16,24 +16,25 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, Long> {
 
-	Optional<Review> findByIdAndReviewStatus(Long reviewId, ReviewStatus reviewStatus);
+	Optional<Review> findByIdAndDeletedStatus(Long reviewId, DeletedStatus deletedStatus);
 
-	boolean existsByMemberAndProgramAndReviewStatus(Member member, Program program, ReviewStatus reviewStatus);
+	boolean existsByMemberAndProgramAndDeletedStatus(Member member, Program program, DeletedStatus deletedStatus);
 
-	@Query("SELECT r FROM Review r WHERE r.member = :member AND r.reviewStatus = :reviewStatus ORDER BY r.createdAt DESC")
-	List<Review> findByMemberAndReviewStatus(@Param("member") Member member, @Param("reviewStatus") ReviewStatus reviewStatus);
+	@Query("SELECT r FROM Review r WHERE r.member = :member AND r.deletedStatus = :deletedStatus ORDER BY r.createdAt DESC")
+	List<Review> findByMemberAndDeletedStatus(@Param("member") Member member, @Param("deletedStatus") DeletedStatus deletedStatus);
 
-	@Query("SELECT r FROM Review r WHERE r.program = :program AND r.reviewStatus = :reviewStatus ORDER BY r.createdAt DESC")
-	List<Review> findByProgramAndReviewStatus(@Param("program") Program program, @Param("reviewStatus") ReviewStatus reviewStatus);
+	@Query("SELECT r FROM Review r WHERE r.program = :program AND r.deletedStatus = :deletedStatus ORDER BY r.createdAt DESC")
+	List<Review> findByProgramAndDeletedStatus(@Param("program") Program program, @Param("deletedStatus") DeletedStatus deletedStatus);
 
-	@Query("SELECT r FROM Review r WHERE r.reviewStatus = :reviewStatus ORDER BY r.createdAt DESC")
-	List<Review> findAllByReviewStatus(@Param("reviewStatus") ReviewStatus reviewStatus);
+	@Query("SELECT r FROM Review r WHERE r.deletedStatus = :deletedStatus ORDER BY r.createdAt DESC")
+	List<Review> findAllByDeletedStatus(@Param("deletedStatus") DeletedStatus deletedStatus);
 
-	@Query("SELECT r FROM Review r LEFT JOIN FETCH r.replies WHERE r.id = :reviewId AND r.reviewStatus = :reviewStatus")
-	Optional<Review> findByIdAndReviewStatusWithReplies(@Param("reviewId") Long reviewId, @Param("reviewStatus") ReviewStatus reviewStatus);
+	@Query("SELECT r FROM Review r LEFT JOIN FETCH r.replies WHERE r.id = :reviewId AND r.deletedStatus = :deletedStatus")
+	Optional<Review> findByIdAndDeletedStatusWithReplies(@Param("reviewId") Long reviewId,
+		@Param("deletedStatus") DeletedStatus deletedStatus);
 
-	default Review findByIdAndReviewStatusOrThrow(Long reviewId, ReviewStatus reviewStatus) {
-		return findByIdAndReviewStatus(reviewId, reviewStatus)
+	default Review findByIdAndDeletedStatusOrThrow(Long reviewId, DeletedStatus deletedStatus) {
+		return findByIdAndDeletedStatus(reviewId, deletedStatus)
 			.orElseThrow(() -> new CustomException(ErrorCode.REVIEW_NOT_FOUND));
 	}
 }

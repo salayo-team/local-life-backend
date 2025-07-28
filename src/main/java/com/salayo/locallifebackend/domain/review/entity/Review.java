@@ -3,8 +3,8 @@ package com.salayo.locallifebackend.domain.review.entity;
 import com.salayo.locallifebackend.domain.member.entity.Member;
 import com.salayo.locallifebackend.domain.program.entity.Program;
 import com.salayo.locallifebackend.domain.reservation.entity.Reservation;
-import com.salayo.locallifebackend.domain.review.enums.ReviewStatus;
 import com.salayo.locallifebackend.global.entity.BaseEntity;
+import com.salayo.locallifebackend.global.enums.DeletedStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -51,8 +51,8 @@ public class Review extends BaseEntity {
 	private String content;
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "review_status", nullable = false)
-	private ReviewStatus reviewStatus = ReviewStatus.DISPLAYED;
+	@Column(name = "deleted_status", nullable = false)
+	private DeletedStatus deletedStatus = DeletedStatus.DISPLAYED;
 
 	@Column(name = "deleted_at")
 	private LocalDateTime deletedAt;
@@ -66,7 +66,7 @@ public class Review extends BaseEntity {
 		this.program = program;
 		this.reservation = reservation;
 		this.content = content;
-		this.reviewStatus = ReviewStatus.DISPLAYED;
+		this.deletedStatus = DeletedStatus.DISPLAYED;
 	}
 
 	public void updateContent(String content) {
@@ -74,14 +74,15 @@ public class Review extends BaseEntity {
 	}
 
 	public void deleteReview() {
-		this.reviewStatus = ReviewStatus.DELETED;
+		this.deletedStatus = DeletedStatus.DELETED;
 		this.deletedAt = LocalDateTime.now();
 	}
 
 	public boolean isModified() {
 		// modifiedAt이 null이면 수정되지 않은 것으로 간주
-		if (getModifiedAt() == null)
+		if (getModifiedAt() == null) {
 			return false;
+		}
 
 		// createdAt과 modifiedAt이 정확히 같거나, modifiedAt이 createdAt보다 먼저이면 수정되지 않은 것으로 간주
 		// (BaseEntity의 @CreatedDate, @LastModifiedDate 설정에 따라 createdAt과 modifiedAt이 동일하게 초기화될 수 있음)

@@ -5,13 +5,11 @@ import com.salayo.locallifebackend.domain.review.dto.ReviewReplyRequestDto;
 import com.salayo.locallifebackend.domain.review.dto.ReviewReplyResponseDto;
 import com.salayo.locallifebackend.domain.review.entity.Review;
 import com.salayo.locallifebackend.domain.review.entity.ReviewReply;
-import com.salayo.locallifebackend.domain.review.enums.ReviewStatus;
+import com.salayo.locallifebackend.global.enums.DeletedStatus;
 import com.salayo.locallifebackend.domain.review.repository.ReviewReplyRepository;
 import com.salayo.locallifebackend.domain.review.repository.ReviewRepository;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
 import com.salayo.locallifebackend.global.error.ErrorCode;
-import com.salayo.locallifebackend.global.util.CacheKeyPrefix;
-import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,13 +38,13 @@ public class ReviewReplyService {
 		// validateContentLength(requestDto.getContent());
 
 		// 리뷰 존재 확인
-		Review review = reviewRepository.findByIdAndReviewStatusOrThrow(reviewId, ReviewStatus.DISPLAYED);
+		Review review = reviewRepository.findByIdAndDeletedStatusOrThrow(reviewId, DeletedStatus.DISPLAYED);
 
 		// 프로그램 소유권 확인
 		validateProgramOwnership(review, creator);
 
 		// 답글 중복 체크
-		if (reviewReplyRepository.existsByReviewAndReviewStatus(review, ReviewStatus.DISPLAYED)) {
+		if (reviewReplyRepository.existsByReviewAndDeletedStatus(review, DeletedStatus.DISPLAYED)) {
 			throw new CustomException(ErrorCode.DUPLICATE_REVIEW_REPLY);
 		}
 
