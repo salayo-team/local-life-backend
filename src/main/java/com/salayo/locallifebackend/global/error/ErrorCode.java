@@ -28,6 +28,13 @@ public enum ErrorCode {
     ALREADY_PROCESSED_LOCALCREATOR(HttpStatus.BAD_REQUEST, "이미 승인된 로컬크리에이터입니다."),
     SAME_AS_OLD_PASSWORD(HttpStatus.BAD_REQUEST, "이전과 동일한 비밀번호는 사용할 수 없습니다."),
     INVALID_PASSWORD(HttpStatus.BAD_REQUEST, "현재 비밀번호가 일치하지 않습니다."),
+    MISSING_API_KEY(HttpStatus.BAD_REQUEST, "API KEY 값이 누락 되었습니다."),
+    EMAIL_NOT_VERIFIED(HttpStatus.BAD_REQUEST, "이메일 인증이 완료되지 않았습니다."),
+    INVALID_SORT_TYPE(HttpStatus.BAD_REQUEST, "정렬 조건이 올바르지 않습니다."),
+    DUPLICATE_REVIEW(HttpStatus.BAD_REQUEST, "이미 리뷰를 작성하셨습니다."),
+    DUPLICATE_REVIEW_REPLY(HttpStatus.BAD_REQUEST, "이미 답글을 작성하셨습니다."),
+    REVIEW_CONTENT_TOO_LONG(HttpStatus.BAD_REQUEST, "리뷰는 최대 500자까지 작성 가능합니다."),
+    CANNOT_UPDATE_REVIEW_WITH_REPLY(HttpStatus.BAD_REQUEST, "답글이 달린 리뷰는 수정할 수 없습니다."),
 
     // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
@@ -41,6 +48,8 @@ public enum ErrorCode {
     FORBIDDEN_ACCESS(HttpStatus.FORBIDDEN, "접근이 거부됐습니다."),
     CREATOR_NOT_APPROVED(HttpStatus.FORBIDDEN, "관리자 승인 후 로그인 가능합니다."),
     LOCAL_CREATOR_NOT_APPROVED(HttpStatus.FORBIDDEN, "로컬 크리에이터로 승인되지 않은 유저입니다."),
+    RESERVATION_NOT_ALLOWED(HttpStatus.FORBIDDEN, "예약을 할 수 있는 권한이 없습니다."),
+    REVIEW_PERIOD_EXPIRED(HttpStatus.FORBIDDEN, "리뷰 작성 기한이 만료되었습니다."),
 
     // 404 NOT_FOUND
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 회원을 찾을 수 없습니다."),
@@ -49,6 +58,10 @@ public enum ErrorCode {
     APTITUDE_NOT_FOUND(HttpStatus.NOT_FOUND, "적성을 찾을 수 없습니다." ),
     LOCALCREATOR_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 회원을 찾을 수 없습니다."),
     NOT_FOUND_TEST_PROGRESS(HttpStatus.NOT_FOUND,"진행 중인 테스트가 없습니다."),
+    PROGRAM_SCHEDULE_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 프로그램 스케줄을 찾을 수 없습니다."),
+    PROGRAM_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 체험 프로그램을 찾을 수 없습니다."),
+    RESERVATION_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 예약을 찾을 수 없습니다."),
+    REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 리뷰를 찾을 수 없습니다."),
 
     // 408 REQUEST_TIMEOUT
     AI_TIMEOUT(HttpStatus.REQUEST_TIMEOUT, "AI 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요."),

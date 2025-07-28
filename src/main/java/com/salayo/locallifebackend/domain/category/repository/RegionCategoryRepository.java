@@ -12,4 +12,6 @@ public interface RegionCategoryRepository extends JpaRepository<RegionCategory, 
 	default RegionCategory findByIdOrElseThrow(Long regionCategoryId){
 		return findById(regionCategoryId).orElseThrow(() -> new CustomException(ErrorCode.REGION_NOT_FOUND));
 	};
+
+	boolean existsByRegionName(String regionName);
 }

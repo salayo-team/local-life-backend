@@ -17,6 +17,10 @@ Content-Type: application/json
 GET http://localhost:8080/admin/localcreators
 Authorization: Bearer {{accessToken}}
 
+###로컬 크리에이터 상세조회 - 미리보기
+GET http://localhost:8080/admin/localcreators/3
+Authorization: Bearer {{accessToken}}
+
 ### 로컬 크리에이터 회원가입 승인
 PATCH http://localhost:8080/admin/localcreators/1/approve
 Authorization: Bearer {{accessToken}}
