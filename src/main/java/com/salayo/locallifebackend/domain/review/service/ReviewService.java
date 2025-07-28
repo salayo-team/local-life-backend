@@ -50,11 +50,8 @@ public class ReviewService {
 		log.info("리뷰 작성 시작 - memberId: {}, programId: {}", member.getId(), programId);
 
 		// 프로그램, 예약 조회
-		Program program = programRepository.findById(programId)
-			.orElseThrow(() -> new CustomException(ErrorCode.PROGRAM_NOT_FOUND));
-
-		Reservation reservation = reservationRepository.findById(reservationId)
-			.orElseThrow(() -> new CustomException(ErrorCode.RESERVATION_NOT_FOUND));
+		Program program = programRepository.findByIdOrElseThrow(programId);
+		Reservation reservation = reservationRepository.findByIdOrElseThrow(reservationId);
 
 		// 체험 완료 확인
 		validateCompletedReservation(reservation, member);
@@ -101,8 +98,7 @@ public class ReviewService {
 	public List<ReviewResponseDto> getProgramReviews(Long programId) {
 		log.info("프로그램 리뷰 조회 - programId: {}", programId);
 
-		Program program = programRepository.findById(programId)
-			.orElseThrow(() -> new CustomException(ErrorCode.PROGRAM_NOT_FOUND));
+		Program program = programRepository.findByIdOrElseThrow(programId);
 
 		List<Review> reviews = reviewRepository.findByProgramAndDeletedStatus(program, DeletedStatus.DISPLAYED);
 
