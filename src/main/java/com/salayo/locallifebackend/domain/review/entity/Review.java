@@ -79,6 +79,19 @@ public class Review extends BaseEntity {
 	}
 
 	public boolean isModified() {
-		return getModifiedAt() != null && getModifiedAt().isAfter(getCreatedAt());
+		// modifiedAt이 null이면 수정되지 않은 것으로 간주
+		if (getModifiedAt() == null)
+			return false;
+
+		// createdAt과 modifiedAt이 정확히 같거나, modifiedAt이 createdAt보다 먼저이면 수정되지 않은 것으로 간주
+		// (BaseEntity의 @CreatedDate, @LastModifiedDate 설정에 따라 createdAt과 modifiedAt이 동일하게 초기화될 수 있음)
+		if (getModifiedAt().isEqual(getCreatedAt()) || getModifiedAt().isBefore(getCreatedAt())) {
+			return false;
+		}
+
+		// createdAt에 2초의 버퍼 시간을 더한 시간 이후에 modifiedAt이 발생해야 실제 수정으로 간주
+		// 이는 DB 동기화 지연이나 Auditing 초기화로 인한 미세한 시간 차이를 무시하기 위함
+		return !getModifiedAt().isEqual(getCreatedAt()) &&
+			getModifiedAt().isAfter(getCreatedAt().plusSeconds(2));
 	}
 }
