@@ -10,9 +10,9 @@ import com.salayo.locallifebackend.domain.review.repository.ReviewReplyRepositor
 import com.salayo.locallifebackend.domain.review.repository.ReviewRepository;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
 import com.salayo.locallifebackend.global.error.ErrorCode;
+import com.salayo.locallifebackend.global.util.CacheKeyPrefix;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,15 +22,14 @@ public class ReviewReplyService {
 
 	private final ReviewRepository reviewRepository;
 	private final ReviewReplyRepository reviewReplyRepository;
-	private final RedisTemplate<String, String> redisTemplate;
+	private final ReviewCacheService reviewCacheService;
 
-	private static final String REVIEW_CACHE_KEY = "review:program:";
 
 	public ReviewReplyService(ReviewRepository reviewRepository, ReviewReplyRepository reviewReplyRepository,
-		@Qualifier("reviewRedisTemplate") RedisTemplate<String, String> redisTemplate) {
+		ReviewCacheService reviewCacheService) {
 		this.reviewRepository = reviewRepository;
 		this.reviewReplyRepository = reviewReplyRepository;
-		this.redisTemplate = redisTemplate;
+		this.reviewCacheService = reviewCacheService;
 	}
 
 	@Transactional
@@ -60,7 +59,7 @@ public class ReviewReplyService {
 		ReviewReply savedReply = reviewReplyRepository.save(reviewReply);
 
 		// 캐시 무효화
-		invalidateReviewCache(review.getProgram().getId());
+		reviewCacheService.invalidateReviewCacheByPattern(review.getProgram().getId());
 
 		return new ReviewReplyResponseDto(savedReply);
 	}
@@ -71,11 +70,5 @@ public class ReviewReplyService {
 		if (!review.getProgram().getMember().getId().equals(creator.getId())) {
 			throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
 		}
-	}
-
-
-	private void invalidateReviewCache(Long programId) {
-		String cacheKey = REVIEW_CACHE_KEY + programId;
-		redisTemplate.delete(cacheKey);
 	}
 }
