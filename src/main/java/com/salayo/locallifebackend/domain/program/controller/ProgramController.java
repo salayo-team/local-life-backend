@@ -4,8 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.salayo.locallifebackend.domain.file.enums.FilePurpose;
 import com.salayo.locallifebackend.domain.program.dto.ProgramCreateRequestDto;
 import com.salayo.locallifebackend.domain.program.dto.ProgramCreateResponseDto;
+import com.salayo.locallifebackend.domain.program.dto.ProgramSearchRequestDto;
 import com.salayo.locallifebackend.domain.program.service.ProgramService;
 import com.salayo.locallifebackend.global.dto.CommonResponseDto;
+import com.salayo.locallifebackend.global.dto.PaginationResponseDto;
 import com.salayo.locallifebackend.global.error.ErrorCode;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
 import com.salayo.locallifebackend.global.security.MemberDetails;
@@ -21,6 +23,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -46,8 +50,7 @@ public class ProgramController {
 	 */
 	@Operation(
 		summary = "체험 프로그램 생성",
-		description = "로컬 크리에이터 유저가 체험 프로그램을 생성합니다.",
-		security = @SecurityRequirement(name = "bearerAuth")
+		description = "로컬 크리에이터 유저가 체험 프로그램을 생성합니다."
 	)
 	@PreAuthorize("hasRole('LOCAL_CREATOR')")
 	@PostMapping(value = "/localcreator/programs", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -74,4 +77,24 @@ public class ProgramController {
 
 		return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponseDto.success(SuccessCode.CREATE_SUCCESS, responseDto));
 	}
+
+	/**
+	 * 체험 프로그램 전체 조회 API
+	 */
+	@Operation(
+		summary = "체험 프로그램 조회",
+		description = "유저가 정렬 조건을 설정하여 체험 프로그램을 조회 할 수 있습니다."
+	)
+	@GetMapping(value = "/program/search")
+	public ResponseEntity<CommonResponseDto<PaginationResponseDto<ProgramCreateResponseDto>>> searchProgram(
+		@ModelAttribute ProgramSearchRequestDto requestDto,
+		@AuthenticationPrincipal MemberDetails memberDetails) {
+
+		Long memberId = memberDetails.getMember().getId();
+
+		PaginationResponseDto<ProgramCreateResponseDto> responsePage = programService.searchProgram(requestDto, memberId);
+
+		return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, responsePage));
+	}
+
 }
