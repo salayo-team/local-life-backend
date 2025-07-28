@@ -16,9 +16,7 @@ public class ReviewCacheService {
 	@Qualifier("reviewRedisTemplate")
 	private final RedisTemplate<String, String> redisTemplate;
 
-	/**
-	 * 프로그램 리뷰 캐시 무효화 단일 키 삭제 방식
-	 */
+	// 프로그램 리뷰 캐시 무효화 단일 키 삭제 방식
 	public void invalidateReviewCache(Long programId) {
 		String cacheKey = CacheKeyPrefix.REVIEW_PROGRAM + programId;
 		redisTemplate.delete(cacheKey);
@@ -42,17 +40,13 @@ public class ReviewCacheService {
 		}
 	}
 
-	/**
-	 * 리뷰 캐시 조회
-	 */
+	// 리뷰 캐시 조회
 	public String getReviewCache(Long programId) {
 		String cacheKey = CacheKeyPrefix.REVIEW_PROGRAM + programId;
 		return redisTemplate.opsForValue().get(cacheKey);
 	}
 
-	/**
-	 * 리뷰 캐시 저장
-	 */
+	// 리뷰 캐시 저장
 	public void setReviewCache(Long programId, String value, long ttlMinutes) {
 		String cacheKey = CacheKeyPrefix.REVIEW_PROGRAM + programId;
 		redisTemplate.opsForValue().set(cacheKey, value, ttlMinutes, java.util.concurrent.TimeUnit.MINUTES);
