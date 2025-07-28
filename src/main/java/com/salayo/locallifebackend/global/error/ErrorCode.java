@@ -54,6 +54,8 @@ public enum ErrorCode {
     LOCALCREATOR_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 회원을 찾을 수 없습니다."),
     NOT_FOUND_TEST_PROGRESS(HttpStatus.NOT_FOUND,"진행 중인 테스트가 없습니다."),
     PROGRAM_SCHEDULE_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 프로그램 스케줄을 찾을 수 없습니다."),
+    PROGRAM_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 체험 프로그램을 찾을 수 없습니다."),
+    RESERVATION_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 예약을 찾을 수 없습니다."),
 
     // 408 REQUEST_TIMEOUT
     AI_TIMEOUT(HttpStatus.REQUEST_TIMEOUT, "AI 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요."),
