@@ -56,12 +56,13 @@ public enum ErrorCode {
     EMAIL_CODE_EXPIRED(HttpStatus.NOT_FOUND, "인증 코드가 만료되었거나 존재하지 않습니다."),
     REGION_NOT_FOUND(HttpStatus.NOT_FOUND, "지역을 찾을 수 없습니다."),
     APTITUDE_NOT_FOUND(HttpStatus.NOT_FOUND, "적성을 찾을 수 없습니다." ),
-    LOCALCREATOR_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 회원을 찾을 수 없습니다."),
+    LOCAL_CREATOR_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 회원을 찾을 수 없습니다."),
     NOT_FOUND_TEST_PROGRESS(HttpStatus.NOT_FOUND,"진행 중인 테스트가 없습니다."),
     PROGRAM_SCHEDULE_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 프로그램 스케줄을 찾을 수 없습니다."),
     PROGRAM_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 체험 프로그램을 찾을 수 없습니다."),
     RESERVATION_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 예약을 찾을 수 없습니다."),
     REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 리뷰를 찾을 수 없습니다."),
+    MAGAZINE_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 매거진을 찾을 수 없습니다."),
 
     // 408 REQUEST_TIMEOUT
     AI_TIMEOUT(HttpStatus.REQUEST_TIMEOUT, "AI 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요."),
