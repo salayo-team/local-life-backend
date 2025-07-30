@@ -18,7 +18,7 @@ public interface LocalCreatorRepository extends JpaRepository<LocalCreator, Long
 
     default LocalCreator findByIdOrThrow(Long id) {
         return findById(id)
-            .orElseThrow(() -> new CustomException(ErrorCode.LOCALCREATOR_NOT_FOUND));
+            .orElseThrow(() -> new CustomException(ErrorCode.LOCAL_CREATOR_NOT_FOUND));
     }
 
 }
