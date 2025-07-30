@@ -2,6 +2,7 @@ package com.salayo.locallifebackend.domain.magazine.controller;
 
 import com.salayo.locallifebackend.domain.file.enums.FilePurpose;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineCreateRequestDto;
+import com.salayo.locallifebackend.domain.magazine.dto.MagazineDraftDetailResponseDto;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineDraftListResponseDto;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineFileUploadResponseDto;
 import com.salayo.locallifebackend.domain.magazine.service.MagazineFileService;
@@ -20,6 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -47,7 +49,7 @@ public class AdminMagazineController {
     public ResponseEntity<CommonResponseDto<Void>> createMagazine(
         @RequestBody @Valid MagazineCreateRequestDto createRequestDto,
         @AuthenticationPrincipal MemberDetails memberDetails
-        ) {
+    ) {
         magazineService.createMagazine(createRequestDto, memberDetails.getMember().getId());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponseDto.success(SuccessCode.CREATE_SUCCESS, null));
@@ -58,7 +60,7 @@ public class AdminMagazineController {
     @PostMapping(value = "/files/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CommonResponseDto<List<MagazineFileUploadResponseDto>>> uploadFiles(
         @RequestPart("files") @NotNull List<MultipartFile> files,
-        @RequestParam("purpose")FilePurpose filePurpose
+        @RequestParam("purpose") FilePurpose filePurpose
     ) {
         List<MagazineFileUploadResponseDto> uploadResponseDto = magazineFileService.uploadFiles(files, filePurpose);
 
@@ -72,5 +74,14 @@ public class AdminMagazineController {
         List<MagazineDraftListResponseDto> draftList = magazineService.getDraftMagazines();
 
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, draftList));
+    }
+
+    @Operation(summary = "1차등록(임시등록) 매거진 상세 조회", description = "관리자가 1차등록 매거진의 상세 글을 조회")
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/{magazineId}")
+    public ResponseEntity<CommonResponseDto<MagazineDraftDetailResponseDto>> getDraftMagazineDetail(@PathVariable Long magazineId) {
+        MagazineDraftDetailResponseDto draftDetail = magazineService.getDraftMagazineDetail(magazineId);
+
+        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, draftDetail));
     }
 }

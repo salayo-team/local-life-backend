@@ -1,5 +1,9 @@
 package com.salayo.locallifebackend.domain.member.service;
 
+import static com.salayo.locallifebackend.global.util.CacheKeyPrefix.EMAIL_VERIFIED;
+import static com.salayo.locallifebackend.global.util.CacheKeyPrefix.PASSWORD_RESET_CODE;
+import static com.salayo.locallifebackend.global.util.CacheKeyPrefix.TOKEN_BLACKLIST;
+
 import com.salayo.locallifebackend.domain.email.service.EmailService;
 import com.salayo.locallifebackend.domain.file.entity.File;
 import com.salayo.locallifebackend.domain.file.entity.FileMapping;
@@ -167,7 +171,7 @@ public class AuthService {
 	}
 
 	public void checkEmailVerifiedOrThrow(String email) {
-		String flag = emailVerifiedRedisTemplate.opsForValue().get("email_verified:" + email);
+		String flag = emailVerifiedRedisTemplate.opsForValue().get(EMAIL_VERIFIED + email);
 
 		if (!"true".equals(flag)) {
 			throw new CustomException(ErrorCode.EMAIL_NOT_VERIFIED);
@@ -221,7 +225,7 @@ public class AuthService {
 		redisUtil.deleteAccessToken(member.getId());
 
 		long expiration = jwtProvider.getExpiration(accessToken);
-		blacklistRedisTemplate.opsForValue().set(accessToken, "logout", expiration, TimeUnit.MILLISECONDS);
+		blacklistRedisTemplate.opsForValue().set(TOKEN_BLACKLIST + accessToken, "logout", expiration, TimeUnit.MILLISECONDS);
 	}
 
 	public void sendPasswordResetCode(String email) {
@@ -229,14 +233,14 @@ public class AuthService {
 
 		String code = String.valueOf(new Random().nextInt(900_000) + 100_000);
 
-		emailVerifiedRedisTemplate.opsForValue().set("password_code:" + email, code, Duration.ofMinutes(5));
+		emailVerifiedRedisTemplate.opsForValue().set(PASSWORD_RESET_CODE + email, code, Duration.ofMinutes(5));
 
 		emailService.sendPasswordResetCode(email, code);
 	}
 
 	@Transactional
 	public void resetPassword(PasswordResetVerifyRequestDto resetVerifyRequestDto) {
-		String key = "password_code:" + resetVerifyRequestDto.getEmail();
+		String key = PASSWORD_RESET_CODE + resetVerifyRequestDto.getEmail();
 		String savedCode = emailVerifiedRedisTemplate.opsForValue().get(key);
 
 		if (savedCode == null) {

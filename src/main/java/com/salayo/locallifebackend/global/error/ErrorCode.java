@@ -35,6 +35,10 @@ public enum ErrorCode {
     DUPLICATE_REVIEW_REPLY(HttpStatus.BAD_REQUEST, "이미 답글을 작성하셨습니다."),
     REVIEW_CONTENT_TOO_LONG(HttpStatus.BAD_REQUEST, "리뷰는 최대 500자까지 작성 가능합니다."),
     CANNOT_UPDATE_REVIEW_WITH_REPLY(HttpStatus.BAD_REQUEST, "답글이 달린 리뷰는 수정할 수 없습니다."),
+    CANNOT_DELETE_BEFORE_START(HttpStatus.BAD_REQUEST, "시작일 7일 전에는 프로그램을 삭제할 수 없습니다."),
+    CANNOT_DELETE_COMPLETED_RESERVATION_EXISTS(HttpStatus.BAD_REQUEST, "체험 완료한 유저가 존재해 삭제할 수 없습니다."),
+    CANNOT_DELETE_ACTIVE_RESERVATION_EXIST(HttpStatus.BAD_REQUEST, "진행중인 예약이 있어 삭제할 수 없습니다."),
+    PROGRAM_DELETED(HttpStatus.BAD_REQUEST, "삭제된 체험 프로그램입니다."),
 
     // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
@@ -56,12 +60,13 @@ public enum ErrorCode {
     EMAIL_CODE_EXPIRED(HttpStatus.NOT_FOUND, "인증 코드가 만료되었거나 존재하지 않습니다."),
     REGION_NOT_FOUND(HttpStatus.NOT_FOUND, "지역을 찾을 수 없습니다."),
     APTITUDE_NOT_FOUND(HttpStatus.NOT_FOUND, "적성을 찾을 수 없습니다." ),
-    LOCALCREATOR_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 회원을 찾을 수 없습니다."),
+    LOCAL_CREATOR_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 회원을 찾을 수 없습니다."),
     NOT_FOUND_TEST_PROGRESS(HttpStatus.NOT_FOUND,"진행 중인 테스트가 없습니다."),
     PROGRAM_SCHEDULE_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 프로그램 스케줄을 찾을 수 없습니다."),
     PROGRAM_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 체험 프로그램을 찾을 수 없습니다."),
     RESERVATION_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 예약을 찾을 수 없습니다."),
     REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 리뷰를 찾을 수 없습니다."),
+    MAGAZINE_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 매거진을 찾을 수 없습니다."),
 
     // 408 REQUEST_TIMEOUT
     AI_TIMEOUT(HttpStatus.REQUEST_TIMEOUT, "AI 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요."),

@@ -5,6 +5,7 @@ import com.salayo.locallifebackend.domain.category.entity.RegionCategory;
 import com.salayo.locallifebackend.domain.category.repository.AptitudeCategoryRepository;
 import com.salayo.locallifebackend.domain.category.repository.RegionCategoryRepository;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineCreateRequestDto;
+import com.salayo.locallifebackend.domain.magazine.dto.MagazineDraftDetailResponseDto;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineDraftListResponseDto;
 import com.salayo.locallifebackend.domain.magazine.entity.Magazine;
 import com.salayo.locallifebackend.domain.magazine.enums.MagazineStatus;
@@ -12,7 +13,12 @@ import com.salayo.locallifebackend.domain.magazine.repository.MagazineRepository
 import com.salayo.locallifebackend.domain.member.entity.Member;
 import com.salayo.locallifebackend.domain.member.repository.MemberRepository;
 import com.salayo.locallifebackend.global.enums.DeletedStatus;
+import com.salayo.locallifebackend.global.error.ErrorCode;
+import com.salayo.locallifebackend.global.error.exception.CustomException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,13 +30,15 @@ public class MagazineService {
     private final RegionCategoryRepository regionCategoryRepository;
     private final AptitudeCategoryRepository aptitudeCategoryRepository;
     private final MemberRepository memberRepository;
+    private final MagazineFileService magazineFileService;
 
     public MagazineService(MagazineRepository magazineRepository, RegionCategoryRepository regionCategoryRepository,
-        AptitudeCategoryRepository aptitudeCategoryRepository, MemberRepository memberRepository) {
+        AptitudeCategoryRepository aptitudeCategoryRepository, MemberRepository memberRepository, MagazineFileService magazineFileService) {
         this.magazineRepository = magazineRepository;
         this.regionCategoryRepository = regionCategoryRepository;
         this.aptitudeCategoryRepository = aptitudeCategoryRepository;
         this.memberRepository = memberRepository;
+        this.magazineFileService = magazineFileService;
     }
 
     @Transactional
@@ -52,6 +60,24 @@ public class MagazineService {
             .build();
 
         magazineRepository.save(magazine);
+
+        List<String> imageUrls = extractImageUrls(createRequestDto.getContent());
+        for (String url : imageUrls) {
+            magazineFileService.updateFileReferenceIdByUrl(url, magazine.getId());
+        }
+    }
+
+    private List<String> extractImageUrls(String html) {
+        Pattern pattern = Pattern.compile("<img\\s+[^>]*src=[\"']([^\"']+)[\"']");
+        Matcher matcher = pattern.matcher(html);
+
+        List<String> urls = new ArrayList<>();
+
+        while (matcher.find()) {
+            urls.add(matcher.group(1));
+        }
+
+        return urls;
     }
 
     public List<MagazineDraftListResponseDto> getDraftMagazines() {
@@ -67,6 +93,30 @@ public class MagazineService {
                 .createdAt(m.getCreatedAt())
                 .build())
             .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public MagazineDraftDetailResponseDto getDraftMagazineDetail(Long magazineId) {
+        Magazine magazine = magazineRepository.findById(magazineId)
+            .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_NOT_FOUND));
+
+        if (magazine.getMagazineStatus() != MagazineStatus.DRAFT || magazine.getDeletedStatus() != DeletedStatus.DISPLAYED) {
+            throw new CustomException(ErrorCode.MAGAZINE_NOT_FOUND);
+        }
+
+        List<String> detailImageUrls = magazineFileService.getDetailImageUrls(magazineId);
+
+        return MagazineDraftDetailResponseDto.builder()
+            .id(magazine.getId())
+            .title(magazine.getTitle())
+            .content(magazine.getContent())
+            .thumnailUrl(magazine.getThumbnailUrl())
+            .detailImageUrls(detailImageUrls)
+            .regionName(magazine.getRegionCategory().getRegionName())
+            .aptitudeName(magazine.getAptitudeCategory().getAptitudeName())
+            .adminEmail(magazine.getAdmin().getEmail())
+            .createdAt(magazine.getCreatedAt())
+            .build();
     }
 
 }

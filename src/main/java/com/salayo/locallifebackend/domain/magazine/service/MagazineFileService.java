@@ -12,7 +12,9 @@ import com.salayo.locallifebackend.global.error.ErrorCode;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
@@ -55,6 +57,21 @@ public class MagazineFileService {
             fileUpload.add(MagazineFileUploadResponseDto.builder().fileUrl(storeUrl).build());
         }
         return fileUpload;
+    }
+
+    public List<String> getDetailImageUrls(Long magazineId) {
+        List<FileMapping> mappings = fileMappingRepository.findAllByFileCategoryAndReferenceIdAndFilePurpose(
+            FileCategory.MAGAZINE, magazineId, FilePurpose.DETAIL_IMAGE
+        );
+
+        return mappings.stream()
+            .map(mapping -> mapping.getFile().getStoredFileName())
+            .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void updateFileReferenceIdByUrl(String url, Long magazineId) {
+        int updated = fileMappingRepository.updateReferenceIdByStoredFileNameAndZeroReference(url, magazineId);
     }
 
 }

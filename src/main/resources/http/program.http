@@ -79,3 +79,7 @@ Authorization: Bearer {{accessToken}}
 &page=0
 &size=10
 
+### 체험 프로그램 삭제 API - (soft-delete)
+PATCH http://localhost:8080/programs/3
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
