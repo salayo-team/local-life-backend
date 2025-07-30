@@ -1,5 +1,7 @@
 package com.salayo.locallifebackend.domain.admin.service;
 
+import static com.salayo.locallifebackend.global.util.CacheKeyPrefix.CREATOR_REAPPLY_TOKEN;
+
 import com.salayo.locallifebackend.domain.admin.dto.CreatorPendingResponseDto;
 import com.salayo.locallifebackend.domain.email.service.EmailService;
 import com.salayo.locallifebackend.domain.localcreator.entity.LocalCreator;
@@ -11,6 +13,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -21,16 +24,16 @@ public class AdminService {
 
     private final LocalCreatorRepository localCreatorRepository;
     private final EmailService emailService;
-    private final RedisTemplate<Object, Object> redisTemplate;
+    private final RedisTemplate<String, String> creatorReapplyRedisTemplate;
 
     @Value("${frontend.url}")
     private String frontendUrl;
 
     public AdminService(LocalCreatorRepository localCreatorRepository, EmailService emailService,
-        RedisTemplate<Object, Object> redisTemplate) {
+        @Qualifier("creatorReapplyRedisTemplate") RedisTemplate<String, String> creatorReapplyRedisTemplate) {
         this.localCreatorRepository = localCreatorRepository;
         this.emailService = emailService;
-        this.redisTemplate = redisTemplate;
+        this.creatorReapplyRedisTemplate = creatorReapplyRedisTemplate;
     }
 
     public List<CreatorPendingResponseDto> getPendingCreators() {
@@ -61,7 +64,7 @@ public class AdminService {
         localCreator.reject(rejectedReason);
 
         String token = UUID.randomUUID().toString();
-        redisTemplate.opsForValue().set("reapply_token:" + localCreator.getId(), token, Duration.ofHours(72));
+        creatorReapplyRedisTemplate.opsForValue().set(CREATOR_REAPPLY_TOKEN + localCreator.getId(), token, Duration.ofHours(72));
 
         String email = localCreator.getMember().getEmail();
         String businessName = localCreator.getBusinessName();
