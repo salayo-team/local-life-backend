@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -103,7 +104,7 @@ public class AptitudeController {
 	})
 	public CommonResponseDto<AptitudeTextProgressResponseDto> submitAnswer(
 			@Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails,
-			@RequestBody AptitudeAnswerRequestDto aptitudeAnswerRequestDto) {
+			@Valid @RequestBody AptitudeAnswerRequestDto aptitudeAnswerRequestDto) {
 		Long memberId = memberDetails.getMember().getId();
 		log.info("답변 제출 - memberId: {}, step: {}", memberId, aptitudeAnswerRequestDto.getStep());
 		AptitudeTextProgressResponseDto response = aptitudeService.submitAnswer(memberId, aptitudeAnswerRequestDto);
