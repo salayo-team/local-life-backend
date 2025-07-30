@@ -25,10 +25,13 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 @RestController
 @RequestMapping("/ai/aptitude")
-@RequiredArgsConstructor
 public class AptitudeController {
 
 	private final AptitudeService aptitudeService;
+
+	public AptitudeController(AptitudeService aptitudeService) {
+		this.aptitudeService = aptitudeService;
+	}
 
 	@PostMapping("/test/start")
 	@PreAuthorize("hasRole('USER')")
