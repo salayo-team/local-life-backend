@@ -13,6 +13,7 @@ import com.salayo.locallifebackend.global.success.SuccessCode;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -30,6 +31,7 @@ public class AptitudeController {
 	private final AptitudeService aptitudeService;
 
 	@PostMapping("/test/start")
+	@PreAuthorize("hasRole('USER')")
 	public CommonResponseDto<AptitudeTestStartResponseDto> startTest(
 		@AuthenticationPrincipal MemberDetails memberDetails) {
 		Long memberId = memberDetails.getMember().getId();
@@ -39,6 +41,7 @@ public class AptitudeController {
 	}
 
 	@PostMapping("/test/answer")
+	@PreAuthorize("hasRole('USER')")
 	public CommonResponseDto<AptitudeTextProgressResponseDto> submitAnswer(
 		@AuthenticationPrincipal MemberDetails memberDetails,
 		@Valid @RequestBody AptitudeAnswerRequestDto aptitudeAnswerRequestDto) {
@@ -49,6 +52,7 @@ public class AptitudeController {
 	}
 
 	@PostMapping("/select")
+	@PreAuthorize("hasRole('USER')")
 	public CommonResponseDto<AptitudeTestResultResponseDto> selectManually(
 		@AuthenticationPrincipal MemberDetails memberDetails,
 		@RequestParam AptitudeType aptitudeType) {
@@ -59,6 +63,7 @@ public class AptitudeController {
 	}
 
 	@GetMapping("/can-retake")
+	@PreAuthorize("hasRole('USER')")
 	public CommonResponseDto<CanRetakeTestResponseDto> canRetakeTest(
 		@AuthenticationPrincipal MemberDetails memberDetails) {
 		Long memberId = memberDetails.getMember().getId();
