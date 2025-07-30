@@ -1,0 +1,41 @@
+### 리뷰 작성
+POST http://localhost:8080/programs/1/reviews?reservationId=1
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "content": "정말 좋은 체험이었습니다!"
+}
+
+### 리뷰 답글 작성
+POST http://localhost:8080/reviews/1/replies
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "content": "소중한 후기 감사합니다!"
+}
+
+### 내 리뷰 조회
+GET http://localhost:8080/mypage/reviews
+Authorization: Bearer {{authToken}}
+
+### 프로그램 리뷰 조회
+GET http://localhost:8080/programs/1/reviews
+
+### 관리자 전체 리뷰 조회
+GET http://localhost:8080/admin/reviews
+Authorization: Bearer {{authToken}}
+
+### 리뷰 수정
+PUT http://localhost:8080/reviews/1
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "content": "정말 좋은 체험이었습니다! 다시 참여하고 싶어요."
+}
+
+### 리뷰 삭제
+DELETE http://localhost:8080/reviews/1
+Authorization: Bearer {{authToken}}

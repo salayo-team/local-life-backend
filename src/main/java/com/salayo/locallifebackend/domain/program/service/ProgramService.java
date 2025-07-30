@@ -16,9 +16,11 @@ import com.salayo.locallifebackend.domain.localcreator.entity.LocalCreator;
 import com.salayo.locallifebackend.domain.localcreator.enums.CreatorStatus;
 import com.salayo.locallifebackend.domain.localcreator.repository.LocalCreatorRepository;
 import com.salayo.locallifebackend.domain.member.entity.Member;
+import com.salayo.locallifebackend.domain.member.enums.MemberRole;
 import com.salayo.locallifebackend.domain.member.repository.MemberRepository;
 import com.salayo.locallifebackend.domain.program.dto.ProgramCreateRequestDto;
 import com.salayo.locallifebackend.domain.program.dto.ProgramCreateResponseDto;
+import com.salayo.locallifebackend.domain.program.dto.ProgramSearchRequestDto;
 import com.salayo.locallifebackend.domain.program.entity.Program;
 import com.salayo.locallifebackend.domain.program.entity.ProgramDay;
 import com.salayo.locallifebackend.domain.program.entity.ProgramScheduleTime;
@@ -28,6 +30,7 @@ import com.salayo.locallifebackend.domain.program.enums.ProgramStatus;
 import com.salayo.locallifebackend.domain.program.repository.ProgramRepository;
 import com.salayo.locallifebackend.domain.programschedule.entity.ProgramSchedule;
 import com.salayo.locallifebackend.domain.programschedule.enums.ProgramScheduleStatus;
+import com.salayo.locallifebackend.global.dto.PaginationResponseDto;
 import com.salayo.locallifebackend.global.enums.DeletedStatus;
 import com.salayo.locallifebackend.global.error.ErrorCode;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
@@ -36,6 +39,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -291,4 +295,21 @@ public class ProgramService {
 		}
 	}
 
+	/**
+	 * 체험 프로그램 조회 메서드
+	 */
+	public PaginationResponseDto<ProgramCreateResponseDto> searchProgram(ProgramSearchRequestDto requestDto, Long memberId) {
+
+		Member member = memberRepository.findByIdOrElseThrow(memberId);
+		if (member.getMemberRole() != MemberRole.USER) {
+			throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
+		}
+
+		Page<Program> programPage = programRepository.searchPrograms(requestDto);
+
+		Page<ProgramCreateResponseDto> programContent = programPage
+			.map(ProgramCreateResponseDto::from);
+
+		return PaginationResponseDto.of(programContent);
+	}
 }

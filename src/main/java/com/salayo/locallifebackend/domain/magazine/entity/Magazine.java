@@ -18,6 +18,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -66,9 +67,12 @@ public class Magazine extends BaseEntity {
     @JoinColumn(name = "admin_id")
     private Member admin;
 
+    @Column(name = "registered_at")
+    private LocalDateTime registeredAt;
+
     @Builder
     public Magazine(String title, String content, String thumbnailUrl, MagazineStatus magazineStatus, DeletedStatus deletedStatus,
-        Long views, RegionCategory regionCategory, AptitudeCategory aptitudeCategory, Member admin) {
+        Long views, RegionCategory regionCategory, AptitudeCategory aptitudeCategory, Member admin, LocalDateTime registeredAt) {
         this.title = title;
         this.content = content;
         this.thumbnailUrl = thumbnailUrl;
@@ -78,6 +82,7 @@ public class Magazine extends BaseEntity {
         this.regionCategory = regionCategory;
         this.aptitudeCategory = aptitudeCategory;
         this.admin = admin;
+        this.registeredAt = registeredAt;
     }
 
     public void updateStatus(MagazineStatus magazineStatus) {
