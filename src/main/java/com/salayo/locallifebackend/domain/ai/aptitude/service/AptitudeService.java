@@ -57,7 +57,7 @@ public class AptitudeService {
 		// 테스트 가능 여부 확인
 		UserAptitude userAptitude = userAptitudeRepository.findByMember(member).orElse(null);
 		if (userAptitude != null && userAptitude.getTestCount() >= CacheKeyPrefix.APTITUDE_MAX_TEST_COUNT) {
-			throw new CustomException(ErrorCode.TOO_MANY_REQUESTS);
+			throw new CustomException(ErrorCode.APTITUDE_TEST_LIMIT_EXCEEDED);
 		}
 
 		/**
