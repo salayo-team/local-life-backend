@@ -30,6 +30,9 @@ import com.salayo.locallifebackend.domain.program.enums.ProgramStatus;
 import com.salayo.locallifebackend.domain.program.repository.ProgramRepository;
 import com.salayo.locallifebackend.domain.programschedule.entity.ProgramSchedule;
 import com.salayo.locallifebackend.domain.programschedule.enums.ProgramScheduleStatus;
+import com.salayo.locallifebackend.domain.reservation.entity.Reservation;
+import com.salayo.locallifebackend.domain.reservation.enums.ReservationStatus;
+import com.salayo.locallifebackend.domain.reservation.repository.ReservationRepository;
 import com.salayo.locallifebackend.global.dto.PaginationResponseDto;
 import com.salayo.locallifebackend.global.enums.DeletedStatus;
 import com.salayo.locallifebackend.global.error.ErrorCode;
@@ -56,10 +59,12 @@ public class ProgramService {
 	private final FileRepository fileRepository;
 	private final S3Uploader s3Uploader;
 	private final FileMappingRepository fileMappingRepository;
+	private final ReservationRepository reservationRepository;
 
 	public ProgramService(AptitudeCategoryRepository aptitudeCategoryRepository, RegionCategoryRepository regionCategoryRepository,
 		ProgramRepository programRepository, MemberRepository memberRepository, LocalCreatorRepository localCreatorRepository,
-		FileRepository fileRepository, S3Uploader s3Uploader, FileMappingRepository fileMappingRepository) {
+		FileRepository fileRepository, S3Uploader s3Uploader, FileMappingRepository fileMappingRepository,
+		ReservationRepository reservationRepository) {
 		this.aptitudeCategoryRepository = aptitudeCategoryRepository;
 		this.regionCategoryRepository = regionCategoryRepository;
 		this.programRepository = programRepository;
@@ -68,6 +73,7 @@ public class ProgramService {
 		this.fileRepository = fileRepository;
 		this.s3Uploader = s3Uploader;
 		this.fileMappingRepository = fileMappingRepository;
+		this.reservationRepository = reservationRepository;
 	}
 
 	/**
@@ -138,7 +144,7 @@ public class ProgramService {
 			.endDate(endDate)
 			.count(0)
 			.isLocalSpecialized(LocalSpecialized.GENERAL)
-			.programStatus(ProgramStatus.REGISTERED)
+			.programStatus(ProgramStatus.PENDING)
 			.deletedStatus(DeletedStatus.DISPLAYED)
 			.build();
 
@@ -311,5 +317,52 @@ public class ProgramService {
 			.map(ProgramCreateResponseDto::from);
 
 		return PaginationResponseDto.of(programContent);
+	}
+
+	/**
+	 * 체험 프로그램 삭제 메서드
+	 */
+	@Transactional
+	public void deleteProgram(Long programId, Long memberId) {
+
+		Member member = memberRepository.findByIdOrElseThrow(memberId);
+		if (member.getMemberRole() != MemberRole.LOCAL_CREATOR) {
+			throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
+		}
+
+		Program program = programRepository.findByIdOrElseThrow(programId);
+		if (program.getDeletedStatus().equals(DeletedStatus.DELETED)) {
+			throw new CustomException(ErrorCode.PROGRAM_DELETED);
+		}
+
+		LocalDate today = LocalDate.now();
+		if (program.getStartDate().isBefore(today.plusDays(7))) {
+			throw new CustomException(ErrorCode.CANNOT_DELETE_BEFORE_START);
+		}
+
+		List<Long> scheduleIds = program.getProgramSchedules().stream()
+			.map(ProgramSchedule::getId)
+			.toList();
+
+		List<Reservation> reservations = reservationRepository.findAllByProgramSchedule_IdIn(scheduleIds);
+
+		boolean hasCompletedReservation = reservations.stream()
+			.anyMatch(reservation -> reservation.getReservationStatus() == ReservationStatus.COMPLETED);
+		if (hasCompletedReservation) {
+			throw new CustomException(ErrorCode.CANNOT_DELETE_COMPLETED_RESERVATION_EXISTS);
+		}
+
+		boolean hasActiveReservation = reservations.stream()
+			.anyMatch(reservation ->
+				reservation.getReservationStatus() != ReservationStatus.REJECTED &&
+					reservation.getReservationStatus() != ReservationStatus.CANCELED &&
+					reservation.getReservationStatus() != ReservationStatus.EXPIRED);
+		if (hasActiveReservation) {
+			throw new CustomException(ErrorCode.CANNOT_DELETE_ACTIVE_RESERVATION_EXIST);
+		}
+
+		program.getProgramSchedules().forEach(schedule -> schedule.updateStatus(DeletedStatus.DELETED, ProgramScheduleStatus.INACTIVE));
+
+		program.updateStatus(DeletedStatus.DELETED);
 	}
 }

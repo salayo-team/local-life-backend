@@ -168,5 +168,8 @@ public class Program extends BaseEntity {
 		programSchedule.connectToProgram(this);
 	}
 
+	public void updateStatus(DeletedStatus deletedStatus) {
+		this.deletedStatus = deletedStatus;
+	}
 
 }
