@@ -35,6 +35,10 @@ public enum ErrorCode {
     DUPLICATE_REVIEW_REPLY(HttpStatus.BAD_REQUEST, "이미 답글을 작성하셨습니다."),
     REVIEW_CONTENT_TOO_LONG(HttpStatus.BAD_REQUEST, "리뷰는 최대 500자까지 작성 가능합니다."),
     CANNOT_UPDATE_REVIEW_WITH_REPLY(HttpStatus.BAD_REQUEST, "답글이 달린 리뷰는 수정할 수 없습니다."),
+    CANNOT_DELETE_BEFORE_START(HttpStatus.BAD_REQUEST, "시작일 7일 전에는 프로그램을 삭제할 수 없습니다."),
+    CANNOT_DELETE_COMPLETED_RESERVATION_EXISTS(HttpStatus.BAD_REQUEST, "체험 완료한 유저가 존재해 삭제할 수 없습니다."),
+    CANNOT_DELETE_ACTIVE_RESERVATION_EXIST(HttpStatus.BAD_REQUEST, "진행중인 예약이 있어 삭제할 수 없습니다."),
+    PROGRAM_DELETED(HttpStatus.BAD_REQUEST, "삭제된 체험 프로그램입니다."),
 
     // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
