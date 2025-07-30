@@ -15,17 +15,15 @@ import com.salayo.locallifebackend.domain.member.entity.Member;
 import com.salayo.locallifebackend.domain.member.repository.MemberRepository;
 import com.salayo.locallifebackend.global.error.ErrorCode;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
+import com.salayo.locallifebackend.global.util.CacheKeyPrefix;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,21 +35,18 @@ public class AptitudeService {
 	private final AptitudeTestHistoryRepository aptitudeTestHistoryRepository;
 	private final MemberRepository memberRepository;
 	private final AptitudeAiService aptitudeAiService;
-	private final RedisTemplate<String, String> aiAptitudeRedisTemplate;
+	private final AptitudeCacheService aptitudeCacheService;
 
-	private static final int MAX_TEST_COUNT = 5;
-	private static final int TOTAL_QUESTIONS = 5;
-	private static final String REDIS_KEY_PREFIX = "aptitude:test:";
-	private static final long REDIS_TTL_HOURS = 24;
-
-	public AptitudeService(UserAptitudeRepository userAptitudeRepository, AptitudeTestHistoryRepository aptitudeTestHistoryRepository,
-		MemberRepository memberRepository, AptitudeAiService aptitudeAiService,
-		@Qualifier("aiAptitudeRedisTemplate") RedisTemplate<String, String> aiAptitudeRedisTemplate) {
+	public AptitudeService(UserAptitudeRepository userAptitudeRepository,
+		AptitudeTestHistoryRepository aptitudeTestHistoryRepository,
+		MemberRepository memberRepository,
+		AptitudeAiService aptitudeAiService,
+		AptitudeCacheService aptitudeCacheService) {
 		this.userAptitudeRepository = userAptitudeRepository;
 		this.aptitudeTestHistoryRepository = aptitudeTestHistoryRepository;
 		this.memberRepository = memberRepository;
 		this.aptitudeAiService = aptitudeAiService;
-		this.aiAptitudeRedisTemplate = aiAptitudeRedisTemplate;
+		this.aptitudeCacheService = aptitudeCacheService;
 	}
 
 	@Transactional
@@ -61,7 +56,7 @@ public class AptitudeService {
 
 		// 테스트 가능 여부 확인
 		UserAptitude userAptitude = userAptitudeRepository.findByMember(member).orElse(null);
-		if (userAptitude != null && userAptitude.getTestCount() >= MAX_TEST_COUNT) {
+		if (userAptitude != null && userAptitude.getTestCount() >= CacheKeyPrefix.APTITUDE_MAX_TEST_COUNT) {
 			throw new CustomException(ErrorCode.TOO_MANY_REQUESTS);
 		}
 
@@ -72,13 +67,12 @@ public class AptitudeService {
 		aptitudeTestHistoryRepository.deleteAllByMember(member);
 
 		// Redis에 테스트 진행 상태 저장
-		String redisKey = REDIS_KEY_PREFIX + memberId;
-		aiAptitudeRedisTemplate.opsForValue().set(redisKey, "1", REDIS_TTL_HOURS, TimeUnit.HOURS);
+		aptitudeCacheService.saveTestProgress(memberId, "1");
 
 		// 첫 질문 가져오기
 		AptitudeQuestionResponseDto firstQuestion = aptitudeAiService.getNextQuestion(0);
 
-		return new AptitudeTestStartResponseDto(1, TOTAL_QUESTIONS, firstQuestion);
+		return new AptitudeTestStartResponseDto(1, CacheKeyPrefix.APTITUDE_TOTAL_QUESTIONS, firstQuestion);
 	}
 
 	@Transactional
@@ -87,8 +81,7 @@ public class AptitudeService {
 			.orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
 		// Redis에서 현재 진행 상태 확인
-		String redisKey = REDIS_KEY_PREFIX + memberId;
-		String currentStepStr = aiAptitudeRedisTemplate.opsForValue().get(redisKey);
+		String currentStepStr = aptitudeCacheService.getTestProgress(memberId);
 		if (currentStepStr == null) {
 			throw new CustomException(ErrorCode.NOT_FOUND_TEST_PROGRESS);
 		}
@@ -110,21 +103,20 @@ public class AptitudeService {
 		aptitudeTestHistoryRepository.save(aptitudeTestHistory);
 
 		// 다음 단계 처리
-		if (aptitudeAnswerRequestDto.getStep() >= TOTAL_QUESTIONS) {
+		if (aptitudeAnswerRequestDto.getStep() >= CacheKeyPrefix.APTITUDE_TOTAL_QUESTIONS) {
 			// Redis에서 상태 삭제
-			aiAptitudeRedisTemplate.delete(redisKey);
+			aptitudeCacheService.deleteTestProgress(memberId);
 			// 최종 결과 계산
 			return calculateAndSaveResult(member);
 		} else {
 			// Redis 상태 업데이트
-			aiAptitudeRedisTemplate.opsForValue().set(redisKey, String.valueOf(aptitudeAnswerRequestDto.getStep() + 1),
-				REDIS_TTL_HOURS, TimeUnit.HOURS);
+			aptitudeCacheService.updateTestProgress(memberId, aptitudeAnswerRequestDto.getStep() + 1);
 
 			// 다음 질문
 			AptitudeQuestionResponseDto nextQuestion = aptitudeAiService.getNextQuestion(aptitudeAnswerRequestDto.getStep());
 			return new AptitudeTextProgressResponseDto(
 				aptitudeAnswerRequestDto.getStep() + 1,
-				TOTAL_QUESTIONS,
+				CacheKeyPrefix.APTITUDE_TOTAL_QUESTIONS,
 				nextQuestion,
 				false,
 				null
@@ -151,8 +143,8 @@ public class AptitudeService {
 		userAptitudeRepository.save(userAptitude);
 
 		return new AptitudeTextProgressResponseDto(
-			TOTAL_QUESTIONS,
-			TOTAL_QUESTIONS,
+			CacheKeyPrefix.APTITUDE_TOTAL_QUESTIONS,
+			CacheKeyPrefix.APTITUDE_TOTAL_QUESTIONS,
 			null,
 			true,
 			finalAptitude
@@ -183,11 +175,11 @@ public class AptitudeService {
 
 		return userAptitudeRepository.findByMember(member)
 			.map(aptitude -> new CanRetakeTestResponseDto(
-				aptitude.getTestCount() < MAX_TEST_COUNT,
+				aptitude.getTestCount() < CacheKeyPrefix.APTITUDE_MAX_TEST_COUNT,
 				aptitude.getTestCount(),
-				MAX_TEST_COUNT
+				CacheKeyPrefix.APTITUDE_MAX_TEST_COUNT
 			))
-			.orElse(new CanRetakeTestResponseDto(true, 0, MAX_TEST_COUNT));
+			.orElse(new CanRetakeTestResponseDto(true, 0, CacheKeyPrefix.APTITUDE_MAX_TEST_COUNT));
 	}
 
 	private Map<AptitudeType, Integer> analyzeHistories(List<AptitudeTestHistory> histories) {
