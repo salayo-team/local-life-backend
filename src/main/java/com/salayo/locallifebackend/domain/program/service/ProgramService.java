@@ -344,19 +344,17 @@ public class ProgramService {
 			.map(ProgramSchedule::getId)
 			.toList();
 
-		List<Reservation> reservations = reservationRepository.findAllByProgramSchedule_IdIn(scheduleIds);
-
-		boolean hasCompletedReservation = reservations.stream()
-			.anyMatch(reservation -> reservation.getReservationStatus() == ReservationStatus.COMPLETED);
+		boolean hasCompletedReservation = reservationRepository.existsByProgramSchedule_IdInAndReservationStatus(
+			scheduleIds, ReservationStatus.COMPLETED);
 		if (hasCompletedReservation) {
 			throw new CustomException(ErrorCode.CANNOT_DELETE_COMPLETED_RESERVATION_EXISTS);
 		}
 
-		boolean hasActiveReservation = reservations.stream()
-			.anyMatch(reservation ->
-				reservation.getReservationStatus() != ReservationStatus.REJECTED &&
-					reservation.getReservationStatus() != ReservationStatus.CANCELED &&
-					reservation.getReservationStatus() != ReservationStatus.EXPIRED);
+		boolean hasActiveReservation = reservationRepository.existsByProgramSchedule_IdInAndReservationStatusNotIn(
+			scheduleIds, List.of(
+				ReservationStatus.REJECTED,
+				ReservationStatus.CANCELED,
+				ReservationStatus.EXPIRED));
 		if (hasActiveReservation) {
 			throw new CustomException(ErrorCode.CANNOT_DELETE_ACTIVE_RESERVATION_EXIST);
 		}
