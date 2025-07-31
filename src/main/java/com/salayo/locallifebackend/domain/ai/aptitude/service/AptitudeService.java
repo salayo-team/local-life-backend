@@ -37,17 +37,17 @@ public class AptitudeService {
 	private final AptitudeAiService aptitudeAiService;
 	private final AptitudeCacheService aptitudeCacheService;
 
-	public AptitudeService(UserAptitudeRepository userAptitudeRepository,
-		AptitudeTestHistoryRepository aptitudeTestHistoryRepository,
-		MemberRepository memberRepository,
-		AptitudeAiService aptitudeAiService,
-		AptitudeCacheService aptitudeCacheService) {
-		this.userAptitudeRepository = userAptitudeRepository;
-		this.aptitudeTestHistoryRepository = aptitudeTestHistoryRepository;
-		this.memberRepository = memberRepository;
-		this.aptitudeAiService = aptitudeAiService;
-		this.aptitudeCacheService = aptitudeCacheService;
-	}
+	public AptitudeService(UserAptitudeRepository userAptitudeRepository, 
+			AptitudeTestHistoryRepository aptitudeTestHistoryRepository,
+			MemberRepository memberRepository, 
+			AptitudeAiService aptitudeAiService,
+			AptitudeCacheService aptitudeCacheService) {
+			this.userAptitudeRepository = userAptitudeRepository;
+			this.aptitudeTestHistoryRepository = aptitudeTestHistoryRepository;
+			this.memberRepository = memberRepository;
+			this.aptitudeAiService = aptitudeAiService;
+			this.aptitudeCacheService = aptitudeCacheService;
+		}
 
 	@Transactional
 	public AptitudeTestStartResponseDto startTest(Long memberId) {
@@ -56,9 +56,15 @@ public class AptitudeService {
 
 		// 테스트 가능 여부 확인
 		UserAptitude userAptitude = userAptitudeRepository.findByMember(member).orElse(null);
-		if (userAptitude != null && userAptitude.getTestCount() >= CacheKeyPrefix.APTITUDE_MAX_TEST_COUNT) {
-			throw new CustomException(ErrorCode.APTITUDE_TEST_LIMIT_EXCEEDED);
+		
+		// 마이페이지에서 호출된 경우 (이미 온보딩을 완료한 경우)
+		if (userAptitude != null && userAptitude.getIsOnboardingCompleted()) {
+			// 마이페이지 테스트 횟수 확인 (최대 5회)
+			if (userAptitude.getMypageTestCount() >= CacheKeyPrefix.APTITUDE_MAX_TEST_COUNT) {
+				throw new CustomException(ErrorCode.APTITUDE_TEST_LIMIT_EXCEEDED);
+			}
 		}
+		// 온보딩에서 처음 호출된 경우는 제한 없음
 
 		/**
 		 * 기존 테스트 이력 삭제 -> 사용자가 여러번 테스트 시작했다가 중도 이탈 시 불필요한 이력 삭제가 발생할 수 있음.
@@ -137,9 +143,17 @@ public class AptitudeService {
 			.orElse(UserAptitude.builder()
 				.member(member)
 				.testCount(0)
+				.mypageTestCount(0)
+				.isOnboardingCompleted(false)
 				.build());
 
-		userAptitude.updateAptitude(finalAptitude);
+		// 온보딩 완료 여부에 따라 다르게 처리
+		if (!userAptitude.getIsOnboardingCompleted()) {
+			userAptitude.updateAptitudeFromOnboarding(finalAptitude);
+		} else {
+			userAptitude.updateAptitudeFromMypage(finalAptitude);
+		}
+		
 		userAptitudeRepository.save(userAptitude);
 
 		return new AptitudeTextProgressResponseDto(
@@ -160,9 +174,13 @@ public class AptitudeService {
 			.orElse(UserAptitude.builder()
 				.member(member)
 				.testCount(0)
+				.mypageTestCount(0)
+				.isOnboardingCompleted(false)
 				.build());
 
-		userAptitude.updateAptitude(aptitudeType);
+		// 수동 선택은 현재 온보딩에서만 가능하므로 온보딩 완료 처리 됨
+		// TODO : 수동 선택은 MyPage에서도 추후에 수동 선택해서 수정이 가능함.
+		userAptitude.updateAptitudeFromOnboarding(aptitudeType);
 		userAptitudeRepository.save(userAptitude);
 
 		return new AptitudeTestResultResponseDto(aptitudeType);
@@ -174,11 +192,18 @@ public class AptitudeService {
 			.orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
 		return userAptitudeRepository.findByMember(member)
-			.map(aptitude -> new CanRetakeTestResponseDto(
-				aptitude.getTestCount() < CacheKeyPrefix.APTITUDE_MAX_TEST_COUNT,
-				aptitude.getTestCount(),
-				CacheKeyPrefix.APTITUDE_MAX_TEST_COUNT
-			))
+			.map(aptitude -> {
+				// 온보딩 미완료 시 항상 가능
+				if (!aptitude.getIsOnboardingCompleted()) {
+					return new CanRetakeTestResponseDto(true, 0, CacheKeyPrefix.APTITUDE_MAX_TEST_COUNT);
+				}
+				// 온보딩 완료 후 마이페이지 테스트 횟수 확인
+				return new CanRetakeTestResponseDto(
+					aptitude.getMypageTestCount() < CacheKeyPrefix.APTITUDE_MAX_TEST_COUNT,
+					aptitude.getMypageTestCount(),
+					CacheKeyPrefix.APTITUDE_MAX_TEST_COUNT
+				);
+			})
 			.orElse(new CanRetakeTestResponseDto(true, 0, CacheKeyPrefix.APTITUDE_MAX_TEST_COUNT));
 	}
 
