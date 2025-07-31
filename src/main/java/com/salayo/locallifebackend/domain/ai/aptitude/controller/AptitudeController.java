@@ -31,7 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/ai/aptitude")
+@RequestMapping("/ai/aptitude")
 @RequiredArgsConstructor
 @Tag(name = "Aptitude", description = "적성 검사 관련 API")
 public class AptitudeController {

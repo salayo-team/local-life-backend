@@ -1,6 +1,7 @@
 package com.salayo.locallifebackend.domain.ai.aptitude.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Builder;
 import lombok.Getter;
 
 @Getter
@@ -16,6 +17,7 @@ public class AptitudeTestStartResponseDto {
 	@Schema(description = "질문 정보")
 	private final AptitudeQuestionResponseDto aptitudeQuestionResponseDto;
 
+	@Builder
 	public AptitudeTestStartResponseDto(Integer step, Integer totalSteps, 
 			AptitudeQuestionResponseDto aptitudeQuestionResponseDto) {
 		this.step = step;

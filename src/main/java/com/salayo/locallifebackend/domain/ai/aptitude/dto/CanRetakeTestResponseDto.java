@@ -1,6 +1,7 @@
 package com.salayo.locallifebackend.domain.ai.aptitude.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Builder;
 import lombok.Getter;
 
 @Getter
@@ -16,6 +17,7 @@ public class CanRetakeTestResponseDto {
 	@Schema(description = "최대 검사 가능 횟수", example = "5")
 	private final int maxTestCount;
 
+	@Builder
 	public CanRetakeTestResponseDto(boolean canRetake, int currentTestCount, int maxTestCount) {
 		this.canRetake = canRetake;
 		this.currentTestCount = currentTestCount;

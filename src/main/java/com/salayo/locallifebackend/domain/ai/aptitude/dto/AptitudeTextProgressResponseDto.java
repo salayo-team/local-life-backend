@@ -2,6 +2,7 @@ package com.salayo.locallifebackend.domain.ai.aptitude.dto;
 
 import com.salayo.locallifebackend.domain.ai.aptitude.enums.AptitudeType;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Builder;
 import lombok.Getter;
 
 @Getter
@@ -23,6 +24,7 @@ public class AptitudeTextProgressResponseDto {
 	@Schema(description = "최종 적성 결과 (검사 진행 중일 때는 null)")
 	private final AptitudeType finalAptitude;
 
+	@Builder
 	public AptitudeTextProgressResponseDto(Integer step, Integer totalStep, 
 			AptitudeQuestionResponseDto aptitudeQuestionResponseDto, Boolean isComplete, 
 			AptitudeType finalAptitude) {
