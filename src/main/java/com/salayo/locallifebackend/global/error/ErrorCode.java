@@ -39,6 +39,7 @@ public enum ErrorCode {
     CANNOT_DELETE_COMPLETED_RESERVATION_EXISTS(HttpStatus.BAD_REQUEST, "체험 완료한 유저가 존재해 삭제할 수 없습니다."),
     CANNOT_DELETE_ACTIVE_RESERVATION_EXIST(HttpStatus.BAD_REQUEST, "진행중인 예약이 있어 삭제할 수 없습니다."),
     PROGRAM_DELETED(HttpStatus.BAD_REQUEST, "삭제된 체험 프로그램입니다."),
+    APTITUDE_TEST_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "적성 검사는 최대 5회까지만 가능합니다."),
 
     // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
@@ -77,7 +78,7 @@ public enum ErrorCode {
     DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "이미 존재하는 닉네임입니다."),
 
     // 429 TOO_MANY_REQUESTS
-    TOO_MANY_REQUESTS(HttpStatus.TOO_MANY_REQUESTS, "적성 검사는 최대 5회까지만 가능합니다."),
+    TOO_MANY_REQUESTS(HttpStatus.TOO_MANY_REQUESTS, "요청 횟수를 초과했습니다."),
 
     // 500 INTERNAL_SERVER_ERROR
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버에서 오류가 발생했습니다."),
