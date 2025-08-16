@@ -12,6 +12,7 @@ import com.salayo.locallifebackend.domain.magazine.enums.MagazineStatus;
 import com.salayo.locallifebackend.domain.magazine.repository.MagazineRepository;
 import com.salayo.locallifebackend.domain.member.entity.Member;
 import com.salayo.locallifebackend.domain.member.repository.MemberRepository;
+import com.salayo.locallifebackend.global.dto.PaginationResponseDto;
 import com.salayo.locallifebackend.global.enums.DeletedStatus;
 import com.salayo.locallifebackend.global.error.ErrorCode;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
@@ -19,7 +20,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -80,19 +84,25 @@ public class MagazineService {
         return urls;
     }
 
-    public List<MagazineDraftListResponseDto> getDraftMagazines() {
-        List<Magazine> magazines = magazineRepository.findByMagazineStatusAndDeletedStatus(MagazineStatus.DRAFT, DeletedStatus.DISPLAYED);
+    public PaginationResponseDto<MagazineDraftListResponseDto> getDraftMagazines(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
-        return magazines.stream()
-            .map(m -> MagazineDraftListResponseDto.builder()
-                .id(m.getId())
-                .title(m.getTitle())
-                .thumbnailUrl(m.getThumbnailUrl())
-                .regionName(m.getRegionCategory().getRegionName())
-                .aptitudeName(m.getAptitudeCategory().getAptitudeName())
-                .createdAt(m.getCreatedAt())
-                .build())
-            .collect(Collectors.toList());
+        Page<Magazine> magazinePage = magazineRepository.findByMagazineStatusAndDeletedStatus(
+            MagazineStatus.DRAFT,
+            DeletedStatus.DISPLAYED,
+            pageable
+        );
+
+        Page<MagazineDraftListResponseDto> dtoPage = magazinePage.map(m -> MagazineDraftListResponseDto.builder()
+            .id(m.getId())
+            .title(m.getTitle())
+            .thumbnailUrl(m.getThumbnailUrl())
+            .regionName(m.getRegionCategory().getRegionName())
+            .aptitudeName(m.getAptitudeCategory().getAptitudeName())
+            .createdAt(m.getCreatedAt())
+            .build());
+
+        return PaginationResponseDto.of(dtoPage);
     }
 
     @Transactional(readOnly = true)

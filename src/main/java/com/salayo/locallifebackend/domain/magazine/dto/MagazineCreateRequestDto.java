@@ -21,7 +21,7 @@ public class MagazineCreateRequestDto {
     @NotNull(message = "적성 카테고리를 선택해주세요.")
     private Long aptitudeCategoryId;
 
-    @NotBlank(message = "대포 이미지를 등록해주세요.")
+    @NotBlank(message = "대표 이미지를 등록해주세요.")
     private String thumbnailUrl;
 
 }

@@ -8,6 +8,7 @@ import com.salayo.locallifebackend.domain.magazine.dto.MagazineFileUploadRespons
 import com.salayo.locallifebackend.domain.magazine.service.MagazineFileService;
 import com.salayo.locallifebackend.domain.magazine.service.MagazineService;
 import com.salayo.locallifebackend.global.dto.CommonResponseDto;
+import com.salayo.locallifebackend.global.dto.PaginationResponseDto;
 import com.salayo.locallifebackend.global.security.MemberDetails;
 import com.salayo.locallifebackend.global.success.SuccessCode;
 import io.swagger.v3.oas.annotations.Operation;
@@ -70,9 +71,11 @@ public class AdminMagazineController {
     @Operation(summary = "1차등록(임시등록) 매거진 목록 조회", description = "관리자가 1차등록 매거진 목록을 조회")
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
-    public ResponseEntity<CommonResponseDto<List<MagazineDraftListResponseDto>>> getDraftMagazines() {
-        List<MagazineDraftListResponseDto> draftList = magazineService.getDraftMagazines();
-
+    public ResponseEntity<CommonResponseDto<PaginationResponseDto<MagazineDraftListResponseDto>>> getDraftMagazines(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size
+    ) {
+        PaginationResponseDto<MagazineDraftListResponseDto> draftList = magazineService.getDraftMagazines(page, size);
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, draftList));
     }
 
