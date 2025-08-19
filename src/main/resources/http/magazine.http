@@ -56,7 +56,7 @@ Authorization: Bearer {{accessToken}}
 }
 
 ### 임시등록 매거진 목록 조회(DRAFT 리스트)
-GET http://localhost:8080/admin/magazines
+GET http://localhost:8080/admin/magazines?page=0&size=5
 Authorization: Bearer {{accessToken}}
 
 ### 임시등록 매거진 상세조회(DRAFT)
