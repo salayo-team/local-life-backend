@@ -1,5 +1,8 @@
 package com.salayo.locallifebackend.domain.email.service;
 
+import static com.salayo.locallifebackend.global.util.CacheKeyPrefix.EMAIL_CODE;
+import static com.salayo.locallifebackend.global.util.CacheKeyPrefix.EMAIL_VERIFIED;
+
 import com.salayo.locallifebackend.global.error.ErrorCode;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
 import java.time.Duration;
@@ -31,7 +34,7 @@ public class EmailService {
 
         clearVerifiedFlag(email);
 
-        redisTemplate.opsForValue().set("email_code:" + email, code, Duration.ofSeconds(EXPIRE_TIME));
+        redisTemplate.opsForValue().set(EMAIL_CODE + email, code, Duration.ofSeconds(EXPIRE_TIME));
 
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
@@ -47,11 +50,11 @@ public class EmailService {
     }
 
     public void clearVerifiedFlag(String email) {
-        redisTemplate.delete("email_verified: " + email);
+        redisTemplate.delete(EMAIL_VERIFIED + email);
     }
 
     public void verifyEmailCode(String email, String code) {
-        String key = "email_code:" + email;
+        String key = EMAIL_CODE + email;
         String savedCode = redisTemplate.opsForValue().get(key);
 
         if (savedCode == null) {
@@ -67,7 +70,7 @@ public class EmailService {
          * -인증 완료 플래그(email_verified:{email})를 Redis에 30분 동안 저장
          * -인증 코드는 재사용 방지를 위해 즉시 삭제
          */
-        redisTemplate.opsForValue().set("email_verified:" + email, "true", Duration.ofMinutes(30));
+        redisTemplate.opsForValue().set(EMAIL_VERIFIED + email, "true", Duration.ofMinutes(30));
         redisTemplate.delete(key);
     }
 

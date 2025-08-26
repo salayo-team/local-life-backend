@@ -5,11 +5,14 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
 @Entity
 @Table(name = "aptitude_category")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class AptitudeCategory {
 
 	@Id
@@ -19,5 +22,10 @@ public class AptitudeCategory {
 	private String aptitudeName; //적성 이름
 
 	private String aptitudeCode; //적성 코드
+
+	public AptitudeCategory(String aptitudeName, String aptitudeCode) {
+		this.aptitudeName = aptitudeName;
+		this.aptitudeCode = aptitudeCode;
+	}
 
 }
