@@ -24,4 +24,7 @@ public class MagazineCreateRequestDto {
     @NotBlank(message = "대표 이미지를 등록해주세요.")
     private String thumbnailUrl;
 
+    @NotNull(message = "로컬크리에이터 ID는 필수입니다.")
+    private Long localCreatorId;
+
 }
