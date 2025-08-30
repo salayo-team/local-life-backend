@@ -5,8 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
+import org.springframework.stereotype.Service;
 
 @Slf4j
+@Service
 public abstract class BaseAiService {
 
 	protected final ChatClient chatClient;
@@ -19,7 +21,6 @@ public abstract class BaseAiService {
 
 	@Retryable(
 		retryFor = {Exception.class},
-		maxAttempts = 3,
 		backoff = @Backoff(delay = 1000, multiplier = 2)
 	)
 	protected String callAi(String systemPrompt, String userInput) {
@@ -35,7 +36,7 @@ public abstract class BaseAiService {
 				.content();
 
 			log.debug("AI 응답 완료 - Response: {}",
-				response.substring(0, Math.min(response.length(), 100)));
+				response != null ? response.substring(0, Math.min(response.length(), 100)) : "null");
 
 			return response;
 		} catch (Exception e) {
