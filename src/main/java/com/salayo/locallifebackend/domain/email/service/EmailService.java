@@ -1,5 +1,8 @@
 package com.salayo.locallifebackend.domain.email.service;
 
+import static com.salayo.locallifebackend.global.util.CacheKeyPrefix.EMAIL_CODE;
+import static com.salayo.locallifebackend.global.util.CacheKeyPrefix.EMAIL_VERIFIED;
+
 import com.salayo.locallifebackend.global.error.ErrorCode;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
 import java.time.Duration;
@@ -31,7 +34,7 @@ public class EmailService {
 
         clearVerifiedFlag(email);
 
-        redisTemplate.opsForValue().set("email_code:" + email, code, Duration.ofSeconds(EXPIRE_TIME));
+        redisTemplate.opsForValue().set(EMAIL_CODE + email, code, Duration.ofSeconds(EXPIRE_TIME));
 
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
@@ -47,11 +50,11 @@ public class EmailService {
     }
 
     public void clearVerifiedFlag(String email) {
-        redisTemplate.delete("email_verified: " + email);
+        redisTemplate.delete(EMAIL_VERIFIED + email);
     }
 
     public void verifyEmailCode(String email, String code) {
-        String key = "email_code:" + email;
+        String key = EMAIL_CODE + email;
         String savedCode = redisTemplate.opsForValue().get(key);
 
         if (savedCode == null) {
@@ -67,7 +70,7 @@ public class EmailService {
          * -인증 완료 플래그(email_verified:{email})를 Redis에 30분 동안 저장
          * -인증 코드는 재사용 방지를 위해 즉시 삭제
          */
-        redisTemplate.opsForValue().set("email_verified:" + email, "true", Duration.ofMinutes(30));
+        redisTemplate.opsForValue().set(EMAIL_VERIFIED + email, "true", Duration.ofMinutes(30));
         redisTemplate.delete(key);
     }
 
@@ -98,6 +101,29 @@ public class EmailService {
         message.setTo(email);
         message.setSubject(subject);
         message.setText(content);
+
+        mailSender.send(message);
+    }
+
+    public void sendPreviewLinkEmail(String email, String businessName, String url) {
+        String subject = "[LocalLife] 로컬매거진 초안 확인 링크 안내";
+
+        String text = businessName + "님, 안녕하세요.\n\n"
+            + "LocalLife 매거진팀입니다.\n\n"
+            + "지난번 인터뷰에 응해주셔서 다시 한번 감사드립니다.\n"
+            + "인터뷰 내용을 바탕으로 매거진 초안을 작성하여 공유드립니다.\n\n"
+            + "아래 링크를 통해 내용을 검토해주시고,\n"
+            + "수정이 필요하거나 보완할 부분이 있다면 2주 이내에 회신 부탁드립니다.\n\n"
+            + "확인해주신 후 최종 승인을 주시면, LocalLife 매거진으로 발행되어\n"
+            + "많은 청년들에게 " + businessName + "님의 이야기와 지역이 소개될 예정입니다.\n\n"
+            + "[매거진 초안 확인 링크]\n" + url + "\n\n"
+            + "감사합니다.\n"
+            + "LocalLife 드림";
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(email);
+        message.setSubject(subject);
+        message.setText(text);
 
         mailSender.send(message);
     }

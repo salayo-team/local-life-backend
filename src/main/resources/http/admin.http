@@ -34,3 +34,8 @@ Content-Type: application/json
 {
   "rejectReason": "사업자등록증 미첨부"
 }
+
+### 로컬 크리에이터 이메일로 조회
+GET http://localhost:8080/admin/localcreators/search?email=creator3@example.com
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json

@@ -2,11 +2,13 @@ package com.salayo.locallifebackend.domain.magazine.controller;
 
 import com.salayo.locallifebackend.domain.file.enums.FilePurpose;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineCreateRequestDto;
+import com.salayo.locallifebackend.domain.magazine.dto.MagazineDraftDetailResponseDto;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineDraftListResponseDto;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineFileUploadResponseDto;
 import com.salayo.locallifebackend.domain.magazine.service.MagazineFileService;
 import com.salayo.locallifebackend.domain.magazine.service.MagazineService;
 import com.salayo.locallifebackend.global.dto.CommonResponseDto;
+import com.salayo.locallifebackend.global.dto.PaginationResponseDto;
 import com.salayo.locallifebackend.global.security.MemberDetails;
 import com.salayo.locallifebackend.global.success.SuccessCode;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -47,7 +50,7 @@ public class AdminMagazineController {
     public ResponseEntity<CommonResponseDto<Void>> createMagazine(
         @RequestBody @Valid MagazineCreateRequestDto createRequestDto,
         @AuthenticationPrincipal MemberDetails memberDetails
-        ) {
+    ) {
         magazineService.createMagazine(createRequestDto, memberDetails.getMember().getId());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponseDto.success(SuccessCode.CREATE_SUCCESS, null));
@@ -58,7 +61,7 @@ public class AdminMagazineController {
     @PostMapping(value = "/files/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CommonResponseDto<List<MagazineFileUploadResponseDto>>> uploadFiles(
         @RequestPart("files") @NotNull List<MultipartFile> files,
-        @RequestParam("purpose")FilePurpose filePurpose
+        @RequestParam("purpose") FilePurpose filePurpose
     ) {
         List<MagazineFileUploadResponseDto> uploadResponseDto = magazineFileService.uploadFiles(files, filePurpose);
 
@@ -68,9 +71,29 @@ public class AdminMagazineController {
     @Operation(summary = "1차등록(임시등록) 매거진 목록 조회", description = "관리자가 1차등록 매거진 목록을 조회")
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
-    public ResponseEntity<CommonResponseDto<List<MagazineDraftListResponseDto>>> getDraftMagazines() {
-        List<MagazineDraftListResponseDto> draftList = magazineService.getDraftMagazines();
-
+    public ResponseEntity<CommonResponseDto<PaginationResponseDto<MagazineDraftListResponseDto>>> getDraftMagazines(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size
+    ) {
+        PaginationResponseDto<MagazineDraftListResponseDto> draftList = magazineService.getDraftMagazines(page, size);
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, draftList));
+    }
+
+    @Operation(summary = "1차등록(임시등록) 매거진 상세 조회", description = "관리자가 1차등록 매거진의 상세 글을 조회")
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/{magazineId}")
+    public ResponseEntity<CommonResponseDto<MagazineDraftDetailResponseDto>> getDraftMagazineDetail(@PathVariable Long magazineId) {
+        MagazineDraftDetailResponseDto draftDetail = magazineService.getDraftMagazineDetail(magazineId);
+
+        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, draftDetail));
+    }
+
+    @Operation(summary = "매거진 초안 확인 링크 전송", description = "로컬크리에이터에게 매거진 초안 확인용 링크를 이메일로 전송합니다.")
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/{magazineId}/preview/send")
+    public ResponseEntity<CommonResponseDto<Void>> sendMagazinePreviewLink(@PathVariable Long magazineId) {
+        magazineService.sendPreviewLink(magazineId);
+
+        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.EMAIL_SEND_SUCCESS, null));
     }
 }
