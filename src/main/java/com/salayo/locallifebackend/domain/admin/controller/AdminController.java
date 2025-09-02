@@ -4,6 +4,7 @@ import com.salayo.locallifebackend.domain.admin.dto.CreatorPendingResponseDto;
 import com.salayo.locallifebackend.domain.admin.dto.RejectReasonRequestDto;
 import com.salayo.locallifebackend.domain.admin.service.AdminService;
 import com.salayo.locallifebackend.domain.localcreator.dto.LocalCreatorDetailResponseDto;
+import com.salayo.locallifebackend.domain.localcreator.dto.LocalCreatorEmailSearchResponseDto;
 import com.salayo.locallifebackend.domain.localcreator.service.LocalCreatorService;
 import com.salayo.locallifebackend.global.dto.CommonResponseDto;
 import com.salayo.locallifebackend.global.success.SuccessCode;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -73,5 +75,14 @@ public class AdminController {
         LocalCreatorDetailResponseDto responseDto = localCreatorService.getLocalCreatorDetail(localcreatorId);
 
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS,responseDto));
+    }
+
+    @Operation(summary = "이메일로 로컬 크리에이터 정보 조회", description = "입력된 이메일을 가진 로컬 크리에이터의 ID, 상호명, 이메일 정보를 반환합니다.")
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/localcreators/search")
+    public ResponseEntity<CommonResponseDto<LocalCreatorEmailSearchResponseDto>> getLocalCreatorByEmail(@RequestParam String email) {
+        LocalCreatorEmailSearchResponseDto emailSearchResponseDto = adminService.findLocalCreatorByEmail(email);
+
+        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS,emailSearchResponseDto));
     }
 }
