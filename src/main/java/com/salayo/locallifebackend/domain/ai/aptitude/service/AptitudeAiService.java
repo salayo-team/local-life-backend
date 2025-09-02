@@ -78,6 +78,7 @@ public class AptitudeAiService extends BaseAiService {
 		return questions;
 	}
 
+	// 다음 질문 가져오기
 	public AptitudeQuestionResponseDto getNextQuestion(int step) {
 		if (step >= 0 && step < QUESTION_POOL.size()) {
 			return QUESTION_POOL.get(step);
@@ -85,6 +86,7 @@ public class AptitudeAiService extends BaseAiService {
 		return QUESTION_POOL.get(0);
 	}
 
+	// 답변 분석 및 적성 판단
 	public String analyzeResponse(String userResponse, AptitudeQuestionResponseDto aptitudeQuestionResponseDto) {
 		String systemPrompt = promptManager.getPrompt(PromptType.APTITUDE_TEST);
 		String userPrompt = String.format(
@@ -94,9 +96,35 @@ public class AptitudeAiService extends BaseAiService {
 			aptitudeQuestionResponseDto.getQuestion(), userResponse
 		);
 
-		return callAi(systemPrompt, userPrompt);
+		try {
+			return callAi(systemPrompt, userPrompt);
+		} catch (Exception e) {
+			// AI 실패는 정상 플로우의 일부로 처리 (사용자 경험을 위한 fallback)
+			log.warn("AI 분석 실패, fallback 분석으로 대체 - memberId: {}, error: {}", 
+				aptitudeQuestionResponseDto.getOrder(), e.getMessage());
+			return fallbackAnalysis(userResponse);
+		}
 	}
 
+
+	// AI 호출 실패 시 Fallback 분석
+	private String fallbackAnalysis(String userResponse) {
+		if (userResponse.contains("자연") || userResponse.contains("산") || userResponse.contains("바다")) {
+			return "NATURE - 자연과 관련된 키워드가 포함되어 있습니다.";
+		} else if (userResponse.contains("만들") || userResponse.contains("창작") || userResponse.contains("예술")) {
+			return "ART_CREATION - 창작과 관련된 키워드가 포함되어 있습니다.";
+		} else if (userResponse.contains("사람") || userResponse.contains("모임") || userResponse.contains("소통")) {
+			return "COMMUNITY - 커뮤니티와 관련된 키워드가 포함되어 있습니다.";
+		} else if (userResponse.contains("기술") || userResponse.contains("앱") || userResponse.contains("디지털")) {
+			return "TECH - 기술과 관련된 키워드가 포함되어 있습니다.";
+		} else if (userResponse.contains("역사") || userResponse.contains("문화") || userResponse.contains("전통")) {
+			return "HISTORY_CULTURE - 역사문화와 관련된 키워드가 포함되어 있습니다.";
+		}
+		
+		return "NATURE - 기본값으로 자연친화 적성을 추천합니다.";
+	}
+
+	// 최종 적성 계산
 	public AptitudeType calculateFinalAptitude(Map<AptitudeType, Integer> scores) {
 		// 가장 높은 점수를 받은 적성 찾기
 		AptitudeType finalAptitude = AptitudeType.NATURE;

@@ -98,6 +98,20 @@ public class AptitudeService {
 			aptitudeAiService.getNextQuestion(aptitudeAnswerRequestDto.getStep() - 1)
 		);
 
+		// Redis에 답변 저장
+		aptitudeCacheService.saveAnswer(memberId, aptitudeAnswerRequestDto.getStep(), 
+			aptitudeAnswerRequestDto.getAnswer());
+		
+		// 디버깅용 로그 (테스트 후 제거)
+		log.info("[TEST] Redis 답변 저장 완료 - memberId: {}, step: {}", memberId, aptitudeAnswerRequestDto.getStep());
+
+		// AI 분석 결과에서 적성 추출 및 점수 업데이트
+		updateScoreFromAnalysis(memberId, aiAnalysis);
+		
+		// 디버깅용 로그 (테스트 후 제거)
+		Map<AptitudeType, Integer> currentScores = aptitudeCacheService.getAllAptitudeScores(memberId);
+		log.info("[TEST] 현재 적성 점수 상태: {}", currentScores);
+
 		// 이력 저장
 		AptitudeTestHistory aptitudeTestHistory = AptitudeTestHistory.builder()
 			.member(member)
@@ -131,9 +145,8 @@ public class AptitudeService {
 	}
 
 	private AptitudeTextProgressResponseDto calculateAndSaveResult(Member member) {
-		// 테스트 이력에서 적성 점수 계산
-		List<AptitudeTestHistory> histories = aptitudeTestHistoryRepository.findByMemberOrderByStepAsc(member);
-		Map<AptitudeType, Integer> scores = analyzeHistories(histories);
+		// Redis에서 적성 점수 가져오기
+		Map<AptitudeType, Integer> scores = aptitudeCacheService.getAllAptitudeScores(member.getId());
 
 		// 최종 적성 결정
 		AptitudeType finalAptitude = aptitudeAiService.calculateFinalAptitude(scores);
@@ -155,6 +168,9 @@ public class AptitudeService {
 		}
 		
 		userAptitudeRepository.save(userAptitude);
+		
+		// Redis 데이터 정리
+		aptitudeCacheService.deleteAllTestData(member.getId());
 
 		return new AptitudeTextProgressResponseDto(
 			CacheKeyPrefix.APTITUDE_TOTAL_QUESTIONS,
@@ -241,5 +257,17 @@ public class AptitudeService {
 		}
 
 		return scores;
+	}
+
+	// AI 분석 결과에서 적성 점수 추출 및 Redis 업데이트
+	private void updateScoreFromAnalysis(Long memberId, String aiAnalysis) {
+		// 간단한 패턴 매칭으로 적성 추출
+		for (AptitudeType type : AptitudeType.values()) {
+			if (aiAnalysis.contains(type.name()) || aiAnalysis.contains(type.getTitle())) {
+				aptitudeCacheService.updateAptitudeScore(memberId, type, 1);
+				log.debug("적성 점수 업데이트 - memberId: {}, type: {}", memberId, type);
+				break; // 한 답변당 하나의 적성만 추출
+			}
+		}
 	}
 }
