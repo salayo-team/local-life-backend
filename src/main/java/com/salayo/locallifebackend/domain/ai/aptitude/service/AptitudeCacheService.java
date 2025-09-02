@@ -79,21 +79,27 @@ public class AptitudeCacheService {
 	
 	// 모든 테스트 관련 데이터 삭제
 	public void deleteAllTestData(Long memberId) {
+		log.debug("테스트 데이터 삭제 시작 - memberId: {}", memberId);
+		
 		// 진행 상태 삭제
-		deleteTestProgress(memberId);
+		String progressKey = CacheKeyPrefix.APTITUDE_TEST + memberId;
+		Boolean progressDeleted = redisTemplate.delete(progressKey);
+		log.debug("진행 상태 삭제 - key: {}, 결과: {}", progressKey, progressDeleted);
 		
 		// 답변 삭제
 		for (int i = 1; i <= CacheKeyPrefix.APTITUDE_TOTAL_QUESTIONS; i++) {
 			String answerKey = CacheKeyPrefix.APTITUDE_TEST + memberId + ":answer:" + i;
-			redisTemplate.delete(answerKey);
+			Boolean answerDeleted = redisTemplate.delete(answerKey);
+			log.debug("답변 삭제 - key: {}, 결과: {}", answerKey, answerDeleted);
 		}
 		
 		// 점수 삭제
 		for (AptitudeType type : AptitudeType.values()) {
 			String scoreKey = CacheKeyPrefix.APTITUDE_TEST + memberId + ":score:" + type.name();
-			redisTemplate.delete(scoreKey);
+			Boolean scoreDeleted = redisTemplate.delete(scoreKey);
+			log.debug("점수 삭제 - key: {}, 결과: {}", scoreKey, scoreDeleted);
 		}
 		
-		log.debug("모든 테스트 데이터 삭제 - memberId: {}", memberId);
+		log.info("모든 테스트 데이터 삭제 완료 - memberId: {}", memberId);
 	}
 }

@@ -71,6 +71,9 @@ public class AptitudeService {
 		 * - TODO : 테스트 시작이 아닌 완료 시점에만 testCount를 증가시키고 완료되지 않은 테스트는 deleteAllByMember로 삭제하는 정책으로 수정
 		 */
 		aptitudeTestHistoryRepository.deleteAllByMember(member);
+		
+		// Redis 기존 데이터 정리 (중복 방지)
+		aptitudeCacheService.deleteAllTestData(memberId);
 
 		// Redis에 테스트 진행 상태 저장
 		aptitudeCacheService.saveTestProgress(memberId, "1");
@@ -170,7 +173,9 @@ public class AptitudeService {
 		userAptitudeRepository.save(userAptitude);
 		
 		// Redis 데이터 정리
+		log.info("[TEST] Redis 데이터 정리 시작 - memberId: {}", member.getId());
 		aptitudeCacheService.deleteAllTestData(member.getId());
+		log.info("[TEST] Redis 데이터 정리 완료 - memberId: {}", member.getId());
 
 		return new AptitudeTextProgressResponseDto(
 			CacheKeyPrefix.APTITUDE_TOTAL_QUESTIONS,
