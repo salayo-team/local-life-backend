@@ -154,7 +154,7 @@ public class AptitudeAiService extends BaseAiService {
 			.aptitudeType(aptitudeType)
 			.confidenceScore(0.5) // Fallback은 낮은 신뢰도
 			.reason(reason)
-			.keyFactors(new String[]{"키워드 매칭"})
+			.keyFactors(List.of("키워드 매칭"))
 			.build();
 	}
 

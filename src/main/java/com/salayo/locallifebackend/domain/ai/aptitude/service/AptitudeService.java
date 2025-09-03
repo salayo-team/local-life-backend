@@ -280,7 +280,7 @@ public class AptitudeService {
 	private void updateScoreFromAnalysis(Long memberId, AiAptitudeAnalysisResponseDto aiAnalysis) {
 		try {
 			// AI 분석 결과에서 적성 타입 추출
-			AptitudeType aptitudeType = AptitudeType.valueOf(aiAnalysis.getAptitudeType());
+			AptitudeType aptitudeType = AptitudeType.valueOf(aiAnalysis.getAptitudeType().toUpperCase());
 			
 			// 신뢰도에 따른 가중치 적용 (높은 신뢰도일수록 더 높은 점수)
 			int score = aiAnalysis.getConfidenceScore() > 0.7 ? 2 : 1;
