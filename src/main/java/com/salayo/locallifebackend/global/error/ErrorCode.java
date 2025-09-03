@@ -39,7 +39,8 @@ public enum ErrorCode {
     CANNOT_DELETE_COMPLETED_RESERVATION_EXISTS(HttpStatus.BAD_REQUEST, "체험 완료한 유저가 존재해 삭제할 수 없습니다."),
     CANNOT_DELETE_ACTIVE_RESERVATION_EXIST(HttpStatus.BAD_REQUEST, "진행중인 예약이 있어 삭제할 수 없습니다."),
     PROGRAM_DELETED(HttpStatus.BAD_REQUEST, "삭제된 체험 프로그램입니다."),
-    APTITUDE_TEST_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "적성 검사는 최대 5회까지만 가능합니다."),
+    APTITUDE_TEST_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "마이페이지에서 적성 검사는 최대 5회까지만 가능합니다."),
+    FEEDBACK_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "피드백은 최대 3회까지만 작성할 수 있습니다."),
 
     // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
@@ -71,6 +72,9 @@ public enum ErrorCode {
 
     // 408 REQUEST_TIMEOUT
     AI_TIMEOUT(HttpStatus.REQUEST_TIMEOUT, "AI 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요."),
+    
+    // 422 UNPROCESSABLE_ENTITY
+    AI_RESPONSE_INVALID_FORMAT(HttpStatus.UNPROCESSABLE_ENTITY, "AI 응답 형식이 올바르지 않습니다."),
 
     // 409 CONFLICT
     DUPLICATE_VALUE(HttpStatus.CONFLICT, "중복된 정보입니다."),

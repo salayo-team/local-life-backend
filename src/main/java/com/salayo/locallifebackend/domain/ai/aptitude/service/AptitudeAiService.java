@@ -2,6 +2,7 @@ package com.salayo.locallifebackend.domain.ai.aptitude.service;
 
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeQuestionResponseDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.enums.AptitudeType;
+import com.salayo.locallifebackend.domain.ai.aptitude.dto.AiAptitudeAnalysisResponseDto;
 import com.salayo.locallifebackend.domain.ai.prompt.PromptManager;
 import com.salayo.locallifebackend.domain.ai.prompt.PromptType;
 import com.salayo.locallifebackend.domain.ai.service.BaseAiService;
@@ -78,6 +79,7 @@ public class AptitudeAiService extends BaseAiService {
 		return questions;
 	}
 
+	// 다음 질문 가져오기
 	public AptitudeQuestionResponseDto getNextQuestion(int step) {
 		if (step >= 0 && step < QUESTION_POOL.size()) {
 			return QUESTION_POOL.get(step);
@@ -85,18 +87,78 @@ public class AptitudeAiService extends BaseAiService {
 		return QUESTION_POOL.get(0);
 	}
 
-	public String analyzeResponse(String userResponse, AptitudeQuestionResponseDto aptitudeQuestionResponseDto) {
+	// 답변 분석 및 적성 판단 (JSON 응답 파싱 적용)
+	public AiAptitudeAnalysisResponseDto analyzeResponse(String userResponse, AptitudeQuestionResponseDto aptitudeQuestionResponseDto) {
 		String systemPrompt = promptManager.getPrompt(PromptType.APTITUDE_TEST);
 		String userPrompt = String.format(
 			"질문: %s\n사용자 답변: %s\n\n" +
-				"이 답변을 분석해서 5가지 적성(자연친화, 역사문화, 예술창작, 커뮤니티, 디지털기술) 중 " +
-				"어느 것에 가장 가까운지 판단하고, 그 이유를 간단히 설명해줘.",
+				"이 답변을 분석해서 5가지 적성(NATURE:자연친화, HISTORY_CULTURE:역사문화, ART_CREATION:예술창작, COMMUNITY:커뮤니티, TECH:디지털기술) 중 " +
+				"어느 것에 가장 가까운지 판단해줘.\n\n" +
+				"반드시 다음 JSON 형식으로만 응답해줘:\n" +
+				"{\n" +
+				"  \"aptitude_type\": \"적성타입(NATURE/HISTORY_CULTURE/ART_CREATION/COMMUNITY/TECH 중 하나)\",\n" +
+				"  \"confidence_score\": 0.8,\n" +
+				"  \"reason\": \"판단 이유\",\n" +
+				"  \"key_factors\": [\"핵심요소1\", \"핵심요소2\"]\n" +
+				"}",
 			aptitudeQuestionResponseDto.getQuestion(), userResponse
 		);
 
-		return callAi(systemPrompt, userPrompt);
+		try {
+			String aiResponse = callAi(systemPrompt, userPrompt);
+			AiAptitudeAnalysisResponseDto analysisResult = parseJsonResponse(aiResponse, AiAptitudeAnalysisResponseDto.class);
+			
+			// JSON 파싱 결과 로그 출력 (테스트용)
+			log.info("[JSON 파싱 테스트] AI 응답 파싱 성공");
+			log.info("[JSON 파싱 테스트] 적성 타입: {}", analysisResult.getAptitudeType());
+			log.info("[JSON 파싱 테스트] 신뢰도 점수: {}", analysisResult.getConfidenceScore());
+			log.info("[JSON 파싱 테스트] 판단 이유: {}", analysisResult.getReason());
+			log.info("[JSON 파싱 테스트] 핵심 요소: {}", 
+				analysisResult.getKeyFactors() != null ? String.join(", ", analysisResult.getKeyFactors()) : "없음");
+			
+			return analysisResult;
+		} catch (Exception e) {
+			// AI 실패는 정상 플로우의 일부로 처리 (사용자 경험을 위한 fallback)
+			log.warn("AI 분석 실패, fallback 분석으로 대체 - order: {}, error: {}", 
+				aptitudeQuestionResponseDto.getOrder(), e.getMessage());
+			return createFallbackAnalysis(userResponse);
+		}
 	}
 
+	// AI 호출 실패 시 Fallback 분석 (객체 반환)
+	private AiAptitudeAnalysisResponseDto createFallbackAnalysis(String userResponse) {
+		String aptitudeType;
+		String reason;
+		
+		if (userResponse.contains("자연") || userResponse.contains("산") || userResponse.contains("바다")) {
+			aptitudeType = "NATURE";
+			reason = "자연과 관련된 키워드가 포함되어 있습니다.";
+		} else if (userResponse.contains("만들") || userResponse.contains("창작") || userResponse.contains("예술")) {
+			aptitudeType = "ART_CREATION";
+			reason = "창작과 관련된 키워드가 포함되어 있습니다.";
+		} else if (userResponse.contains("사람") || userResponse.contains("모임") || userResponse.contains("소통")) {
+			aptitudeType = "COMMUNITY";
+			reason = "커뮤니티와 관련된 키워드가 포함되어 있습니다.";
+		} else if (userResponse.contains("기술") || userResponse.contains("앱") || userResponse.contains("디지털")) {
+			aptitudeType = "TECH";
+			reason = "기술과 관련된 키워드가 포함되어 있습니다.";
+		} else if (userResponse.contains("역사") || userResponse.contains("문화") || userResponse.contains("전통")) {
+			aptitudeType = "HISTORY_CULTURE";
+			reason = "역사문화와 관련된 키워드가 포함되어 있습니다.";
+		} else {
+			aptitudeType = "NATURE";
+			reason = "기본값으로 자연친화 적성을 추천합니다.";
+		}
+		
+		return AiAptitudeAnalysisResponseDto.builder()
+			.aptitudeType(aptitudeType)
+			.confidenceScore(0.5) // Fallback은 낮은 신뢰도
+			.reason(reason)
+			.keyFactors(List.of("키워드 매칭"))
+			.build();
+	}
+
+	// 최종 적성 계산
 	public AptitudeType calculateFinalAptitude(Map<AptitudeType, Integer> scores) {
 		// 가장 높은 점수를 받은 적성 찾기
 		AptitudeType finalAptitude = AptitudeType.NATURE;
