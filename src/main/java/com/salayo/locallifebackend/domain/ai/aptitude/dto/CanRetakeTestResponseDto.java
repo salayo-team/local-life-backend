@@ -11,7 +11,7 @@ public class CanRetakeTestResponseDto {
 	@Schema(description = "재검사 가능 여부", example = "true")
 	private final boolean canRetake;
 	
-	@Schema(description = "현재까지 검사한 횟수", example = "2", minimum = "0", maximum = "5")
+	@Schema(description = "현재까지 마이페이지에서 검사한 횟수 (온보딩 제외)", example = "2", minimum = "0", maximum = "5")
 	private final int currentTestCount;
 	
 	@Schema(description = "최대 검사 가능 횟수", example = "5")

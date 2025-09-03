@@ -42,7 +42,7 @@ public class AptitudeController {
 	@PreAuthorize("hasRole('USER')")
 	@Operation(
 		summary = "적성 검사 시작",
-		description = "AI 기반 적성 검사를 시작합니다. 최대 5회까지 가능합니다. 기존 진행 중인 테스트는 초기화됩니다."
+		description = "AI 기반 적성 검사를 시작합니다. 온보딩 시 첫 검사는 제한 없이 가능하며, 마이페이지에서는 최대 5회까지 가능합니다. 기존 진행 중인 테스트는 초기화됩니다."
 	)
 	@ApiResponses(value = {
 		@ApiResponse(
@@ -158,7 +158,7 @@ public class AptitudeController {
 	@PreAuthorize("hasRole('USER')")
 	@Operation(
 		summary = "재검사 가능 여부 확인",
-		description = "적성 재검사 가능 여부와 현재 검사 횟수를 확인합니다. 마이페이지에서 사용됩니다."
+		description = "적성 재검사 가능 여부와 현재 검사 횟수를 확인합니다. 온보딩 완료 후 마이페이지에서 최대 5회까지 재검사 가능합니다."
 	)
 	@ApiResponses(value = {
 		@ApiResponse(
