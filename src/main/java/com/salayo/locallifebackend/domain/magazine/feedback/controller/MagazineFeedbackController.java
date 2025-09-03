@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/magazines/{magazineId}/feedbacks")
+@RequestMapping("/localcreator/magazines/{magazineId}/feedbacks")
 @Tag(name = "Magazine Feedback | LocalCreator", description = "로컬 크리에이터 매거진 피드백 API")
 public class MagazineFeedbackController {
 

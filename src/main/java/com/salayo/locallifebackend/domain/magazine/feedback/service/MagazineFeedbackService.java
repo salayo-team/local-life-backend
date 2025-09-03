@@ -37,6 +37,10 @@ public class MagazineFeedbackService {
         LocalCreator localCreator = localCreatorRepository.findByMemberId(memberId)
             .orElseThrow(() -> new CustomException(ErrorCode.LOCAL_CREATOR_NOT_FOUND));
 
+        if (!magazine.getLocalCreator().getId().equals(localCreator.getId())) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
+        }
+
         int feedbackCount = magazineFeedbackRepository.findByMagazineIdAndLocalCreatorId(magazineId, localCreator.getId()).size();
 
         if (feedbackCount >= 3) {
@@ -57,6 +61,13 @@ public class MagazineFeedbackService {
     public List<MagazineFeedbackResponseDto> getMyFeedbacks(Long magazineId, Long memberId) {
         LocalCreator localCreator = localCreatorRepository.findByMemberId(memberId)
             .orElseThrow(() -> new CustomException(ErrorCode.LOCAL_CREATOR_NOT_FOUND));
+
+        Magazine magazine = magazineRepository.findById(magazineId)
+            .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_NOT_FOUND));
+
+        if (!magazine.getLocalCreator().getId().equals(localCreator.getId())) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
+        }
 
         return magazineFeedbackRepository.findByMagazineIdAndLocalCreatorId(magazineId, localCreator.getId())
             .stream()

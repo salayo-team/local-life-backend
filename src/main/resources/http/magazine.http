@@ -85,7 +85,7 @@ Content-Type: application/json
 %}
 
 ### 매거진 피드백 등록 성공
-POST http://localhost:8080/magazines/1/feedbacks
+POST http://localhost:8080/localcreator/magazines/8/feedbacks
 Content-Type: application/json
 Authorization: Bearer {{accessToken}}
 
@@ -94,7 +94,7 @@ Authorization: Bearer {{accessToken}}
 }
 
 ### 매거진 피드백 등록 실패 (최대 3회 초과)
-POST http://localhost:8080/magazines/1/feedbacks
+POST http://localhost:8080/localcreator/magazines/1/feedbacks
 Content-Type: application/json
 Authorization: Bearer {{accessToken}}
 
@@ -103,5 +103,5 @@ Authorization: Bearer {{accessToken}}
 }
 
 ### 매거진 피드백 목록 조회 (로컬 크리에이터)
-GET http://localhost:8080/magazines/1/feedbacks
+GET http://localhost:8080/localcreator/magazines/8/feedbacks
 Authorization: Bearer {{accessToken}}
