@@ -102,3 +102,6 @@ Authorization: Bearer {{accessToken}}
   "content": "네 번째 피드백 시도입니다."
 }
 
+### 매거진 피드백 목록 조회 (로컬 크리에이터)
+GET http://localhost:8080/magazines/1/feedbacks
+Authorization: Bearer {{accessToken}}

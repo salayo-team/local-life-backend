@@ -4,11 +4,14 @@ import com.salayo.locallifebackend.domain.localcreator.entity.LocalCreator;
 import com.salayo.locallifebackend.domain.localcreator.repository.LocalCreatorRepository;
 import com.salayo.locallifebackend.domain.magazine.entity.Magazine;
 import com.salayo.locallifebackend.domain.magazine.feedback.dto.MagazineFeedbackCreateRequestDto;
+import com.salayo.locallifebackend.domain.magazine.feedback.dto.MagazineFeedbackResponseDto;
 import com.salayo.locallifebackend.domain.magazine.feedback.entity.MagazineFeedback;
 import com.salayo.locallifebackend.domain.magazine.feedback.repository.MagazineFeedbackRepository;
 import com.salayo.locallifebackend.domain.magazine.repository.MagazineRepository;
 import com.salayo.locallifebackend.global.error.ErrorCode;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,5 +51,16 @@ public class MagazineFeedbackService {
             .build();
 
         magazineFeedbackRepository.save(magazineFeedback);
+    }
+
+    @Transactional
+    public List<MagazineFeedbackResponseDto> getMyFeedbacks(Long magazineId, Long memberId) {
+        LocalCreator localCreator = localCreatorRepository.findByMemberId(memberId)
+            .orElseThrow(() -> new CustomException(ErrorCode.LOCAL_CREATOR_NOT_FOUND));
+
+        return magazineFeedbackRepository.findByMagazineIdAndLocalCreatorId(magazineId, localCreator.getId())
+            .stream()
+            .map(MagazineFeedbackResponseDto::new)
+            .collect(Collectors.toList());
     }
 }
