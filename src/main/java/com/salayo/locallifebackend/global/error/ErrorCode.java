@@ -71,6 +71,9 @@ public enum ErrorCode {
 
     // 408 REQUEST_TIMEOUT
     AI_TIMEOUT(HttpStatus.REQUEST_TIMEOUT, "AI 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요."),
+    
+    // 422 UNPROCESSABLE_ENTITY
+    AI_RESPONSE_INVALID_FORMAT(HttpStatus.UNPROCESSABLE_ENTITY, "AI 응답 형식이 올바르지 않습니다."),
 
     // 409 CONFLICT
     DUPLICATE_VALUE(HttpStatus.CONFLICT, "중복된 정보입니다."),
