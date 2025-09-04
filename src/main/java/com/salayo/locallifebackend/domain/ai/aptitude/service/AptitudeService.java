@@ -2,6 +2,7 @@ package com.salayo.locallifebackend.domain.ai.aptitude.service;
 
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeAnswerRequestDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeQuestionResponseDto;
+import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeTestHistoryResponseDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeTestStartResponseDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeTextProgressResponseDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeTestResultResponseDto;
@@ -67,6 +68,9 @@ public class AptitudeService {
 		}
 		// 온보딩에서 처음 호출된 경우는 제한 없음
 
+		// 세션 ID 생성
+		String sessionId = generateSessionId(memberId);
+		
 		/**
 		 * 기존 테스트 이력 삭제 -> 사용자가 여러번 테스트 시작했다가 중도 이탈 시 불필요한 이력 삭제가 발생할 수 있음.
 		 * - TODO : 테스트 시작이 아닌 완료 시점에만 testCount를 증가시키고 완료되지 않은 테스트는 deleteAllByMember로 삭제하는 정책으로 수정
@@ -78,11 +82,19 @@ public class AptitudeService {
 
 		// Redis에 테스트 진행 상태 저장
 		aptitudeCacheService.saveTestProgress(memberId, "1");
+		
+		// Redis에 세션 ID 저장
+		aptitudeCacheService.saveSessionId(memberId, sessionId);
 
 		// 첫 질문 가져오기
 		AptitudeQuestionResponseDto firstQuestion = aptitudeAiService.getNextQuestion(0);
 
 		return new AptitudeTestStartResponseDto(1, CacheKeyPrefix.APTITUDE_TOTAL_QUESTIONS, firstQuestion);
+	}
+	
+	// 세션 ID 생성
+	private String generateSessionId(Long memberId) {
+		return String.format("APT-%d-%d", memberId, System.currentTimeMillis());
 	}
 
 	@Transactional
@@ -94,6 +106,13 @@ public class AptitudeService {
 		String currentStepStr = aptitudeCacheService.getTestProgress(memberId);
 		if (currentStepStr == null) {
 			throw new CustomException(ErrorCode.NOT_FOUND_TEST_PROGRESS);
+		}
+		
+		// Redis에서 세션 ID 가져오기
+		String sessionId = aptitudeCacheService.getSessionId(memberId);
+		if (sessionId == null) {
+			sessionId = generateSessionId(memberId);
+			aptitudeCacheService.saveSessionId(memberId, sessionId);
 		}
 
 		// 답변 분석 (JSON 파싱된 객체 반환)
@@ -118,24 +137,32 @@ public class AptitudeService {
 			aiAnalysis.getAptitudeType(), 
 			aiAnalysis.getConfidenceScore());
 		
-		// 디버깅용 로그 (테스트 후 제거)
-		Map<AptitudeType, Integer> currentScores = aptitudeCacheService.getAllAptitudeScores(memberId);
-		log.info("[TEST] 현재 적성 점수 상태: {}", currentScores);
-
-		// 이력 저장 (AI 분석 결과를 JSON 문자열로 저장)
+		// 이력 저장용 AI 응답 문자열 생성
 		String aiResponseStr = String.format("%s - %s (신뢰도: %.2f)", 
 			aiAnalysis.getAptitudeType(), 
 			aiAnalysis.getReason(), 
 			aiAnalysis.getConfidenceScore());
-			
+		
+		// 디버깅용 로그
+		Map<AptitudeType, Integer> currentScores = aptitudeCacheService.getAllAptitudeScores(memberId);
+		log.info("[TEST] 현재 적성 점수 상태: {}", currentScores);
+
+		// 이력 저장 (AI 분석 결과를 포함하여 저장)
 		AptitudeTestHistory aptitudeTestHistory = AptitudeTestHistory.builder()
 			.member(member)
 			.step(aptitudeAnswerRequestDto.getStep())
 			.questionText(aptitudeAnswerRequestDto.getQuestionText())
 			.userResponse(aptitudeAnswerRequestDto.getAnswer())
 			.aiResponse(aiResponseStr)
+			.analyzedAptitudeType(parseAptitudeType(aiAnalysis.getAptitudeType()))
+			.confidenceScore(aiAnalysis.getConfidenceScore())
+			.sessionId(sessionId)
+			.isCompleted(false)
 			.build();
 		aptitudeTestHistoryRepository.save(aptitudeTestHistory);
+		
+		log.info("[이력 저장] Step {} 저장 완료 - sessionId: {}, aptitudeType: {}", 
+			aptitudeAnswerRequestDto.getStep(), sessionId, aiAnalysis.getAptitudeType());
 
 		// 다음 단계 처리
 		if (aptitudeAnswerRequestDto.getStep() >= CacheKeyPrefix.APTITUDE_TOTAL_QUESTIONS) {
@@ -165,6 +192,9 @@ public class AptitudeService {
 
 		// 최종 적성 결정
 		AptitudeType finalAptitude = aptitudeAiService.calculateFinalAptitude(scores);
+		
+		// Redis에서 세션 ID 가져오기
+		String sessionId = aptitudeCacheService.getSessionId(member.getId());
 
 		// 저장 또는 업데이트
 		UserAptitude userAptitude = userAptitudeRepository.findByMember(member)
@@ -183,6 +213,12 @@ public class AptitudeService {
 		}
 		
 		userAptitudeRepository.save(userAptitude);
+		
+		// 세션의 모든 이력을 완료 처리
+		if (sessionId != null) {
+			aptitudeTestHistoryRepository.markSessionAsCompleted(sessionId);
+			log.info("[테스트 완료] 세션 {} 완료 처리 - 최종 적성: {}", sessionId, finalAptitude);
+		}
 		
 		// Redis 데이터 정리
 		log.info("[TEST] Redis 데이터 정리 시작 - memberId: {}", member.getId());
@@ -238,6 +274,53 @@ public class AptitudeService {
 				);
 			})
 			.orElse(new CanRetakeTestResponseDto(true, 0, CacheKeyPrefix.APTITUDE_MAX_TEST_COUNT));
+	}
+	
+	// 테스트 이력 조회 (세션별)
+	@Transactional(readOnly = true)
+	public List<AptitudeTestHistoryResponseDto> getTestHistoryBySession(Long memberId, String sessionId) {
+		Member member = memberRepository.findById(memberId)
+			.orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+		
+		List<AptitudeTestHistory> histories = aptitudeTestHistoryRepository.findBySessionIdOrderByStepAsc(sessionId);
+		
+		// 본인의 이력인지 확인
+		if (!histories.isEmpty() && !histories.get(0).getMember().getId().equals(memberId)) {
+			throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
+		}
+		
+		return histories.stream()
+			.map(this::convertToDto)
+			.toList();
+	}
+	
+	// 완료된 테스트 이력 조회
+	@Transactional(readOnly = true)
+	public List<AptitudeTestHistoryResponseDto> getCompletedTestHistory(Long memberId) {
+		Member member = memberRepository.findById(memberId)
+			.orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+		
+		return aptitudeTestHistoryRepository.findByMemberAndIsCompletedTrueOrderByCreatedAtDesc(member)
+			.stream()
+			.map(this::convertToDto)
+			.toList();
+	}
+	
+	// Entity -> DTO 변환 메소드
+	private AptitudeTestHistoryResponseDto convertToDto(AptitudeTestHistory history) {
+		return AptitudeTestHistoryResponseDto.builder()
+			.historyId(history.getId())
+			.step(history.getStep())
+			.questionText(history.getQuestionText())
+			.userResponse(history.getUserResponse())
+			.aiResponse(history.getAiResponse())
+			.aptitudeType(history.getAnalyzedAptitudeType() != null ? 
+				history.getAnalyzedAptitudeType().name() : null)
+			.confidenceScore(history.getConfidenceScore())
+			.sessionId(history.getSessionId())
+			.isCompleted(history.getIsCompleted())
+			.createdAt(history.getCreatedAt())
+			.build();
 	}
 
 	private Map<AptitudeType, Integer> analyzeHistories(List<AptitudeTestHistory> histories) {
@@ -304,6 +387,16 @@ public class AptitudeService {
 					break;
 				}
 			}
+		}
+	}
+	
+	// String을 AptitudeType Enum으로 안전하게 변환
+	private AptitudeType parseAptitudeType(String aptitudeTypeStr) {
+		try {
+			return AptitudeType.valueOf(aptitudeTypeStr.toUpperCase());
+		} catch (IllegalArgumentException | NullPointerException e) {
+			log.warn("유효하지 않은 적성 타입 문자열: {}, 기본값 NATURE 반환", aptitudeTypeStr);
+			return AptitudeType.NATURE; // 기본값
 		}
 	}
 }
