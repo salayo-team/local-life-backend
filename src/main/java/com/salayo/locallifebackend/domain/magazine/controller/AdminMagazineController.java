@@ -5,6 +5,7 @@ import com.salayo.locallifebackend.domain.magazine.dto.MagazineCreateRequestDto;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineDraftDetailResponseDto;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineDraftListResponseDto;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineFileUploadResponseDto;
+import com.salayo.locallifebackend.domain.magazine.dto.MagazineUpdateRequestDto;
 import com.salayo.locallifebackend.domain.magazine.service.MagazineFileService;
 import com.salayo.locallifebackend.domain.magazine.service.MagazineService;
 import com.salayo.locallifebackend.global.dto.CommonResponseDto;
@@ -24,6 +25,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -95,5 +97,17 @@ public class AdminMagazineController {
         magazineService.sendPreviewLink(magazineId);
 
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.EMAIL_SEND_SUCCESS, null));
+    }
+
+    @Operation(summary = "매거진 수정(최대 3회)", description = "관리자가 로컬크리에이터의 피드백에 따라 매거진 본문을 수정하며, 수정은 최대 3회, 수정 기록도 최대 3회 저장됩니다.")
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/{magazineId}")
+    public ResponseEntity<CommonResponseDto<Void>> updateMagazine(
+        @PathVariable Long magazineId,
+        @RequestBody @Valid MagazineUpdateRequestDto magazineUpdateRequestDto,
+        @AuthenticationPrincipal MemberDetails memberDetails) {
+        magazineService.updateMagazine(magazineId, magazineUpdateRequestDto, memberDetails.getMember());
+
+        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.UPDATE_SUCCESS, null));
     }
 }
