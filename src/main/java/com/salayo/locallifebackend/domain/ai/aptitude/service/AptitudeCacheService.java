@@ -86,6 +86,11 @@ public class AptitudeCacheService {
 		Boolean progressDeleted = redisTemplate.delete(progressKey);
 		log.debug("진행 상태 삭제 - key: {}, 결과: {}", progressKey, progressDeleted);
 		
+		// 세션 ID 삭제
+		String sessionKey = CacheKeyPrefix.APTITUDE_TEST + memberId + ":session";
+		Boolean sessionDeleted = redisTemplate.delete(sessionKey);
+		log.debug("세션 ID 삭제 - key: {}, 결과: {}", sessionKey, sessionDeleted);
+		
 		// 답변 삭제
 		for (int i = 1; i <= CacheKeyPrefix.APTITUDE_TOTAL_QUESTIONS; i++) {
 			String answerKey = CacheKeyPrefix.APTITUDE_TEST + memberId + ":answer:" + i;
@@ -101,5 +106,18 @@ public class AptitudeCacheService {
 		}
 		
 		log.info("모든 테스트 데이터 삭제 완료 - memberId: {}", memberId);
+	}
+	
+	// 세션 ID 저장
+	public void saveSessionId(Long memberId, String sessionId) {
+		String key = CacheKeyPrefix.APTITUDE_TEST + memberId + ":session";
+		redisTemplate.opsForValue().set(key, sessionId, CacheKeyPrefix.APTITUDE_TEST_TTL_HOURS, TimeUnit.HOURS);
+		log.debug("세션 ID 저장 - memberId: {}, sessionId: {}", memberId, sessionId);
+	}
+	
+	// 세션 ID 조회
+	public String getSessionId(Long memberId) {
+		String key = CacheKeyPrefix.APTITUDE_TEST + memberId + ":session";
+		return redisTemplate.opsForValue().get(key);
 	}
 }
