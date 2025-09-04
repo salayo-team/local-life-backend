@@ -1,6 +1,7 @@
 package com.salayo.locallifebackend.domain.ai.aptitude.controller;
 
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeAnswerRequestDto;
+import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeTestHistoryResponseDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeTestResultResponseDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeTestStartResponseDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeTextProgressResponseDto;
@@ -18,6 +19,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -182,6 +184,74 @@ public class AptitudeController {
 		@Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails) {
 		Long memberId = memberDetails.getMember().getId();
 		CanRetakeTestResponseDto response = aptitudeService.canRetakeTest(memberId);
+		return CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, response);
+	}
+	
+	@GetMapping("/history")
+	@PreAuthorize("hasRole('USER')")
+	@Operation(
+		summary = "완료된 적성 검사 이력 조회",
+		description = "사용자의 완료된 적성 검사 이력을 조회합니다."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(
+			responseCode = "200",
+			description = "조회 성공",
+			content = @Content(
+				mediaType = "application/json",
+				schema = @Schema(implementation = CommonResponseDto.class)
+			)
+		),
+		@ApiResponse(
+			responseCode = "401",
+			description = "인증되지 않은 사용자"
+		),
+		@ApiResponse(
+			responseCode = "404",
+			description = "회원을 찾을 수 없음 (MEMBER_NOT_FOUND)"
+		)
+	})
+	public CommonResponseDto<List<AptitudeTestHistoryResponseDto>> getCompletedHistory(
+		@Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails) {
+		Long memberId = memberDetails.getMember().getId();
+		List<AptitudeTestHistoryResponseDto> response = aptitudeService.getCompletedTestHistory(memberId);
+		return CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, response);
+	}
+	
+	@GetMapping("/history/session")
+	@PreAuthorize("hasRole('USER')")
+	@Operation(
+		summary = "특정 세션의 적성 검사 이력 조회",
+		description = "특정 세션 ID에 해당하는 적성 검사 이력을 조회합니다."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(
+			responseCode = "200",
+			description = "조회 성공",
+			content = @Content(
+				mediaType = "application/json",
+				schema = @Schema(implementation = CommonResponseDto.class)
+			)
+		),
+		@ApiResponse(
+			responseCode = "401",
+			description = "인증되지 않은 사용자"
+		),
+		@ApiResponse(
+			responseCode = "403",
+			description = "다른 사용자의 이력에 접근 시도 (FORBIDDEN_ACCESS)"
+		),
+		@ApiResponse(
+			responseCode = "404",
+			description = "회원을 찾을 수 없음 (MEMBER_NOT_FOUND)"
+		)
+	})
+	public CommonResponseDto<List<AptitudeTestHistoryResponseDto>> getHistoryBySession(
+		@Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails,
+		@Parameter(description = "조회할 세션 ID", required = true, example = "APT-1-1234567890")
+		@RequestParam String sessionId) {
+		Long memberId = memberDetails.getMember().getId();
+		List<AptitudeTestHistoryResponseDto> response = aptitudeService.getTestHistoryBySession(memberId, sessionId);
 		return CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, response);
 	}
 }
