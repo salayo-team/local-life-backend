@@ -10,11 +10,14 @@ import com.salayo.locallifebackend.domain.localcreator.repository.LocalCreatorRe
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineCreateRequestDto;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineDraftDetailResponseDto;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineDraftListResponseDto;
+import com.salayo.locallifebackend.domain.magazine.dto.MagazineUpdateRequestDto;
 import com.salayo.locallifebackend.domain.magazine.entity.Magazine;
 import com.salayo.locallifebackend.domain.magazine.entity.MagazinePreviewToken;
+import com.salayo.locallifebackend.domain.magazine.entity.MagazineRevision;
 import com.salayo.locallifebackend.domain.magazine.enums.MagazineStatus;
 import com.salayo.locallifebackend.domain.magazine.repository.MagazinePreviewTokenRepository;
 import com.salayo.locallifebackend.domain.magazine.repository.MagazineRepository;
+import com.salayo.locallifebackend.domain.magazine.repository.MagazineRevisionRepository;
 import com.salayo.locallifebackend.domain.member.entity.Member;
 import com.salayo.locallifebackend.domain.member.repository.MemberRepository;
 import com.salayo.locallifebackend.global.dto.PaginationResponseDto;
@@ -46,6 +49,7 @@ public class MagazineService {
     private final MagazinePreviewTokenRepository magazinePreviewTokenRepository;
     private final EmailService emailService;
     private final LocalCreatorRepository localCreatorRepository;
+    private final MagazineRevisionRepository magazineRevisionRepository;
 
     @Value("${frontend.preview-url}")
     private String previewBaseUrl;
@@ -53,7 +57,7 @@ public class MagazineService {
     public MagazineService(MagazineRepository magazineRepository, RegionCategoryRepository regionCategoryRepository,
         AptitudeCategoryRepository aptitudeCategoryRepository, MemberRepository memberRepository, MagazineFileService magazineFileService,
         MagazinePreviewTokenRepository magazinePreviewTokenRepository, EmailService emailService,
-        LocalCreatorRepository localCreatorRepository) {
+        LocalCreatorRepository localCreatorRepository, MagazineRevisionRepository magazineRevisionRepository) {
         this.magazineRepository = magazineRepository;
         this.regionCategoryRepository = regionCategoryRepository;
         this.aptitudeCategoryRepository = aptitudeCategoryRepository;
@@ -62,6 +66,7 @@ public class MagazineService {
         this.magazinePreviewTokenRepository = magazinePreviewTokenRepository;
         this.emailService = emailService;
         this.localCreatorRepository = localCreatorRepository;
+        this.magazineRevisionRepository = magazineRevisionRepository;
     }
 
     @Transactional
@@ -156,6 +161,8 @@ public class MagazineService {
         Magazine magazine = magazineRepository.findById(magazineId)
             .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_NOT_FOUND));
 
+        magazine.updateStatus(MagazineStatus.PENDING_CONFIRMATION);
+
         String email = magazine.getLocalCreator().getMember().getEmail();
         String businessName = magazine.getLocalCreator().getBusinessName();
 
@@ -170,4 +177,24 @@ public class MagazineService {
         emailService.sendPreviewLinkEmail(email, businessName, previewUrl);
     }
 
+    @Transactional
+    public void updateMagazine(Long magazineId, MagazineUpdateRequestDto magazineUpdateRequestDto, Member member) {
+        Magazine magazine = magazineRepository.findById(magazineId)
+            .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_NOT_FOUND));
+
+        if (!magazine.getAdmin().getId().equals(member.getId())) {
+            throw new CustomException(ErrorCode.MAGAZINE_FORBIDDEN);
+        }
+
+        magazine.updateContent(magazineUpdateRequestDto.getContent());
+
+        int revisionCount = magazineRevisionRepository.countByMagazineId(magazineId);
+
+        if (revisionCount >= 3) {
+            throw new CustomException(ErrorCode.MAGAZINE_REVISION_LIMIT_EXCEEDED);
+        }
+
+        MagazineRevision magazineRevision = new MagazineRevision(magazine, magazineUpdateRequestDto.getContent(), revisionCount + 1);
+        magazineRevisionRepository.save(magazineRevision);
+    }
 }

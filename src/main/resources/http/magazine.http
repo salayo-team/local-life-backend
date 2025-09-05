@@ -61,7 +61,7 @@ GET http://localhost:8080/admin/magazines?page=0&size=5
 Authorization: Bearer {{accessToken}}
 
 ### 임시등록 매거진 상세조회(DRAFT)
-GET http://localhost:8080/admin/magazines/1
+GET http://localhost:8080/admin/magazines/8
 Authorization: Bearer {{accessToken}}
 
 ### 매거진 초안 확인 링크 전송
@@ -83,6 +83,15 @@ Content-Type: application/json
   const accessToken = json.data.accessToken;
   client.global.set("accessToken", accessToken);
 %}
+
+### 매거진 수정 (관리자 전용)
+PUT http://localhost:8080/admin/magazines/8
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "content": "수정된 매거진 본문 내용입니다. 새로운 인터뷰 내용을 반영했습니다."
+}
 
 ### 매거진 피드백 등록 성공
 POST http://localhost:8080/localcreator/magazines/8/feedbacks
