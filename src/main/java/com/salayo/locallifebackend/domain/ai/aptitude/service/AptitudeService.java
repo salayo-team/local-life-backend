@@ -111,8 +111,13 @@ public class AptitudeService {
 		// Redis에서 세션 ID 가져오기
 		String sessionId = aptitudeCacheService.getSessionId(memberId);
 		if (sessionId == null) {
+			// 세션이 만료되거나 없는 경우 재생성
 			sessionId = generateSessionId(memberId);
 			aptitudeCacheService.saveSessionId(memberId, sessionId);
+			log.warn("세션이 없어 재생성 - memberId: {}, newSessionId: {}", memberId, sessionId);
+		} else {
+			// 세션 TTL 갱신 (30분 연장)
+			aptitudeCacheService.refreshSession(memberId);
 		}
 
 		// 답변 분석 (JSON 파싱된 객체 반환)

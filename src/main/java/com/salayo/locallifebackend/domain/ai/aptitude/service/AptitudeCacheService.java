@@ -108,16 +108,23 @@ public class AptitudeCacheService {
 		log.info("모든 테스트 데이터 삭제 완료 - memberId: {}", memberId);
 	}
 	
-	// 세션 ID 저장
+	// 세션 ID 저장 (30분 타임아웃)
 	public void saveSessionId(Long memberId, String sessionId) {
 		String key = CacheKeyPrefix.APTITUDE_TEST + memberId + ":session";
-		redisTemplate.opsForValue().set(key, sessionId, CacheKeyPrefix.APTITUDE_TEST_TTL_HOURS, TimeUnit.HOURS);
-		log.debug("세션 ID 저장 - memberId: {}, sessionId: {}", memberId, sessionId);
+		redisTemplate.opsForValue().set(key, sessionId, CacheKeyPrefix.SESSION_TIMEOUT_MINUTES, TimeUnit.MINUTES);
+		log.debug("세션 ID 저장 - memberId: {}, sessionId: {}, TTL: {}분", memberId, sessionId, CacheKeyPrefix.SESSION_TIMEOUT_MINUTES);
 	}
 	
 	// 세션 ID 조회
 	public String getSessionId(Long memberId) {
 		String key = CacheKeyPrefix.APTITUDE_TEST + memberId + ":session";
 		return redisTemplate.opsForValue().get(key);
+	}
+	
+	// 세션 TTL 갱신 (활동 시마다 호출)
+	public void refreshSession(Long memberId) {
+		String sessionKey = CacheKeyPrefix.APTITUDE_TEST + memberId + ":session";
+		Boolean refreshed = redisTemplate.expire(sessionKey, CacheKeyPrefix.SESSION_TIMEOUT_MINUTES, TimeUnit.MINUTES);
+		log.debug("세션 TTL 갱신 - memberId: {}, 결과: {}", memberId, refreshed);
 	}
 }
