@@ -105,4 +105,8 @@ public class Magazine extends BaseEntity {
         this.content = content;
     }
 
+    public void updateContent(String newContent) {
+        this.content = newContent;
+    }
+
 }

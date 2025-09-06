@@ -41,6 +41,7 @@ public enum ErrorCode {
     PROGRAM_DELETED(HttpStatus.BAD_REQUEST, "삭제된 체험 프로그램입니다."),
     APTITUDE_TEST_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "마이페이지에서 적성 검사는 최대 5회까지만 가능합니다."),
     FEEDBACK_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "피드백은 최대 3회까지만 작성할 수 있습니다."),
+    MAGAZINE_REVISION_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "매거진 수정은 최대 3회까지만 할 수 있습니다."),
 
     // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
@@ -56,6 +57,7 @@ public enum ErrorCode {
     LOCAL_CREATOR_NOT_APPROVED(HttpStatus.FORBIDDEN, "로컬 크리에이터로 승인되지 않은 유저입니다."),
     RESERVATION_NOT_ALLOWED(HttpStatus.FORBIDDEN, "예약을 할 수 있는 권한이 없습니다."),
     REVIEW_PERIOD_EXPIRED(HttpStatus.FORBIDDEN, "리뷰 작성 기한이 만료되었습니다."),
+    MAGAZINE_FORBIDDEN(HttpStatus.FORBIDDEN, "이 매거진에 대한 권한이 없습니다."),
 
     // 404 NOT_FOUND
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 회원을 찾을 수 없습니다."),
