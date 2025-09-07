@@ -289,8 +289,13 @@ public class AptitudeService {
 		
 		List<AptitudeTestHistory> histories = aptitudeTestHistoryRepository.findBySessionIdOrderByStepAsc(sessionId);
 		
-		// 본인의 이력인지 확인
-		if (!histories.isEmpty() && !histories.get(0).getMember().getId().equals(memberId)) {
+		// 세션이 존재하지 않거나, 이력이 없는 경우
+		if (histories.isEmpty()) {
+			throw new CustomException(ErrorCode.SESSION_NOT_FOUND);
+		}
+
+		// 세션은 존재하지만, 권한이 없는 경우
+		if (!histories.get(0).getMember().getId().equals(memberId)) {
 			throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
 		}
 		
