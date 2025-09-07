@@ -319,8 +319,8 @@ public class AptitudeService {
 			.questionText(history.getQuestionText())
 			.userResponse(history.getUserResponse())
 			.aiResponse(history.getAiResponse())
-			.aptitudeType(history.getAnalyzedAptitudeType() != null ? 
-				history.getAnalyzedAptitudeType().name() : null)
+			.aptitudeType(history.getAnalyzedAptitudeType() != null ?
+				AptitudeType.valueOf(history.getAnalyzedAptitudeType().name()) : null)
 			.confidenceScore(history.getConfidenceScore())
 			.sessionId(history.getSessionId())
 			.isCompleted(history.getIsCompleted())
