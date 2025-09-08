@@ -2,6 +2,7 @@ package com.salayo.locallifebackend.domain.ai.aptitude.service;
 
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeAnswerRequestDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeQuestionResponseDto;
+import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeTestHistoryResponseDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeTestStartResponseDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeTextProgressResponseDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeTestResultResponseDto;
@@ -11,22 +12,20 @@ import com.salayo.locallifebackend.domain.ai.aptitude.entity.UserAptitude;
 import com.salayo.locallifebackend.domain.ai.aptitude.enums.AptitudeType;
 import com.salayo.locallifebackend.domain.ai.aptitude.repository.AptitudeTestHistoryRepository;
 import com.salayo.locallifebackend.domain.ai.aptitude.repository.UserAptitudeRepository;
+import com.salayo.locallifebackend.domain.ai.aptitude.dto.AiAptitudeAnalysisResponseDto;
 import com.salayo.locallifebackend.domain.member.entity.Member;
 import com.salayo.locallifebackend.domain.member.repository.MemberRepository;
 import com.salayo.locallifebackend.global.error.ErrorCode;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
+import com.salayo.locallifebackend.global.util.CacheKeyPrefix;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,22 +37,19 @@ public class AptitudeService {
 	private final AptitudeTestHistoryRepository aptitudeTestHistoryRepository;
 	private final MemberRepository memberRepository;
 	private final AptitudeAiService aptitudeAiService;
-	private final RedisTemplate<String, String> aiAptitudeRedisTemplate;
+	private final AptitudeCacheService aptitudeCacheService;
 
-	private static final int MAX_TEST_COUNT = 5;
-	private static final int TOTAL_QUESTIONS = 5;
-	private static final String REDIS_KEY_PREFIX = "aptitude:test:";
-	private static final long REDIS_TTL_HOURS = 24;
-
-	public AptitudeService(UserAptitudeRepository userAptitudeRepository, AptitudeTestHistoryRepository aptitudeTestHistoryRepository,
-		MemberRepository memberRepository, AptitudeAiService aptitudeAiService,
-		@Qualifier("aiAptitudeRedisTemplate") RedisTemplate<String, String> aiAptitudeRedisTemplate) {
-		this.userAptitudeRepository = userAptitudeRepository;
-		this.aptitudeTestHistoryRepository = aptitudeTestHistoryRepository;
-		this.memberRepository = memberRepository;
-		this.aptitudeAiService = aptitudeAiService;
-		this.aiAptitudeRedisTemplate = aiAptitudeRedisTemplate;
-	}
+	public AptitudeService(UserAptitudeRepository userAptitudeRepository, 
+			AptitudeTestHistoryRepository aptitudeTestHistoryRepository,
+			MemberRepository memberRepository, 
+			AptitudeAiService aptitudeAiService,
+			AptitudeCacheService aptitudeCacheService) {
+			this.userAptitudeRepository = userAptitudeRepository;
+			this.aptitudeTestHistoryRepository = aptitudeTestHistoryRepository;
+			this.memberRepository = memberRepository;
+			this.aptitudeAiService = aptitudeAiService;
+			this.aptitudeCacheService = aptitudeCacheService;
+		}
 
 	@Transactional
 	public AptitudeTestStartResponseDto startTest(Long memberId) {
@@ -62,24 +58,43 @@ public class AptitudeService {
 
 		// 테스트 가능 여부 확인
 		UserAptitude userAptitude = userAptitudeRepository.findByMember(member).orElse(null);
-		if (userAptitude != null && userAptitude.getTestCount() >= MAX_TEST_COUNT) {
-			throw new CustomException(ErrorCode.TOO_MANY_REQUESTS);
+		
+		// 마이페이지에서 호출된 경우 (이미 온보딩을 완료한 경우)
+		if (userAptitude != null && userAptitude.getIsOnboardingCompleted()) {
+			// 마이페이지 테스트 횟수 확인 (최대 5회)
+			if (userAptitude.getMypageTestCount() >= CacheKeyPrefix.APTITUDE_MAX_TEST_COUNT) {
+				throw new CustomException(ErrorCode.APTITUDE_TEST_LIMIT_EXCEEDED);
+			}
 		}
+		// 온보딩에서 처음 호출된 경우는 제한 없음
 
+		// 세션 ID 생성
+		String sessionId = generateSessionId(memberId);
+		
 		/**
 		 * 기존 테스트 이력 삭제 -> 사용자가 여러번 테스트 시작했다가 중도 이탈 시 불필요한 이력 삭제가 발생할 수 있음.
 		 * - TODO : 테스트 시작이 아닌 완료 시점에만 testCount를 증가시키고 완료되지 않은 테스트는 deleteAllByMember로 삭제하는 정책으로 수정
 		 */
 		aptitudeTestHistoryRepository.deleteAllByMember(member);
+		
+		// Redis 기존 데이터 정리 (중복 방지)
+		aptitudeCacheService.deleteAllTestData(memberId);
 
 		// Redis에 테스트 진행 상태 저장
-		String redisKey = REDIS_KEY_PREFIX + memberId;
-		aiAptitudeRedisTemplate.opsForValue().set(redisKey, "1", REDIS_TTL_HOURS, TimeUnit.HOURS);
+		aptitudeCacheService.saveTestProgress(memberId, "1");
+		
+		// Redis에 세션 ID 저장
+		aptitudeCacheService.saveSessionId(memberId, sessionId);
 
 		// 첫 질문 가져오기
 		AptitudeQuestionResponseDto firstQuestion = aptitudeAiService.getNextQuestion(0);
 
-		return new AptitudeTestStartResponseDto(1, TOTAL_QUESTIONS, firstQuestion);
+		return new AptitudeTestStartResponseDto(1, CacheKeyPrefix.APTITUDE_TOTAL_QUESTIONS, firstQuestion);
+	}
+	
+	// 세션 ID 생성
+	private String generateSessionId(Long memberId) {
+		return String.format("APT-%d-%d", memberId, System.currentTimeMillis());
 	}
 
 	@Transactional
@@ -88,44 +103,87 @@ public class AptitudeService {
 			.orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
 		// Redis에서 현재 진행 상태 확인
-		String redisKey = REDIS_KEY_PREFIX + memberId;
-		String currentStepStr = aiAptitudeRedisTemplate.opsForValue().get(redisKey);
+		String currentStepStr = aptitudeCacheService.getTestProgress(memberId);
 		if (currentStepStr == null) {
 			throw new CustomException(ErrorCode.NOT_FOUND_TEST_PROGRESS);
 		}
+		
+		// Redis에서 세션 ID 가져오기
+		String sessionId = aptitudeCacheService.getSessionId(memberId);
+		if (sessionId == null) {
+			// 세션이 만료되거나 없는 경우 재생성
+			sessionId = generateSessionId(memberId);
+			aptitudeCacheService.saveSessionId(memberId, sessionId);
+			log.warn("세션이 없어 재생성 - memberId: {}, newSessionId: {}", memberId, sessionId);
+		} else {
+			// 세션 TTL 갱신 (30분 연장)
+			aptitudeCacheService.refreshSession(memberId);
+		}
 
-		// 답변 분석
-		String aiAnalysis = aptitudeAiService.analyzeResponse(
+		// 답변 분석 (JSON 파싱된 객체 반환)
+		AiAptitudeAnalysisResponseDto aiAnalysis = aptitudeAiService.analyzeResponse(
 			aptitudeAnswerRequestDto.getAnswer(),
 			aptitudeAiService.getNextQuestion(aptitudeAnswerRequestDto.getStep() - 1)
 		);
 
-		// 이력 저장
+		// Redis에 답변 저장
+		aptitudeCacheService.saveAnswer(memberId, aptitudeAnswerRequestDto.getStep(), 
+			aptitudeAnswerRequestDto.getAnswer());
+		
+		// 디버깅용 로그 (테스트 후 제거)
+		log.info("[TEST] Redis 답변 저장 완료 - memberId: {}, step: {}", memberId, aptitudeAnswerRequestDto.getStep());
+
+		// AI 분석 결과에서 적성 추출 및 점수 업데이트 (객체로 변경)
+		updateScoreFromAnalysis(memberId, aiAnalysis);
+		
+		// JSON 파싱 테스트 로그
+		log.info("[JSON 파싱 테스트] Step {} 처리 완료 - 적성: {}, 신뢰도: {}", 
+			aptitudeAnswerRequestDto.getStep(), 
+			aiAnalysis.getAptitudeType(), 
+			aiAnalysis.getConfidenceScore());
+		
+		// 이력 저장용 AI 응답 문자열 생성
+		String aiResponseStr = String.format("%s - %s (신뢰도: %.2f)", 
+			aiAnalysis.getAptitudeType(), 
+			aiAnalysis.getReason(), 
+			aiAnalysis.getConfidenceScore());
+		
+		// 디버깅용 로그
+		Map<AptitudeType, Integer> currentScores = aptitudeCacheService.getAllAptitudeScores(memberId);
+		log.info("[TEST] 현재 적성 점수 상태: {}", currentScores);
+
+		// 이력 저장 (AI 분석 결과를 포함하여 저장)
 		AptitudeTestHistory aptitudeTestHistory = AptitudeTestHistory.builder()
 			.member(member)
 			.step(aptitudeAnswerRequestDto.getStep())
 			.questionText(aptitudeAnswerRequestDto.getQuestionText())
 			.userResponse(aptitudeAnswerRequestDto.getAnswer())
-			.aiResponse(aiAnalysis)
+			.aiResponse(aiResponseStr)
+			.analyzedAptitudeType(parseAptitudeType(aiAnalysis.getAptitudeType()))
+			.confidenceScore(aiAnalysis.getConfidenceScore())
+			.sessionId(sessionId)
+			.isCompleted(false)
 			.build();
 		aptitudeTestHistoryRepository.save(aptitudeTestHistory);
+		
+		log.info("[이력 저장] Step {} 저장 완료 - sessionId: {}, aptitudeType: {}", 
+			aptitudeAnswerRequestDto.getStep(), sessionId, aiAnalysis.getAptitudeType());
 
 		// 다음 단계 처리
-		if (aptitudeAnswerRequestDto.getStep() >= TOTAL_QUESTIONS) {
+		if (aptitudeAnswerRequestDto.getStep() >= CacheKeyPrefix.APTITUDE_TOTAL_QUESTIONS) {
 			// Redis에서 상태 삭제
-			aiAptitudeRedisTemplate.delete(redisKey);
+			aptitudeCacheService.deleteTestProgress(memberId);
 			// 최종 결과 계산
 			return calculateAndSaveResult(member);
 		} else {
 			// Redis 상태 업데이트
-			aiAptitudeRedisTemplate.opsForValue().set(redisKey, String.valueOf(aptitudeAnswerRequestDto.getStep() + 1),
-				REDIS_TTL_HOURS, TimeUnit.HOURS);
+			aptitudeCacheService.updateTestProgress(memberId, aptitudeAnswerRequestDto.getStep() + 1);
 
 			// 다음 질문
 			AptitudeQuestionResponseDto nextQuestion = aptitudeAiService.getNextQuestion(aptitudeAnswerRequestDto.getStep());
 			return new AptitudeTextProgressResponseDto(
 				aptitudeAnswerRequestDto.getStep() + 1,
-				TOTAL_QUESTIONS,
+				CacheKeyPrefix.APTITUDE_TOTAL_QUESTIONS,
 				nextQuestion,
 				false,
 				null
@@ -134,26 +192,47 @@ public class AptitudeService {
 	}
 
 	private AptitudeTextProgressResponseDto calculateAndSaveResult(Member member) {
-		// 테스트 이력에서 적성 점수 계산
-		List<AptitudeTestHistory> histories = aptitudeTestHistoryRepository.findByMemberOrderByStepAsc(member);
-		Map<AptitudeType, Integer> scores = analyzeHistories(histories);
+		// Redis에서 적성 점수 가져오기
+		Map<AptitudeType, Integer> scores = aptitudeCacheService.getAllAptitudeScores(member.getId());
 
 		// 최종 적성 결정
 		AptitudeType finalAptitude = aptitudeAiService.calculateFinalAptitude(scores);
+		
+		// Redis에서 세션 ID 가져오기
+		String sessionId = aptitudeCacheService.getSessionId(member.getId());
 
 		// 저장 또는 업데이트
 		UserAptitude userAptitude = userAptitudeRepository.findByMember(member)
 			.orElse(UserAptitude.builder()
 				.member(member)
 				.testCount(0)
+				.mypageTestCount(0)
+				.isOnboardingCompleted(false)
 				.build());
 
-		userAptitude.updateAptitude(finalAptitude);
+		// 온보딩 완료 여부에 따라 다르게 처리
+		if (!userAptitude.getIsOnboardingCompleted()) {
+			userAptitude.updateAptitudeFromOnboarding(finalAptitude);
+		} else {
+			userAptitude.updateAptitudeFromMypage(finalAptitude);
+		}
+		
 		userAptitudeRepository.save(userAptitude);
+		
+		// 세션의 모든 이력을 완료 처리
+		if (sessionId != null) {
+			aptitudeTestHistoryRepository.markSessionAsCompleted(sessionId);
+			log.info("[테스트 완료] 세션 {} 완료 처리 - 최종 적성: {}", sessionId, finalAptitude);
+		}
+		
+		// Redis 데이터 정리
+		log.info("[TEST] Redis 데이터 정리 시작 - memberId: {}", member.getId());
+		aptitudeCacheService.deleteAllTestData(member.getId());
+		log.info("[TEST] Redis 데이터 정리 완료 - memberId: {}", member.getId());
 
 		return new AptitudeTextProgressResponseDto(
-			TOTAL_QUESTIONS,
-			TOTAL_QUESTIONS,
+			CacheKeyPrefix.APTITUDE_TOTAL_QUESTIONS,
+			CacheKeyPrefix.APTITUDE_TOTAL_QUESTIONS,
 			null,
 			true,
 			finalAptitude
@@ -169,9 +248,13 @@ public class AptitudeService {
 			.orElse(UserAptitude.builder()
 				.member(member)
 				.testCount(0)
+				.mypageTestCount(0)
+				.isOnboardingCompleted(false)
 				.build());
 
-		userAptitude.updateAptitude(aptitudeType);
+		// 수동 선택은 현재 온보딩에서만 가능하므로 온보딩 완료 처리 됨
+		// TODO : 수동 선택은 MyPage에서도 추후에 수동 선택해서 수정이 가능함.
+		userAptitude.updateAptitudeFromOnboarding(aptitudeType);
 		userAptitudeRepository.save(userAptitude);
 
 		return new AptitudeTestResultResponseDto(aptitudeType);
@@ -183,12 +266,71 @@ public class AptitudeService {
 			.orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
 		return userAptitudeRepository.findByMember(member)
-			.map(aptitude -> new CanRetakeTestResponseDto(
-				aptitude.getTestCount() < MAX_TEST_COUNT,
-				aptitude.getTestCount(),
-				MAX_TEST_COUNT
-			))
-			.orElse(new CanRetakeTestResponseDto(true, 0, MAX_TEST_COUNT));
+			.map(aptitude -> {
+				// 온보딩 미완료 시 항상 가능
+				if (!aptitude.getIsOnboardingCompleted()) {
+					return new CanRetakeTestResponseDto(true, 0, CacheKeyPrefix.APTITUDE_MAX_TEST_COUNT);
+				}
+				// 온보딩 완료 후 마이페이지 테스트 횟수 확인
+				return new CanRetakeTestResponseDto(
+					aptitude.getMypageTestCount() < CacheKeyPrefix.APTITUDE_MAX_TEST_COUNT,
+					aptitude.getMypageTestCount(),
+					CacheKeyPrefix.APTITUDE_MAX_TEST_COUNT
+				);
+			})
+			.orElse(new CanRetakeTestResponseDto(true, 0, CacheKeyPrefix.APTITUDE_MAX_TEST_COUNT));
+	}
+	
+	// 테스트 이력 조회 (세션별)
+	@Transactional(readOnly = true)
+	public List<AptitudeTestHistoryResponseDto> getTestHistoryBySession(Long memberId, String sessionId) {
+		Member member = memberRepository.findById(memberId)
+			.orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+		
+		List<AptitudeTestHistory> histories = aptitudeTestHistoryRepository.findBySessionIdOrderByStepAsc(sessionId);
+		
+		// 세션이 존재하지 않거나, 이력이 없는 경우
+		if (histories.isEmpty()) {
+			throw new CustomException(ErrorCode.SESSION_NOT_FOUND);
+		}
+
+		// 세션은 존재하지만, 권한이 없는 경우
+		if (!histories.get(0).getMember().getId().equals(memberId)) {
+			throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
+		}
+		
+		return histories.stream()
+			.map(this::convertToDto)
+			.toList();
+	}
+	
+	// 완료된 테스트 이력 조회
+	@Transactional(readOnly = true)
+	public List<AptitudeTestHistoryResponseDto> getCompletedTestHistory(Long memberId) {
+		Member member = memberRepository.findById(memberId)
+			.orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+		
+		return aptitudeTestHistoryRepository.findByMemberAndIsCompletedTrueOrderByCreatedAtDesc(member)
+			.stream()
+			.map(this::convertToDto)
+			.toList();
+	}
+	
+	// Entity -> DTO 변환 메소드
+	private AptitudeTestHistoryResponseDto convertToDto(AptitudeTestHistory history) {
+		return AptitudeTestHistoryResponseDto.builder()
+			.historyId(history.getId())
+			.step(history.getStep())
+			.questionText(history.getQuestionText())
+			.userResponse(history.getUserResponse())
+			.aiResponse(history.getAiResponse())
+			.aptitudeType(history.getAnalyzedAptitudeType() != null ?
+				AptitudeType.valueOf(history.getAnalyzedAptitudeType().name()) : null)
+			.confidenceScore(history.getConfidenceScore())
+			.sessionId(history.getSessionId())
+			.isCompleted(history.getIsCompleted())
+			.createdAt(history.getCreatedAt())
+			.build();
 	}
 
 	private Map<AptitudeType, Integer> analyzeHistories(List<AptitudeTestHistory> histories) {
@@ -225,5 +367,46 @@ public class AptitudeService {
 		}
 
 		return scores;
+	}
+
+	// AI 분석 결과에서 적성 점수 추출 및 Redis 업데이트 (JSON 객체 기반)
+	private void updateScoreFromAnalysis(Long memberId, AiAptitudeAnalysisResponseDto aiAnalysis) {
+		try {
+			// AI 분석 결과에서 적성 타입 추출
+			AptitudeType aptitudeType = AptitudeType.valueOf(aiAnalysis.getAptitudeType().toUpperCase());
+			
+			// 신뢰도에 따른 가중치 적용 (높은 신뢰도일수록 더 높은 점수)
+			int score = aiAnalysis.getConfidenceScore() > 0.7 ? 2 : 1;
+			
+			// 가중치 적용 로그
+			log.info("[가중치 테스트] 신뢰도 {}에 따른 점수: {} (기준: 0.7 초과 시 2점, 이하 시 1점)", 
+				aiAnalysis.getConfidenceScore(), score);
+			
+			aptitudeCacheService.updateAptitudeScore(memberId, aptitudeType, score);
+			log.debug("적성 점수 업데이트 - memberId: {}, type: {}, score: {}, confidence: {}", 
+				memberId, aptitudeType, score, aiAnalysis.getConfidenceScore());
+		} catch (IllegalArgumentException e) {
+			log.warn("AI 응답에서 유효하지 않은 적성 타입: {}", aiAnalysis.getAptitudeType());
+			// Fallback: reason에서 키워드 매칭
+			for (AptitudeType type : AptitudeType.values()) {
+				if (aiAnalysis.getReason() != null && 
+					(aiAnalysis.getReason().contains(type.name()) || 
+					 aiAnalysis.getReason().contains(type.getTitle()))) {
+					aptitudeCacheService.updateAptitudeScore(memberId, type, 1);
+					log.debug("Fallback 적성 점수 업데이트 - memberId: {}, type: {}", memberId, type);
+					break;
+				}
+			}
+		}
+	}
+	
+	// String을 AptitudeType Enum으로 안전하게 변환
+	private AptitudeType parseAptitudeType(String aptitudeTypeStr) {
+		try {
+			return AptitudeType.valueOf(aptitudeTypeStr.toUpperCase());
+		} catch (IllegalArgumentException | NullPointerException e) {
+			log.warn("유효하지 않은 적성 타입 문자열: {}, 기본값 NATURE 반환", aptitudeTypeStr);
+			return AptitudeType.NATURE; // 기본값
+		}
 	}
 }

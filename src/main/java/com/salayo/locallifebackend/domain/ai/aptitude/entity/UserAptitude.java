@@ -44,16 +44,32 @@ public class UserAptitude extends BaseEntity {
 	@Column(name = "test_count", nullable = false)
 	private Integer testCount;
 
+	@Column(name = "mypage_test_count", nullable = false)
+	private Integer mypageTestCount;
+
+	@Column(name = "is_onboarding_completed", nullable = false)
+	private Boolean isOnboardingCompleted;
+
 	@Builder
-	public UserAptitude(Member member, AptitudeType aptitudeType, Integer testStep, Integer testCount) {
+	public UserAptitude(Member member, AptitudeType aptitudeType, Integer testStep, 
+			Integer testCount, Integer mypageTestCount, Boolean isOnboardingCompleted) {
 		this.member = member;
 		this.aptitudeType = aptitudeType;
 		this.testStep = testStep;
 		this.testCount = (testCount != null) ? testCount : 0;
+		this.mypageTestCount = (mypageTestCount != null) ? mypageTestCount : 0;
+		this.isOnboardingCompleted = (isOnboardingCompleted != null) ? isOnboardingCompleted : false;
 	}
 
-	public void updateAptitude(AptitudeType aptitudeType) {
+	public void updateAptitudeFromOnboarding(AptitudeType aptitudeType) {
 		this.aptitudeType = aptitudeType;
+		this.isOnboardingCompleted = true;
+		this.testCount++;
+	}
+
+	public void updateAptitudeFromMypage(AptitudeType aptitudeType) {
+		this.aptitudeType = aptitudeType;
+		this.mypageTestCount++;
 		this.testCount++;
 	}
 
