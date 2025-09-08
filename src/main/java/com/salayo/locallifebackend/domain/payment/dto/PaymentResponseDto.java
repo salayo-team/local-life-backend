@@ -1,6 +1,8 @@
 package com.salayo.locallifebackend.domain.payment.dto;
 
 import com.salayo.locallifebackend.domain.payment.entity.Payment;
+import com.salayo.locallifebackend.domain.payment.enums.PaymentMethodType;
+import com.salayo.locallifebackend.domain.payment.enums.PaymentProvider;
 import com.salayo.locallifebackend.domain.payment.enums.PaymentStatus;
 import com.salayo.locallifebackend.global.enums.DeletedStatus;
 import java.math.BigDecimal;
@@ -18,11 +20,17 @@ public class PaymentResponseDto {
 
 	private String impUid; //Iamport Unique ID
 
+	private String merchantUid; //주문 고유 번호
+
 	private BigDecimal paymentCost; //결제 금액
 
 	private String paymentCard; //결제 카드 정보
 
-	private String paymentMethodType; //결제 수단 타입
+	private PaymentMethodType paymentMethodType; //결제 수단 타입
+
+	private PaymentProvider paymentProvider; //결제 대행사
+
+	private String paymentCardSnapshot; //카드 스냅샷
 
 	private PaymentStatus paymentStatus; //결제 상태
 
@@ -48,9 +56,12 @@ public class PaymentResponseDto {
 			.id(payment.getId())
 			.pgTid(payment.getPgTid())
 			.impUid(payment.getImpUid())
+			.merchantUid(payment.getMerchantUid())
 			.paymentCost(payment.getPaymentCost())
 			.paymentCard(payment.getPaymentCard())
 			.paymentMethodType(payment.getPaymentMethodType())
+			.paymentProvider(payment.getPaymentProvider())
+			.paymentCardSnapshot(payment.getPaymentCardSnapshot())
 			.paymentStatus(payment.getPaymentStatus())
 			.refundAttemptedAt(payment.getRefundAttemptedAt())
 			.paymentFailedReason(payment.getPaymentFailedReason())

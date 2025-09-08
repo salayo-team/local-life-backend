@@ -13,8 +13,8 @@ import com.salayo.locallifebackend.global.error.exception.CustomException;
 import com.salayo.locallifebackend.global.security.MemberDetails;
 import com.salayo.locallifebackend.global.success.SuccessCode;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +23,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -90,7 +89,7 @@ public class ProgramController {
 	)
 	@GetMapping(value = "/programs/search")
 	public ResponseEntity<CommonResponseDto<PaginationResponseDto<ProgramCreateResponseDto>>> searchProgram(
-		@ModelAttribute ProgramSearchRequestDto requestDto,
+		@Valid @ModelAttribute ProgramSearchRequestDto requestDto,
 		@AuthenticationPrincipal MemberDetails memberDetails) {
 
 		Long memberId = memberDetails.getMember().getId();
