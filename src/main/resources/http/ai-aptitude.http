@@ -69,6 +69,23 @@ GET http://localhost:8080/ai/aptitude/can-retake
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
+### ===== 적성 검사 이력 조회 =====
+
+### 4. 완료된 적성 검사 이력 조회
+GET http://localhost:8080/ai/aptitude/history
+Authorization: Bearer {{accessToken}}
+
+### 5. 특정 세션의 적성 검사 이력 조회
+# sessionId를 실제 세션 ID로 변경해서 사용
+GET http://localhost:8080/ai/aptitude/history/session?sessionId=APT-1-1234567890
+Authorization: Bearer {{accessToken}}
+
+> {%
+  // 세션 ID 예시 출력
+  console.log("세션 ID 예시: APT-{userId}-{timestamp}");
+  console.log("실제 테스트 후 반환된 세션 ID를 사용할 것");
+%}
+
 ### ===== 개별 단계별 테스트 (디버깅용) =====
 # 테스트 시작을 먼저 실행한 후 아래 요청들을 순서대로 실행
 
