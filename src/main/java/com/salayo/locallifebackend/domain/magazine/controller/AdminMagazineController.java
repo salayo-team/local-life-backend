@@ -5,8 +5,10 @@ import com.salayo.locallifebackend.domain.magazine.dto.MagazineCreateRequestDto;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineDraftDetailResponseDto;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineDraftListResponseDto;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineFileUploadResponseDto;
+import com.salayo.locallifebackend.domain.magazine.dto.MagazineRevisionResponseDto;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineUpdateRequestDto;
 import com.salayo.locallifebackend.domain.magazine.service.MagazineFileService;
+import com.salayo.locallifebackend.domain.magazine.service.MagazineRevisionService;
 import com.salayo.locallifebackend.domain.magazine.service.MagazineService;
 import com.salayo.locallifebackend.global.dto.CommonResponseDto;
 import com.salayo.locallifebackend.global.dto.PaginationResponseDto;
@@ -40,10 +42,12 @@ public class AdminMagazineController {
 
     private final MagazineService magazineService;
     private final MagazineFileService magazineFileService;
+    private final MagazineRevisionService magazineRevisionService;
 
-    public AdminMagazineController(MagazineService magazineService, MagazineFileService magazineFileService) {
+    public AdminMagazineController(MagazineService magazineService, MagazineFileService magazineFileService, MagazineRevisionService magazineRevisionService) {
         this.magazineService = magazineService;
         this.magazineFileService = magazineFileService;
+        this.magazineRevisionService = magazineRevisionService;
     }
 
     @Operation(summary = "매거진 임시 저장 - 로컬 크리에이터 확인용", description = "관리자가 로컬 크리에이터를 인터뷰한 매거진을 임시 상태로 저장")
@@ -109,5 +113,15 @@ public class AdminMagazineController {
         magazineService.updateMagazine(magazineId, magazineUpdateRequestDto, memberDetails.getMember());
 
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.UPDATE_SUCCESS, null));
+    }
+
+    @Operation(summary = "매거진 수정 이력 조회", description = "관리자가 특정 매거진의 수정 이력 전체를 조회합니다.")
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/{magazineId}/revisions")
+    public ResponseEntity<CommonResponseDto<List<MagazineRevisionResponseDto>>> getMagazineRevisions(
+        @PathVariable Long magazineId
+    ) {
+        List<MagazineRevisionResponseDto> revisions = magazineRevisionService.getRevisions(magazineId);
+        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, revisions));
     }
 }

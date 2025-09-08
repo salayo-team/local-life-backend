@@ -114,3 +114,8 @@ Authorization: Bearer {{accessToken}}
 ### 매거진 피드백 목록 조회 (로컬 크리에이터)
 GET http://localhost:8080/localcreator/magazines/8/feedbacks
 Authorization: Bearer {{accessToken}}
+
+### 매거진 수정 이력 조회
+GET http://localhost:8080/admin/magazines/8/revisions
+Authorization: Bearer {{accessToken}}
+Accept: application/json
