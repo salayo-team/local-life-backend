@@ -159,30 +159,30 @@ public class PaymentService {
 
 		if (iamportPayment == null || !"paid".equals(iamportPayment.getStatus())) {
 			String pgFailMessage = iamportPayment != null ? iamportPayment.getFailReason() : null;
-			failAndThrow(payment, "상태가 결제 완료가 아닙니다.", pgFailMessage,
+			failPaymentAndThrow(payment, "상태가 결제 완료가 아닙니다.", pgFailMessage,
 				ErrorCode.PAYMENT_VERIFICATION_FAILED);
 		}
 
 		String iamportPgTidCheck = iamportPayment.getPgTid();
 		if(iamportPgTidCheck == null){
-			failAndThrow(payment, "iamport pgTid 값 없음", iamportPayment.getFailReason()
+			failPaymentAndThrow(payment, "iamport pgTid 값 없음", iamportPayment.getFailReason()
 				, ErrorCode.PGTID_NOT_FOUND);
 		}
 
 		if (!requestDto.getPgTid().equals(iamportPayment.getPgTid())) {
-			failAndThrow(payment, "pgTid가 일치하지 않습니다.", iamportPayment.getFailReason(),
+			failPaymentAndThrow(payment, "pgTid가 일치하지 않습니다.", iamportPayment.getFailReason(),
 				ErrorCode.PGTID_MISMATCH);
 		}
 
 		BigDecimal paymentCost = payment.getPaymentCost();
 		BigDecimal iamportAmount = BigDecimal.valueOf(iamportPayment.getAmount().longValue());
 		if (paymentCost.compareTo(iamportAmount) != 0) {
-			failAndThrow(payment, "결제 금액이 일치하지 않습니다.", iamportPayment.getFailReason(),
+			failPaymentAndThrow(payment, "결제 금액이 일치하지 않습니다.", iamportPayment.getFailReason(),
 				ErrorCode.PAYMENT_AMOUNT_MISMATCH);
 		}
 
 		if (!payment.getMerchantUid().equals(iamportPayment.getMerchantUid())) {
-			failAndThrow(payment, "merchantUid 일치하지 않습니다.", iamportPayment.getFailReason(),
+			failPaymentAndThrow(payment, "merchantUid 일치하지 않습니다.", iamportPayment.getFailReason(),
 				ErrorCode.MERCHANT_UID_MISMATCH);
 		}
 
@@ -236,10 +236,10 @@ public class PaymentService {
 	}
 
 	/**
-	 * TODO : 실패 로그 저장 메서드 분리
+	 * TODO : 결제 실패 처리 메서드 분리
 	 * - 중복되는 로직 리팩토링
 	 */
-	private void failAndThrow(Payment payment, String paymentFailedReason, String pgFailMessage, ErrorCode errorCode) {
+	private void failPaymentAndThrow(Payment payment, String paymentFailedReason, String pgFailMessage, ErrorCode errorCode) {
 		payment.failPayment(paymentFailedReason, pgFailMessage);
 		paymentRepository.save(payment);
 		throw new CustomException(errorCode);
