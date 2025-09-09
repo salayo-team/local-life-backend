@@ -7,7 +7,6 @@ import com.salayo.locallifebackend.global.dto.CommonResponseDto;
 import com.salayo.locallifebackend.global.security.MemberDetails;
 import com.salayo.locallifebackend.global.success.SuccessCode;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -34,8 +33,7 @@ public class PaymentController {
 	 */
 	@Operation(
 		summary = "결제 생성",
-		description = "멤버가 결제를 생성합니다.",
-		security = @SecurityRequirement(name = "bearerAuth")
+		description = "멤버가 결제를 생성합니다."
 	)
 	@PostMapping("/payments/{reservationId}")
 	public ResponseEntity<CommonResponseDto<PaymentResponseDto>> createPayment(

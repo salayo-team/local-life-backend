@@ -7,7 +7,6 @@ import com.salayo.locallifebackend.global.dto.CommonResponseDto;
 import com.salayo.locallifebackend.global.security.MemberDetails;
 import com.salayo.locallifebackend.global.success.SuccessCode;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -32,8 +31,7 @@ public class ReservationController {
 	 */
 	@Operation(
 		summary = "예약 생성",
-		description = "멤버가 예약을 생성합니다.",
-		security = @SecurityRequirement(name = "bearerAuth")
+		description = "멤버가 예약을 생성합니다."
 	)
 	@PostMapping("/reservations")
 	public ResponseEntity<CommonResponseDto<ReservationResponseDto>> createReservation(

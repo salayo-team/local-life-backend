@@ -175,7 +175,7 @@ public class PaymentService {
 		}
 
 		BigDecimal paymentCost = payment.getPaymentCost();
-		BigDecimal iamportAmount = BigDecimal.valueOf(iamportPayment.getAmount().longValue());
+		BigDecimal iamportAmount = iamportPayment.getAmount();
 		if (paymentCost.compareTo(iamportAmount) != 0) {
 			failPaymentAndThrow(payment, "결제 금액이 일치하지 않습니다.", iamportPayment.getFailReason(),
 				ErrorCode.PAYMENT_AMOUNT_MISMATCH);
