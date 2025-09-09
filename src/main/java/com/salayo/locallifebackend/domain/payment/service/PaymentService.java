@@ -70,6 +70,9 @@ public class PaymentService {
 		}
 
 		Reservation reservation = reservationRepository.findByIdOrElseThrow(reservationId);
+		if(reservation.getReservationStatus() != ReservationStatus.REQUESTED){
+			throw new CustomException(ErrorCode.INVALID_RESERVATION_STATUS);
+		}
 		reservation.updateReservationStatus(ReservationStatus.PAYMENT_PENDING);
 
 		String merchantUid = generateUniqueMerchantUid(reservation.getId());
@@ -119,8 +122,9 @@ public class PaymentService {
 	/**
 	 * 결제 검증 메서드
 	 * - 결제 검증 완료시 데이터 업데이트 & 결제 내역 생성
-	 * - TODO : Throw 터졌을때, 실패 로그 저장되는 로직 수정하기
-	 * - TODO : 검증 시, 특정 필드 null 허용 고민, 공백 방어 로직 추가하기
+	 * - TODO : throw 발생 시, 실패 로그 저장되는 로직 수정
+	 * - TODO : 검증 시, 특정 필드 null 허용 고민, 공백 방어 로직 추가
+	 * - TODO : 예외처리 & 검증 로직 추가 예정
 	 */
 	@Transactional
 	public PaymentResponseDto verifyPayment(Long memberId, Long paymentId, @Valid PaymentCreateRequestDto requestDto) {
@@ -146,9 +150,9 @@ public class PaymentService {
 		try {
 			iamportPaymentResponse = iamportClient.paymentByImpUid(requestDto.getImpUid());
 		} catch (IamportResponseException | IOException exception) {
-			failAndThrow(payment, "iamport 결제 조회 실패", null,
-				ErrorCode.IMPUID_NOT_FOUND_BY_IAMPORT);
-			return null;
+			payment.failPayment("iamport 결제 조회 실패", null);
+			paymentRepository.save(payment);
+			throw new CustomException(ErrorCode.IMPUID_NOT_FOUND_BY_IAMPORT);
 		}
 
 		com.siot.IamportRestClient.response.Payment iamportPayment = iamportPaymentResponse.getResponse();
@@ -235,8 +239,8 @@ public class PaymentService {
 	 * TODO : 실패 로그 저장 메서드 분리
 	 * - 중복되는 로직 리팩토링
 	 */
-	private void failAndThrow(Payment payment, String paymentFailedReason, String iamportReason, ErrorCode errorCode) {
-		payment.failPayment(paymentFailedReason, iamportReason);
+	private void failAndThrow(Payment payment, String paymentFailedReason, String pgFailMessage, ErrorCode errorCode) {
+		payment.failPayment(paymentFailedReason, pgFailMessage);
 		paymentRepository.save(payment);
 		throw new CustomException(errorCode);
 	}
@@ -249,20 +253,20 @@ public class PaymentService {
 	private String cardSnapShotLabel(com.siot.IamportRestClient.response.Payment iamportPayment, String cardName) {
 
 		String issuer = null;
-		if (iamportPayment != null && iamportPayment.getCardName() != null && !iamportPayment.getCardName().isBlank()) {
+		if (iamportPayment.getCardName() != null && !iamportPayment.getCardName().isBlank()) {
 			issuer = iamportPayment.getCardName().trim();
 		} else if (cardName != null && !cardName.isBlank()) {
 			issuer = cardName.trim();
 		}
 
-		if (issuer != null && !issuer.isEmpty()) {
+		if (issuer != null) {
 			issuer = issuer.replaceAll("\\s+", "");
 		}
 
 		String lastFourNumber = null;
-		if (iamportPayment != null && iamportPayment.getCardNumber() != null && !iamportPayment.getCardNumber().isBlank()) {
+		if (iamportPayment.getCardNumber() != null && !iamportPayment.getCardNumber().isBlank()) {
+			String cardNumbers = iamportPayment.getCardNumber().replaceAll("\\D", "");
 
-			String cardNumbers = iamportPayment.getCardNumber().trim().replaceAll("\\D", "");
 			if (cardNumbers.length() >= 4) {
 				lastFourNumber = cardNumbers.substring(cardNumbers.length() - 4);
 			}
