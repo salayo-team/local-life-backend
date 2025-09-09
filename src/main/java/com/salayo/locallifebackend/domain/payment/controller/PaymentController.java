@@ -76,7 +76,7 @@ public class PaymentController {
 	}
 
 	/**
-	 * 결제 검증 API
+	 * 결제 검증 테스트용 API
 	 */
 	@PostMapping("/payments/{paymentId}/verify/test")
 	public ResponseEntity<CommonResponseDto<PaymentResponseDto>> testVerifyPayment(@PathVariable("paymentId") Long paymentId,

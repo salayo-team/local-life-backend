@@ -124,7 +124,7 @@ public class PaymentService {
 	 * - 결제 검증 완료시 데이터 업데이트 & 결제 내역 생성
 	 * - TODO : throw 발생 시, 실패 로그 저장되는 로직 수정
 	 * - TODO : 검증 시, 특정 필드 null 허용 고민, 공백 방어 로직 추가
-	 * - TODO : 예외처리 & 검증 로직 추가 예정
+	 * - TODO : 예외처리 & 검증 로직 추가 예정 - 결제 상태 검증 등
 	 */
 	@Transactional
 	public PaymentResponseDto verifyPayment(Long memberId, Long paymentId, @Valid PaymentCreateRequestDto requestDto) {

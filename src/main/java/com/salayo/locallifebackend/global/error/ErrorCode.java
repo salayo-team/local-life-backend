@@ -49,7 +49,7 @@ public enum ErrorCode {
     PGTID_MISMATCH(HttpStatus.BAD_REQUEST, "pg_tid 정보가 일치하지 않습니다."),
     PAYMENT_AMOUNT_MISMATCH(HttpStatus.BAD_REQUEST, "결제 금액이 일치하지 않습니다."),
     PAYMENT_ALREADY_VERIFIED(HttpStatus.BAD_REQUEST, "이미 검증된 결제입니다."),
-    INVALID_RESERVATION_STATUS(HttpStatus.BAD_REQUEST, "현재 예약 상태에서는 결제 검증을 할 수 없습니다."),
+    INVALID_RESERVATION_STATUS(HttpStatus.BAD_REQUEST, "예약 상태가 올바르지 않습니다."),
     INVALID_PAYMENT_METHODTYPE(HttpStatus.BAD_REQUEST, "결제 수단 값이 올바르지 않습니다."),
     INVALID_PAYMENT_PROVIDER(HttpStatus.BAD_REQUEST, "결제 대행사 값이 올바르지 않습니다."),
 
