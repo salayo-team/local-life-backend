@@ -46,14 +46,17 @@ public class ProgramRepositoryCustomImpl implements ProgramRepositoryCustom {
 			conditions.add(program.aptitudeCategory.id.in(requestDto.getAptitudeIds()));
 		}
 
+		int page = (requestDto.getPage() == null || requestDto.getPage() < 0) ? 0 : requestDto.getPage();
+		int size = (requestDto.getSize() == null || requestDto.getSize() <= 0) ? ProgramSearchRequestDto.DEFAULT_SIZE : requestDto.getSize();
+
 		OrderSpecifier<? extends Comparable<?>> sortOrder = getSortOrder(requestDto.getSort(), program);
 
 		List<Program> content = jpaQueryFactory.selectFrom(program)
 			.where(conditions.toArray(
 				BooleanExpression[]::new))
 			.orderBy(sortOrder)
-			.offset((long) requestDto.getPage() * requestDto.getSize())
-			.limit(requestDto.getSize())
+			.offset((long) page * size)
+			.limit(size)
 			.fetch();
 
 		Long total = jpaQueryFactory.select(program.count())
