@@ -58,11 +58,18 @@ public class AptitudeTestHistory extends BaseEntity {
 	
 	@Column(name = "is_completed")
 	private Boolean isCompleted = false; // 테스트 완료 여부
+	
+	@Column(name = "is_partial_save")
+	private Boolean isPartialSave = false; // 부분 저장 여부
+	
+	@Column(name = "last_completed_step")
+	private Integer lastCompletedStep; // 마지막 완료 단계
 
 	@Builder
 	public AptitudeTestHistory(Member member, Integer step, String questionText, 
 							   String userResponse, String aiResponse, AptitudeType analyzedAptitudeType,
-							   Double confidenceScore, String sessionId, Boolean isCompleted) {
+							   Double confidenceScore, String sessionId, Boolean isCompleted,
+							   Boolean isPartialSave, Integer lastCompletedStep) {
 		this.member = member;
 		this.step = step;
 		this.questionText = questionText;
@@ -72,5 +79,7 @@ public class AptitudeTestHistory extends BaseEntity {
 		this.confidenceScore = confidenceScore;
 		this.sessionId = sessionId;
 		this.isCompleted = isCompleted != null ? isCompleted : false;
+		this.isPartialSave = isPartialSave != null ? isPartialSave : false;
+		this.lastCompletedStep = lastCompletedStep;
 	}
 }
