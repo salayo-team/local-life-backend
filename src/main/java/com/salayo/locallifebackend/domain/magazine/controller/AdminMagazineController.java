@@ -124,4 +124,13 @@ public class AdminMagazineController {
         List<MagazineRevisionResponseDto> revisions = magazineRevisionService.getRevisions(magazineId);
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, revisions));
     }
+
+    @Operation(summary = "매거진 수정본 확인 링크 전송", description = "로컬크리에이터에게 매거진 수정본 확인용 링크를 이메일로 전송합니다.")
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/{magazineId}/revision/send")
+    public ResponseEntity<CommonResponseDto<Void>> sendMagazineRevisionLink(@PathVariable Long magazineId) {
+        magazineService.sendPreviewLink(magazineId);
+
+        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.EMAIL_SEND_SUCCESS, null));
+    }
 }

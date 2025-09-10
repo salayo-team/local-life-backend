@@ -69,6 +69,11 @@ POST http://localhost:8080/admin/magazines/8/preview/send
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
+### 매거진 수정본 확인 링크 전송
+POST http://localhost:8080/admin/magazines/8/revision/send
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
 ### 로컬 크리에이터 로그인 (승인 여부 확인 포함)
 POST http://localhost:8080/auth/login
 Content-Type: application/json

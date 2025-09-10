@@ -197,4 +197,30 @@ public class MagazineService {
         MagazineRevision magazineRevision = new MagazineRevision(magazine, magazineUpdateRequestDto.getContent(), revisionCount + 1);
         magazineRevisionRepository.save(magazineRevision);
     }
+
+    @Transactional
+    public void sendRevisionLink(Long magazineId) {
+        Magazine magazine = magazineRepository.findById(magazineId)
+            .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_NOT_FOUND));
+
+        int revisionCount = magazineRevisionRepository.countByMagazineId(magazineId);
+
+        String email = magazine.getLocalCreator().getMember().getEmail();
+        String businessName = magazine.getLocalCreator().getBusinessName();
+
+        String subject;
+        String messageHeader;
+
+        if (revisionCount <= 3) {
+            subject ="[LocalLife] 로컬매거진 수정안" + revisionCount + " / 3 확인 요청";
+            messageHeader = "매거진" + revisionCount + "차 수정안이 작성되어 확인 요청드립니다.";
+        } else {
+            subject = "[LocalLife] 로컬매거진 추가 수정안(" + revisionCount + "회차) 확인 요청";
+            messageHeader = revisionCount + "번째 추가 수정안이 작성되어 확인 요청드립니다.";
+        }
+
+        String url = previewBaseUrl + UUID.randomUUID();
+
+        emailService.sendRevisionLinkEmail(email, businessName, url, subject, messageHeader, revisionCount);
+    }
 }
