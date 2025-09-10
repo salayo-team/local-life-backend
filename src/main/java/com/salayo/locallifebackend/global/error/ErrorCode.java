@@ -42,6 +42,16 @@ public enum ErrorCode {
     APTITUDE_TEST_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "마이페이지에서 적성 검사는 최대 5회까지만 가능합니다."),
     FEEDBACK_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "피드백은 최대 3회까지만 작성할 수 있습니다."),
     MAGAZINE_REVISION_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "매거진 수정은 최대 3회까지만 할 수 있습니다."),
+    ALREADY_RESERVATION(HttpStatus.BAD_REQUEST, "이미 예약된 스케줄입니다."),
+    PAYMENT_VERIFICATION_FAILED(HttpStatus.BAD_REQUEST, "결제 상태가 유효하지 않습니다."),
+    PAYMENT_METHOD_MISMATCH(HttpStatus.BAD_REQUEST, "결제 수단 정보가 일치하지 않습니다."),
+    MERCHANT_UID_MISMATCH(HttpStatus.BAD_REQUEST,"주문 번호 정보가 일치하지 않습니다."),
+    PGTID_MISMATCH(HttpStatus.BAD_REQUEST, "pg_tid 정보가 일치하지 않습니다."),
+    PAYMENT_AMOUNT_MISMATCH(HttpStatus.BAD_REQUEST, "결제 금액이 일치하지 않습니다."),
+    PAYMENT_ALREADY_VERIFIED(HttpStatus.BAD_REQUEST, "이미 검증된 결제입니다."),
+    INVALID_RESERVATION_STATUS(HttpStatus.BAD_REQUEST, "예약 상태가 올바르지 않습니다."),
+    INVALID_PAYMENT_METHODTYPE(HttpStatus.BAD_REQUEST, "결제 수단 값이 올바르지 않습니다."),
+    INVALID_PAYMENT_PROVIDER(HttpStatus.BAD_REQUEST, "결제 대행사 값이 올바르지 않습니다."),
 
     // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
@@ -72,10 +82,14 @@ public enum ErrorCode {
     REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 리뷰를 찾을 수 없습니다."),
     MAGAZINE_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 매거진을 찾을 수 없습니다."),
     SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 세션을 찾을 수 없습니다."),
+    IMPUID_NOT_FOUND(HttpStatus.NOT_FOUND, "imp_uid 값을 찾을 수 없습니다."),
+    PGTID_NOT_FOUND(HttpStatus.NOT_FOUND, "pg_tid 값을 찾을 수 없습니다."),
+    PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 결제를 찾을 수 없습니다."),
+    IMPUID_NOT_FOUND_BY_IAMPORT(HttpStatus.NOT_FOUND, "iam_port에서 해당 결제를 찾을 수 없습니다."),
 
     // 408 REQUEST_TIMEOUT
     AI_TIMEOUT(HttpStatus.REQUEST_TIMEOUT, "AI 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요."),
-    
+
     // 422 UNPROCESSABLE_ENTITY
     AI_RESPONSE_INVALID_FORMAT(HttpStatus.UNPROCESSABLE_ENTITY, "AI 응답 형식이 올바르지 않습니다."),
 
@@ -92,7 +106,7 @@ public enum ErrorCode {
     FILE_UPLOAD_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "파일 업로드에 실패했습니다."),
     AI_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "AI 처리 중 오류가 발생했습니다."),
 
-    ;
+	;
 
 
     private final HttpStatus status;
