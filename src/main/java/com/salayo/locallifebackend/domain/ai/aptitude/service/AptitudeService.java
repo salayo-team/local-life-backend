@@ -2,6 +2,7 @@ package com.salayo.locallifebackend.domain.ai.aptitude.service;
 
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeAnswerRequestDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeQuestionResponseDto;
+import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeResumeResponseDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeTestHistoryResponseDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeTestStartResponseDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeTextProgressResponseDto;
@@ -39,9 +40,9 @@ public class AptitudeService {
 	private final AptitudeAiService aptitudeAiService;
 	private final AptitudeCacheService aptitudeCacheService;
 
-	public AptitudeService(UserAptitudeRepository userAptitudeRepository, 
+	public AptitudeService(UserAptitudeRepository userAptitudeRepository,
 			AptitudeTestHistoryRepository aptitudeTestHistoryRepository,
-			MemberRepository memberRepository, 
+			MemberRepository memberRepository,
 			AptitudeAiService aptitudeAiService,
 			AptitudeCacheService aptitudeCacheService) {
 			this.userAptitudeRepository = userAptitudeRepository;
@@ -70,13 +71,11 @@ public class AptitudeService {
 
 		// 세션 ID 생성
 		String sessionId = generateSessionId(memberId);
-		
-		/**
-		 * 기존 테스트 이력 삭제 -> 사용자가 여러번 테스트 시작했다가 중도 이탈 시 불필요한 이력 삭제가 발생할 수 있음.
-		 * - TODO : 테스트 시작이 아닌 완료 시점에만 testCount를 증가시키고 완료되지 않은 테스트는 deleteAllByMember로 삭제하는 정책으로 수정
-		 */
-		aptitudeTestHistoryRepository.deleteAllByMember(member);
-		
+
+		// 미완료된 테스트 이력만 삭제 (완료된 이력은 보존)
+		// TODO: 테스트 완료 시점에만 testCount 증가하도록 수정 필요
+		aptitudeTestHistoryRepository.deleteByMemberAndIsCompletedFalse(member);
+
 		// Redis 기존 데이터 정리 (중복 방지)
 		aptitudeCacheService.deleteAllTestData(memberId);
 
@@ -165,8 +164,11 @@ public class AptitudeService {
 			.isCompleted(false)
 			.build();
 		aptitudeTestHistoryRepository.save(aptitudeTestHistory);
-		
-		log.info("[이력 저장] Step {} 저장 완료 - sessionId: {}, aptitudeType: {}", 
+
+		// 모든 단계에서 부분 저장 (중단 시 이어하기 가능)
+		savePartialResult(member, sessionId, aptitudeAnswerRequestDto.getStep());
+
+		log.info("[이력 저장] Step {} 저장 완료 - sessionId: {}, aptitudeType: {}",
 			aptitudeAnswerRequestDto.getStep(), sessionId, aiAnalysis.getAptitudeType());
 
 		// 다음 단계 처리
@@ -216,7 +218,9 @@ public class AptitudeService {
 		} else {
 			userAptitude.updateAptitudeFromMypage(finalAptitude);
 		}
-		
+
+		// 부분 저장 정보 초기화
+		userAptitude.clearPartialProgress();
 		userAptitudeRepository.save(userAptitude);
 		
 		// 세션의 모든 이력을 완료 처리
@@ -408,5 +412,77 @@ public class AptitudeService {
 			log.warn("유효하지 않은 적성 타입 문자열: {}, 기본값 NATURE 반환", aptitudeTypeStr);
 			return AptitudeType.NATURE; // 기본값
 		}
+	}
+
+	// 부분 저장 메소드
+	private void savePartialResult(Member member, String sessionId, int currentStep) {
+		// 모든 단계에서 저장 (테스트 완료 전까지)
+		if (currentStep < CacheKeyPrefix.APTITUDE_TOTAL_QUESTIONS) {
+			UserAptitude userAptitude = userAptitudeRepository.findByMember(member)
+				.orElse(UserAptitude.builder()
+					.member(member)
+					.testCount(0)
+					.mypageTestCount(0)
+					.isOnboardingCompleted(false)
+					.build());
+
+			userAptitude.updatePartialProgress(currentStep, sessionId);
+			userAptitudeRepository.save(userAptitude);
+
+			log.info("[부분 저장] memberId: {}, step: {}, sessionId: {}",
+				member.getId(), currentStep, sessionId);
+		}
+	}
+
+	// 이어하기 기능
+	@Transactional
+	public AptitudeResumeResponseDto resumeTest(Long memberId) {
+		Member member = memberRepository.findById(memberId)
+			.orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+
+		// UserAptitude에서 부분 저장 정보 확인
+		UserAptitude userAptitude = userAptitudeRepository.findByMember(member).orElse(null);
+
+		if (userAptitude != null && userAptitude.getPartialSessionId() != null) {
+			String sessionId = userAptitude.getPartialSessionId();
+			Integer lastStep = userAptitude.getLastPartialStep();
+
+			// 세션의 이력 조회
+			List<AptitudeTestHistory> histories = aptitudeTestHistoryRepository
+				.findBySessionIdOrderByStepAsc(sessionId);
+
+			if (!histories.isEmpty()) {
+				// Redis 복구 - 세션 ID와 진행 상태
+				aptitudeCacheService.saveSessionId(memberId, sessionId);
+				aptitudeCacheService.saveTestProgress(memberId, String.valueOf(lastStep + 1));
+
+				// 기존 점수 복구
+				for (AptitudeTestHistory history : histories) {
+					if (history.getAnalyzedAptitudeType() != null) {
+						int score = history.getConfidenceScore() > 0.7 ? 2 : 1;
+						aptitudeCacheService.updateAptitudeScore(memberId,
+							history.getAnalyzedAptitudeType(), score);
+					}
+
+					// 답변도 복구
+					aptitudeCacheService.saveAnswer(memberId, history.getStep(),
+						history.getUserResponse());
+				}
+
+				// 다음 질문 반환
+				AptitudeQuestionResponseDto nextQuestion = aptitudeAiService.getNextQuestion(lastStep);
+
+				return AptitudeResumeResponseDto.builder()
+					.sessionId(sessionId)
+					.nextStep(lastStep + 1)
+					.totalSteps(CacheKeyPrefix.APTITUDE_TOTAL_QUESTIONS)
+					.nextQuestion(nextQuestion)
+					.completedSteps(lastStep)
+					.message(String.format("%d단계부터 이어서 진행합니다.", lastStep + 1))
+					.build();
+			}
+		}
+
+		throw new CustomException(ErrorCode.NO_INCOMPLETE_TEST);
 	}
 }
