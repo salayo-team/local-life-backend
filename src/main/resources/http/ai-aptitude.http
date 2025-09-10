@@ -86,6 +86,28 @@ Authorization: Bearer {{accessToken}}
   console.log("실제 테스트 후 반환된 세션 ID를 사용할 것");
 %}
 
+### 6. 중단된 테스트 이어하기
+GET http://localhost:8080/ai/aptitude/resume
+Authorization: Bearer {{accessToken}}
+
+> {%
+  // 이어하기 결과 처리
+  if (response.body.data) {
+    const data = response.body.data;
+    console.log("이어하기 성공!");
+    console.log("세션 ID:", data.sessionId);
+    console.log("다음 단계:", data.nextStep);
+    console.log("완료된 단계:", data.completedSteps);
+    console.log("메시지:", data.message);
+
+    // 다음 질문 정보 저장
+    if (data.nextQuestion) {
+      client.global.set("currentStep", data.nextStep);
+      client.global.set("currentQuestion", data.nextQuestion.question);
+    }
+  }
+%}
+
 ### ===== 개별 단계별 테스트 (디버깅용) =====
 # 테스트 시작을 먼저 실행한 후 아래 요청들을 순서대로 실행
 
@@ -170,4 +192,3 @@ Content-Type: application/json
 POST http://localhost:8080/ai/aptitude/select?aptitudeType=HISTORY_CULTURE
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
-

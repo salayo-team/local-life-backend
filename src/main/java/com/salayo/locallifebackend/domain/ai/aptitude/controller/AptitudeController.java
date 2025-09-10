@@ -1,6 +1,7 @@
 package com.salayo.locallifebackend.domain.ai.aptitude.controller;
 
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeAnswerRequestDto;
+import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeResumeResponseDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeTestHistoryResponseDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeTestResultResponseDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeTestStartResponseDto;
@@ -252,6 +253,37 @@ public class AptitudeController {
 		@RequestParam String sessionId) {
 		Long memberId = memberDetails.getMember().getId();
 		List<AptitudeTestHistoryResponseDto> response = aptitudeService.getTestHistoryBySession(memberId, sessionId);
+		return CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, response);
+	}
+
+	@GetMapping("/resume")
+	@PreAuthorize("hasRole('USER')")
+	@Operation(
+		summary = "중단된 적성 검사 이어하기",
+		description = "이전에 중단된 적성 검사를 이어서 진행합니다. 3단계 이상 진행한 테스트만 이어하기가 가능합니다."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(
+			responseCode = "200",
+			description = "이어하기 성공",
+			content = @Content(
+				mediaType = "application/json",
+				schema = @Schema(implementation = AptitudeResumeResponseDto.class)
+			)
+		),
+		@ApiResponse(
+			responseCode = "401",
+			description = "인증되지 않은 사용자"
+		),
+		@ApiResponse(
+			responseCode = "404",
+			description = "이어할 테스트가 없음 (NO_INCOMPLETE_TEST)"
+		)
+	})
+	public CommonResponseDto<AptitudeResumeResponseDto> resumeTest(
+		@Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails) {
+		Long memberId = memberDetails.getMember().getId();
+		AptitudeResumeResponseDto response = aptitudeService.resumeTest(memberId);
 		return CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, response);
 	}
 }
