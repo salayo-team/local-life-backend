@@ -19,13 +19,8 @@ import com.salayo.locallifebackend.domain.member.repository.MemberRepository;
 import com.salayo.locallifebackend.global.error.ErrorCode;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
 import com.salayo.locallifebackend.global.util.CacheKeyPrefix;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -288,7 +283,7 @@ public class AptitudeService {
 	// 테스트 이력 조회 (세션별)
 	@Transactional(readOnly = true)
 	public List<AptitudeTestHistoryResponseDto> getTestHistoryBySession(Long memberId, String sessionId) {
-		Member member = memberRepository.findById(memberId)
+		memberRepository.findById(memberId)
 			.orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 		
 		List<AptitudeTestHistory> histories = aptitudeTestHistoryRepository.findBySessionIdOrderByStepAsc(sessionId);
@@ -299,7 +294,7 @@ public class AptitudeService {
 		}
 
 		// 세션은 존재하지만, 권한이 없는 경우
-		if (!histories.get(0).getMember().getId().equals(memberId)) {
+		if (!histories.getFirst().getMember().getId().equals(memberId)) {
 			throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
 		}
 		
@@ -328,49 +323,12 @@ public class AptitudeService {
 			.questionText(history.getQuestionText())
 			.userResponse(history.getUserResponse())
 			.aiResponse(history.getAiResponse())
-			.aptitudeType(history.getAnalyzedAptitudeType() != null ?
-				AptitudeType.valueOf(history.getAnalyzedAptitudeType().name()) : null)
+			.aptitudeType(history.getAnalyzedAptitudeType())
 			.confidenceScore(history.getConfidenceScore())
 			.sessionId(history.getSessionId())
 			.isCompleted(history.getIsCompleted())
 			.createdAt(history.getCreatedAt())
 			.build();
-	}
-
-	private Map<AptitudeType, Integer> analyzeHistories(List<AptitudeTestHistory> histories) {
-		Map<AptitudeType, Integer> scores = new HashMap<>();
-		for (AptitudeType type : AptitudeType.values()) {
-			scores.put(type, 0);
-		}
-
-		/**
-		 * 정규식 패턴 생성 - 모든 적성 타입을 OR로 연결
-		 * TODO : HashMap 최적화
-		 */
-		String pattern = Arrays.stream(AptitudeType.values())
-			.map(type -> type.name() + "|" + type.getTitle())
-			.collect(Collectors.joining("|"));
-		Pattern aptitudePattern = Pattern.compile("(" + pattern + ")");
-
-		// AI 응답에서 적성 키워드 추출 및 점수 계산
-		for (AptitudeTestHistory history : histories) {
-			String aiResponse = history.getAiResponse();
-			if (aiResponse != null) {
-				Matcher matcher = aptitudePattern.matcher(aiResponse);
-				while (matcher.find()) {
-					String matchedCode = matcher.group();
-					// 매칭된 코드가 어떤 적성 타입인지 확인
-					for (AptitudeType type : AptitudeType.values()) {
-						if (matchedCode.equals(type.name()) || matchedCode.equals(type.getTitle())) {
-							scores.put(type, scores.get(type) + 1);
-							break;
-						}
-					}
-				}
-			}
-		}
-
-		return scores;
 	}
 
 	// AI 분석 결과에서 적성 점수 추출 및 Redis 업데이트 (JSON 객체 기반)
