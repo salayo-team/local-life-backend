@@ -168,6 +168,9 @@ public class MagazineService {
 
         magazine.updateStatus(MagazineStatus.PENDING_CONFIRMATION);
 
+        magazinePreviewTokenRepository.deleteByMagazineId(magazineId);
+        magazinePreviewTokenRepository.flush();
+
         String email = magazine.getLocalCreator().getMember().getEmail();
         String businessName = magazine.getLocalCreator().getBusinessName();
 
@@ -217,6 +220,18 @@ public class MagazineService {
         Magazine magazine = magazineRepository.findById(magazineId)
             .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_NOT_FOUND));
 
+        MagazinePreviewToken previewToken = magazinePreviewTokenRepository.findByMagazineId(magazineId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_PREVIEW_NOT_SENT));
+
+        if (previewToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new CustomException(ErrorCode.MAGAZINE_PREVIEW_EXPIRED);
+        }
+
+        magazine.updateStatus(MagazineStatus.REQUEST_REVISION);
+
+        magazinePreviewTokenRepository.deleteByMagazineId(magazineId);
+        magazinePreviewTokenRepository.flush();
+
         int revisionCount = magazineRevisionRepository.countByMagazineId(magazineId);
 
         String email = magazine.getLocalCreator().getMember().getEmail();
@@ -233,8 +248,29 @@ public class MagazineService {
             messageHeader = revisionCount + "번째 추가 수정안이 작성되어 확인 요청드립니다.";
         }
 
-        String url = previewBaseUrl + UUID.randomUUID();
+        String token = UUID.randomUUID().toString();
+        LocalDateTime expiresAt = LocalDateTime.now().plusDays(3);
 
-        emailService.sendRevisionLinkEmail(email, businessName, url, subject, messageHeader, revisionCount);
+        MagazinePreviewToken revisionToken = new MagazinePreviewToken(magazine, email, token, expiresAt);
+        magazinePreviewTokenRepository.save(revisionToken);
+
+        String previewUrl = previewBaseUrl + token;
+
+        emailService.sendRevisionLinkEmail(email, businessName, previewUrl, subject, messageHeader, revisionCount);
     }
+
+    @Transactional(readOnly = true)
+    public void validatePreviewToken(String token, String currentUserEmail) {
+        MagazinePreviewToken previewToken = magazinePreviewTokenRepository.findByToken(token)
+            .orElseThrow(() -> new CustomException(ErrorCode.INVALID_TOKEN));
+
+        if (previewToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new CustomException(ErrorCode.MAGAZINE_PREVIEW_EXPIRED);
+        }
+
+        if (!previewToken.getEmail().equals(currentUserEmail)) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
+        }
+    }
+
 }

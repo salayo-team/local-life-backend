@@ -129,8 +129,9 @@ public class AdminMagazineController {
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{magazineId}/revision/send")
     public ResponseEntity<CommonResponseDto<Void>> sendMagazineRevisionLink(@PathVariable Long magazineId) {
-        magazineService.sendPreviewLink(magazineId);
+        magazineService.sendRevisionLink(magazineId);
 
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.EMAIL_SEND_SUCCESS, null));
     }
+
 }

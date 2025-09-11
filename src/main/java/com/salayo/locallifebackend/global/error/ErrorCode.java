@@ -53,6 +53,8 @@ public enum ErrorCode {
     INVALID_PAYMENT_METHODTYPE(HttpStatus.BAD_REQUEST, "결제 수단 값이 올바르지 않습니다."),
     INVALID_PAYMENT_PROVIDER(HttpStatus.BAD_REQUEST, "결제 대행사 값이 올바르지 않습니다."),
     FEEDBACK_ALREADY_REFLECTED(HttpStatus.BAD_REQUEST, "이미 반영된 피드백입니다."),
+    MAGAZINE_PREVIEW_NOT_SENT(HttpStatus.BAD_REQUEST, "초안이 먼저 전송되어야 합니다."),
+    MAGAZINE_PREVIEW_EXPIRED(HttpStatus.BAD_REQUEST, "초안 확인 기간이 만료되었습니다."),
 
     // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
