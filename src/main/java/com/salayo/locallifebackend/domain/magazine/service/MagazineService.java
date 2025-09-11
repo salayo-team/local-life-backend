@@ -6,6 +6,7 @@ import com.salayo.locallifebackend.domain.category.repository.AptitudeCategoryRe
 import com.salayo.locallifebackend.domain.category.repository.RegionCategoryRepository;
 import com.salayo.locallifebackend.domain.email.service.EmailService;
 import com.salayo.locallifebackend.domain.localcreator.entity.LocalCreator;
+import com.salayo.locallifebackend.domain.localcreator.enums.CreatorStatus;
 import com.salayo.locallifebackend.domain.localcreator.repository.LocalCreatorRepository;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineCreateRequestDto;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineDraftDetailResponseDto;
@@ -81,6 +82,10 @@ public class MagazineService {
         Member admin = memberRepository.findByIdOrElseThrow(adminId);
 
         LocalCreator localCreator = localCreatorRepository.findByIdOrThrow(createRequestDto.getLocalCreatorId());
+
+        if (localCreator.getCreatorStatus() != CreatorStatus.APPROVED) {
+            throw new CustomException(ErrorCode.LOCAL_CREATOR_NOT_APPROVED);
+        }
 
         Magazine magazine = Magazine.builder()
             .title(createRequestDto.getTitle())
@@ -220,6 +225,11 @@ public class MagazineService {
         Magazine magazine = magazineRepository.findById(magazineId)
             .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_NOT_FOUND));
 
+        int revisionCount = magazineRevisionRepository.countByMagazineId(magazineId);
+        if (revisionCount == 0) {
+            throw new CustomException(ErrorCode.REVISION_NOT_AVAILABLE);
+        }
+
         MagazinePreviewToken previewToken = magazinePreviewTokenRepository.findByMagazineId(magazineId)
                 .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_PREVIEW_NOT_SENT));
 
@@ -232,8 +242,6 @@ public class MagazineService {
         magazinePreviewTokenRepository.deleteByMagazineId(magazineId);
         magazinePreviewTokenRepository.flush();
 
-        int revisionCount = magazineRevisionRepository.countByMagazineId(magazineId);
-
         String email = magazine.getLocalCreator().getMember().getEmail();
         String businessName = magazine.getLocalCreator().getBusinessName();
 
@@ -241,7 +249,7 @@ public class MagazineService {
         String messageHeader;
 
         if (revisionCount <= 3) {
-            subject ="[LocalLife] 로컬매거진 수정안" + revisionCount + " / 3 확인 요청";
+            subject ="[LocalLife] 로컬매거진 수정안 (" + revisionCount + " / 3) 확인 요청";
             messageHeader = "매거진" + revisionCount + "차 수정안이 작성되어 확인 요청드립니다.";
         } else {
             subject = "[LocalLife] 로컬매거진 추가 수정안(" + revisionCount + "회차) 확인 요청";

@@ -55,6 +55,7 @@ public enum ErrorCode {
     FEEDBACK_ALREADY_REFLECTED(HttpStatus.BAD_REQUEST, "이미 반영된 피드백입니다."),
     MAGAZINE_PREVIEW_NOT_SENT(HttpStatus.BAD_REQUEST, "초안이 먼저 전송되어야 합니다."),
     MAGAZINE_PREVIEW_EXPIRED(HttpStatus.BAD_REQUEST, "초안 확인 기간이 만료되었습니다."),
+    REVISION_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "아직 수정안이 없어 전송할 수 없습니다."),
 
     // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
@@ -66,7 +67,6 @@ public enum ErrorCode {
 
     // 403 Forbidden
     FORBIDDEN_ACCESS(HttpStatus.FORBIDDEN, "접근이 거부됐습니다."),
-    CREATOR_NOT_APPROVED(HttpStatus.FORBIDDEN, "관리자 승인 후 로그인 가능합니다."),
     LOCAL_CREATOR_NOT_APPROVED(HttpStatus.FORBIDDEN, "로컬 크리에이터로 승인되지 않은 유저입니다."),
     RESERVATION_NOT_ALLOWED(HttpStatus.FORBIDDEN, "예약을 할 수 있는 권한이 없습니다."),
     REVIEW_PERIOD_EXPIRED(HttpStatus.FORBIDDEN, "리뷰 작성 기한이 만료되었습니다."),

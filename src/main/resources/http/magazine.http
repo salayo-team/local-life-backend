@@ -65,17 +65,17 @@ GET http://localhost:8080/admin/magazines/13
 Authorization: Bearer {{accessToken}}
 
 ### 매거진 초안 확인 링크 전송
-POST http://localhost:8080/admin/magazines/13/preview/send
+POST http://localhost:8080/admin/magazines/14/preview/send
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 ### 매거진 수정본 확인 링크 전송
-POST http://localhost:8080/admin/magazines/12/revision/send
+POST http://localhost:8080/admin/magazines/14/revision/send
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 ### 피드백 기반 매거진 수정 (관리자 전용)
-PUT http://localhost:8080/admin/magazines/13/feedback
+PUT http://localhost:8080/admin/magazines/14/feedback
 Content-Type: application/json
 Authorization: Bearer {{accessToken}}
 
@@ -99,7 +99,7 @@ Content-Type: application/json
 %}
 
 ### 매거진 피드백 등록 성공
-POST http://localhost:8080/localcreator/magazines/13/feedbacks
+POST http://localhost:8080/localcreator/magazines/14/feedbacks
 Content-Type: application/json
 Authorization: Bearer {{accessToken}}
 
