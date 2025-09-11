@@ -110,7 +110,7 @@ public class AptitudeService {
 			aptitudeCacheService.saveSessionId(memberId, sessionId);
 			log.warn("세션이 없어 재생성 - memberId: {}, newSessionId: {}", memberId, sessionId);
 		} else {
-			// 세션 TTL 갱신 (30분 연장)
+			// 세션 TTL 갱신 (60분 연장)
 			aptitudeCacheService.refreshSession(memberId);
 		}
 

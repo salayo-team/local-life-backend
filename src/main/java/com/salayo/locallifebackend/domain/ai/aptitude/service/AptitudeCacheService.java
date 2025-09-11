@@ -121,7 +121,7 @@ public class AptitudeCacheService {
 		return redisTemplate.opsForValue().get(key);
 	}
 	
-	// 세션 TTL 갱신 (활동 시마다 호출)
+	// 세션 TTL 갱신 (답변 제출 시 호출)
 	public void refreshSession(Long memberId) {
 		String sessionKey = CacheKeyPrefix.APTITUDE_TEST + memberId + ":session";
 		Boolean refreshed = redisTemplate.expire(sessionKey, CacheKeyPrefix.SESSION_TIMEOUT_MINUTES, TimeUnit.MINUTES);
