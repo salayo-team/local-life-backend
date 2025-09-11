@@ -15,6 +15,8 @@ import com.salayo.locallifebackend.domain.magazine.entity.Magazine;
 import com.salayo.locallifebackend.domain.magazine.entity.MagazinePreviewToken;
 import com.salayo.locallifebackend.domain.magazine.entity.MagazineRevision;
 import com.salayo.locallifebackend.domain.magazine.enums.MagazineStatus;
+import com.salayo.locallifebackend.domain.magazine.feedback.entity.MagazineFeedback;
+import com.salayo.locallifebackend.domain.magazine.feedback.repository.MagazineFeedbackRepository;
 import com.salayo.locallifebackend.domain.magazine.repository.MagazinePreviewTokenRepository;
 import com.salayo.locallifebackend.domain.magazine.repository.MagazineRepository;
 import com.salayo.locallifebackend.domain.magazine.repository.MagazineRevisionRepository;
@@ -50,6 +52,7 @@ public class MagazineService {
     private final EmailService emailService;
     private final LocalCreatorRepository localCreatorRepository;
     private final MagazineRevisionRepository magazineRevisionRepository;
+    private final MagazineFeedbackRepository magazineFeedbackRepository;
 
     @Value("${frontend.preview-url}")
     private String previewBaseUrl;
@@ -57,7 +60,8 @@ public class MagazineService {
     public MagazineService(MagazineRepository magazineRepository, RegionCategoryRepository regionCategoryRepository,
         AptitudeCategoryRepository aptitudeCategoryRepository, MemberRepository memberRepository, MagazineFileService magazineFileService,
         MagazinePreviewTokenRepository magazinePreviewTokenRepository, EmailService emailService,
-        LocalCreatorRepository localCreatorRepository, MagazineRevisionRepository magazineRevisionRepository) {
+        LocalCreatorRepository localCreatorRepository, MagazineRevisionRepository magazineRevisionRepository,
+        MagazineFeedbackRepository magazineFeedbackRepository) {
         this.magazineRepository = magazineRepository;
         this.regionCategoryRepository = regionCategoryRepository;
         this.aptitudeCategoryRepository = aptitudeCategoryRepository;
@@ -67,6 +71,7 @@ public class MagazineService {
         this.emailService = emailService;
         this.localCreatorRepository = localCreatorRepository;
         this.magazineRevisionRepository = magazineRevisionRepository;
+        this.magazineFeedbackRepository = magazineFeedbackRepository;
     }
 
     @Transactional
@@ -178,12 +183,19 @@ public class MagazineService {
     }
 
     @Transactional
-    public void updateMagazine(Long magazineId, MagazineUpdateRequestDto magazineUpdateRequestDto, Member member) {
+    public void updateMagazineFromFeedback(Long magazineId, MagazineUpdateRequestDto magazineUpdateRequestDto, Member member) {
         Magazine magazine = magazineRepository.findById(magazineId)
             .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_NOT_FOUND));
 
         if (!magazine.getAdmin().getId().equals(member.getId())) {
             throw new CustomException(ErrorCode.MAGAZINE_FORBIDDEN);
+        }
+
+        MagazineFeedback lastFeedback = magazineFeedbackRepository.findTopByMagazineIdOrderByCreatedAtDesc(magazineId)
+                .orElseThrow(() -> new CustomException(ErrorCode.FEEDBACK_NOT_FOUND));
+
+        if (lastFeedback.isReflected()) {
+            throw new CustomException(ErrorCode.FEEDBACK_ALREADY_REFLECTED);
         }
 
         magazine.updateContent(magazineUpdateRequestDto.getContent());
@@ -196,6 +208,8 @@ public class MagazineService {
 
         MagazineRevision magazineRevision = new MagazineRevision(magazine, magazineUpdateRequestDto.getContent(), revisionCount + 1);
         magazineRevisionRepository.save(magazineRevision);
+
+        lastFeedback.markAsReflected();
     }
 
     @Transactional

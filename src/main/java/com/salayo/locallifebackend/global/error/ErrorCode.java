@@ -52,6 +52,7 @@ public enum ErrorCode {
     INVALID_RESERVATION_STATUS(HttpStatus.BAD_REQUEST, "예약 상태가 올바르지 않습니다."),
     INVALID_PAYMENT_METHODTYPE(HttpStatus.BAD_REQUEST, "결제 수단 값이 올바르지 않습니다."),
     INVALID_PAYMENT_PROVIDER(HttpStatus.BAD_REQUEST, "결제 대행사 값이 올바르지 않습니다."),
+    FEEDBACK_ALREADY_REFLECTED(HttpStatus.BAD_REQUEST, "이미 반영된 피드백입니다."),
 
     // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
@@ -86,6 +87,7 @@ public enum ErrorCode {
     PGTID_NOT_FOUND(HttpStatus.NOT_FOUND, "pg_tid 값을 찾을 수 없습니다."),
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 결제를 찾을 수 없습니다."),
     IMPUID_NOT_FOUND_BY_IAMPORT(HttpStatus.NOT_FOUND, "iam_port에서 해당 결제를 찾을 수 없습니다."),
+    FEEDBACK_NOT_FOUND(HttpStatus.NOT_FOUND, "피드백을 찾을 수 없습니다."),
 
     // 408 REQUEST_TIMEOUT
     AI_TIMEOUT(HttpStatus.REQUEST_TIMEOUT, "AI 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요."),

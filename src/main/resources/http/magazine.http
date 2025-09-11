@@ -48,9 +48,9 @@ Content-Type: application/json
 Authorization: Bearer {{accessToken}}
 
 {
-  "title": "테스트으2",
-  "content": "<h2>로컬 청년의 하루</h2><p>바다와 함께 시작하는 제주에서의 아침...</p><img src=\"https://s3.amazonaws.com/local-life-s3/magazine/jeju.jpg\"/>",
-  "regionCategoryId": 1,
+  "title": "테스트으!!",
+  "content": "<h2>피드백 잘 들어오나요?</h2><p>음음음음ㅇ...</p><img src=\"https://s3.amazonaws.com/local-life-s3/magazine/jeju.jpg\"/>",
+  "regionCategoryId": 2,
   "aptitudeCategoryId": 2,
   "thumbnailUrl": "https://s3.amazonaws.com/local-life-s3/magazine/jeju-thumb.jpg",
   "localCreatorId": 1
@@ -61,7 +61,7 @@ GET http://localhost:8080/admin/magazines?page=0&size=5
 Authorization: Bearer {{accessToken}}
 
 ### 임시등록 매거진 상세조회(DRAFT)
-GET http://localhost:8080/admin/magazines/8
+GET http://localhost:8080/admin/magazines/9
 Authorization: Bearer {{accessToken}}
 
 ### 매거진 초안 확인 링크 전송
@@ -89,8 +89,8 @@ Content-Type: application/json
   client.global.set("accessToken", accessToken);
 %}
 
-### 매거진 수정 (관리자 전용)
-PUT http://localhost:8080/admin/magazines/8
+### 피드백 기반 매거진 수정 (관리자 전용)
+PUT http://localhost:8080/admin/magazines/9/feedback
 Content-Type: application/json
 Authorization: Bearer {{accessToken}}
 
@@ -99,7 +99,7 @@ Authorization: Bearer {{accessToken}}
 }
 
 ### 매거진 피드백 등록 성공
-POST http://localhost:8080/localcreator/magazines/8/feedbacks
+POST http://localhost:8080/localcreator/magazines/9/feedbacks
 Content-Type: application/json
 Authorization: Bearer {{accessToken}}
 

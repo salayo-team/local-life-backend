@@ -103,14 +103,14 @@ public class AdminMagazineController {
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.EMAIL_SEND_SUCCESS, null));
     }
 
-    @Operation(summary = "매거진 수정(최대 3회)", description = "관리자가 로컬크리에이터의 피드백에 따라 매거진 본문을 수정하며, 수정은 최대 3회, 수정 기록도 최대 3회 저장됩니다.")
+    @Operation(summary = "피드백 기반 매거진 수정(최대 3회)", description = "관리자가 로컬크리에이터의 피드백에 따라 매거진 본문을 수정하며, 수정은 최대 3회, 수정 기록도 최대 3회 저장됩니다.")
     @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/{magazineId}")
-    public ResponseEntity<CommonResponseDto<Void>> updateMagazine(
+    @PutMapping("/{magazineId}/feedback")
+    public ResponseEntity<CommonResponseDto<Void>> updateMagazineFromFeedback(
         @PathVariable Long magazineId,
         @RequestBody @Valid MagazineUpdateRequestDto magazineUpdateRequestDto,
         @AuthenticationPrincipal MemberDetails memberDetails) {
-        magazineService.updateMagazine(magazineId, magazineUpdateRequestDto, memberDetails.getMember());
+        magazineService.updateMagazineFromFeedback(magazineId, magazineUpdateRequestDto, memberDetails.getMember());
 
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.UPDATE_SUCCESS, null));
     }
