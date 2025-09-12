@@ -52,6 +52,10 @@ public enum ErrorCode {
     INVALID_RESERVATION_STATUS(HttpStatus.BAD_REQUEST, "예약 상태가 올바르지 않습니다."),
     INVALID_PAYMENT_METHODTYPE(HttpStatus.BAD_REQUEST, "결제 수단 값이 올바르지 않습니다."),
     INVALID_PAYMENT_PROVIDER(HttpStatus.BAD_REQUEST, "결제 대행사 값이 올바르지 않습니다."),
+    FEEDBACK_ALREADY_REFLECTED(HttpStatus.BAD_REQUEST, "이미 반영된 피드백입니다."),
+    MAGAZINE_PREVIEW_NOT_SENT(HttpStatus.BAD_REQUEST, "초안이 먼저 전송되어야 합니다."),
+    MAGAZINE_PREVIEW_EXPIRED(HttpStatus.BAD_REQUEST, "초안 확인 기간이 만료되었습니다."),
+    REVISION_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "아직 수정안이 없어 전송할 수 없습니다."),
 
     // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
@@ -63,7 +67,6 @@ public enum ErrorCode {
 
     // 403 Forbidden
     FORBIDDEN_ACCESS(HttpStatus.FORBIDDEN, "접근이 거부됐습니다."),
-    CREATOR_NOT_APPROVED(HttpStatus.FORBIDDEN, "관리자 승인 후 로그인 가능합니다."),
     LOCAL_CREATOR_NOT_APPROVED(HttpStatus.FORBIDDEN, "로컬 크리에이터로 승인되지 않은 유저입니다."),
     RESERVATION_NOT_ALLOWED(HttpStatus.FORBIDDEN, "예약을 할 수 있는 권한이 없습니다."),
     REVIEW_PERIOD_EXPIRED(HttpStatus.FORBIDDEN, "리뷰 작성 기한이 만료되었습니다."),
@@ -86,6 +89,7 @@ public enum ErrorCode {
     PGTID_NOT_FOUND(HttpStatus.NOT_FOUND, "pg_tid 값을 찾을 수 없습니다."),
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 결제를 찾을 수 없습니다."),
     IMPUID_NOT_FOUND_BY_IAMPORT(HttpStatus.NOT_FOUND, "iam_port에서 해당 결제를 찾을 수 없습니다."),
+    FEEDBACK_NOT_FOUND(HttpStatus.NOT_FOUND, "피드백을 찾을 수 없습니다."),
 
     // 408 REQUEST_TIMEOUT
     AI_TIMEOUT(HttpStatus.REQUEST_TIMEOUT, "AI 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요."),

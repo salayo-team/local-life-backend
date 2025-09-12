@@ -132,4 +132,30 @@ public class EmailService {
 
         mailSender.send(message);
     }
+
+    public void sendRevisionLinkEmail(String email, String businessName, String url, String subject, String messageHeader, int revisionCount) {
+
+        String text = businessName + "님, 안녕하세요.\n\n"
+            + "LocalLife 매거진팀입니다.\n\n"
+            + messageHeader + "\n\n"
+            + "아래 링크를 통해 글과 사진을 확인해주시고,\n"
+            + "추가로 보완할 부분이 있다면 3일 이내에 남겨주시길 부탁드립니다.\n\n"
+            + "[수정본 확인 링크]\n" + url + "\n\n"
+            + "수정본 페이지 하단의 '피드백 남기기' 버튼을 통해 요청하실 내용을 작성해주시면 됩니다.\n"
+            + "메일 회신은 누락될 수 있으니, 꼭 해당 버튼을 통해 남겨주세요.\n\n"
+            + "※ 현재까지 반영된 수정 요청: " + revisionCount + "회\n"
+            + "※ 수정 요청은 최대 3회까지 가능하며, 이후에는 고객센터를 통해 별도 요청이 가능합니다.\n"
+            + "※ 3일 이내 회신이 없을 경우, 현재 수정본을 기준으로 발행이 진행될 수 있습니다.\n\n"
+            + "확인을 마치고 최종 승인을 주시면,\n"
+            + "LocalLife 매거진으로 정식 발행되어 많은 청년들에게 " + businessName + "님의 이야기와 지역이 소개될 예정입니다.\n\n"
+            + "항상 협조해주셔서 감사합니다.\n"
+            + "LocalLife 드림";
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(email);
+        message.setSubject(subject);
+        message.setText(text);
+
+        mailSender.send(message);
+    }
 }
