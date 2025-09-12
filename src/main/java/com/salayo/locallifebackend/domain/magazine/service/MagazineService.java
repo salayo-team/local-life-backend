@@ -173,19 +173,11 @@ public class MagazineService {
 
         magazine.updateStatus(MagazineStatus.PENDING_CONFIRMATION);
 
-        magazinePreviewTokenRepository.deleteByMagazineId(magazineId);
-        magazinePreviewTokenRepository.flush();
+        MagazinePreviewToken previewToken = reissuePreviewToken(magazine, 14);
 
         String email = magazine.getLocalCreator().getMember().getEmail();
         String businessName = magazine.getLocalCreator().getBusinessName();
-
-        String token = UUID.randomUUID().toString();
-        LocalDateTime expiresAt = LocalDateTime.now().plusDays(14);
-
-        MagazinePreviewToken previewToken = new MagazinePreviewToken(magazine, email, token, expiresAt);
-        magazinePreviewTokenRepository.save(previewToken);
-
-        String previewUrl = previewBaseUrl + token;
+        String previewUrl = previewBaseUrl + previewToken.getToken();
 
         emailService.sendPreviewLinkEmail(email, businessName, previewUrl);
     }
@@ -239,11 +231,11 @@ public class MagazineService {
 
         magazine.updateStatus(MagazineStatus.REQUEST_REVISION);
 
-        magazinePreviewTokenRepository.deleteByMagazineId(magazineId);
-        magazinePreviewTokenRepository.flush();
+        MagazinePreviewToken revisionToken = reissuePreviewToken(magazine, 3);
 
         String email = magazine.getLocalCreator().getMember().getEmail();
         String businessName = magazine.getLocalCreator().getBusinessName();
+        String previewUrl = previewBaseUrl + revisionToken.getToken();
 
         String subject;
         String messageHeader;
@@ -255,14 +247,6 @@ public class MagazineService {
             subject = "[LocalLife] 로컬매거진 추가 수정안(" + revisionCount + "회차) 확인 요청";
             messageHeader = revisionCount + "번째 추가 수정안이 작성되어 확인 요청드립니다.";
         }
-
-        String token = UUID.randomUUID().toString();
-        LocalDateTime expiresAt = LocalDateTime.now().plusDays(3);
-
-        MagazinePreviewToken revisionToken = new MagazinePreviewToken(magazine, email, token, expiresAt);
-        magazinePreviewTokenRepository.save(revisionToken);
-
-        String previewUrl = previewBaseUrl + token;
 
         emailService.sendRevisionLinkEmail(email, businessName, previewUrl, subject, messageHeader, revisionCount);
     }
@@ -279,6 +263,19 @@ public class MagazineService {
         if (!previewToken.getEmail().equals(currentUserEmail)) {
             throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
         }
+    }
+
+    private MagazinePreviewToken reissuePreviewToken(Magazine magazine, int daysToExpire) {
+        magazinePreviewTokenRepository.deleteByMagazineId(magazine.getId());
+        magazinePreviewTokenRepository.flush();
+
+        String token = UUID.randomUUID().toString();
+        LocalDateTime expiresAt = LocalDateTime.now().plusDays(daysToExpire);
+        String email = magazine.getLocalCreator().getMember().getEmail();
+
+        MagazinePreviewToken newToken = new MagazinePreviewToken(magazine, email, token, expiresAt);
+
+        return magazinePreviewTokenRepository.save(newToken);
     }
 
 }
