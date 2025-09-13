@@ -20,7 +20,7 @@ public interface AptitudeTestHistoryRepository extends JpaRepository<AptitudeTes
 	void deleteByMemberAndIsCompletedFalse(Member member);
 	
 	// 세션별 이력 조회
-	List<AptitudeTestHistory> findBySessionIdOrderByStepAsc(String sessionId);
+	List<AptitudeTestHistory> findBySessionIdAndMemberOrderByStepAsc(String sessionId, Member member);
 	
 	// 완료된 테스트 이력 조회
 	List<AptitudeTestHistory> findByMemberAndIsCompletedTrueOrderByCreatedAtDesc(Member member);

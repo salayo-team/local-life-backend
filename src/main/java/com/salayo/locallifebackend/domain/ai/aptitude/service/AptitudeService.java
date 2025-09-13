@@ -283,10 +283,10 @@ public class AptitudeService {
 	// 테스트 이력 조회 (세션별)
 	@Transactional(readOnly = true)
 	public List<AptitudeTestHistoryResponseDto> getTestHistoryBySession(Long memberId, String sessionId) {
-		memberRepository.findById(memberId)
+		Member member = memberRepository.findById(memberId)
 			.orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 		
-		List<AptitudeTestHistory> histories = aptitudeTestHistoryRepository.findBySessionIdOrderByStepAsc(sessionId);
+		List<AptitudeTestHistory> histories = aptitudeTestHistoryRepository.findBySessionIdAndMemberOrderByStepAsc(sessionId,member);
 		
 		// 세션이 존재하지 않거나, 이력이 없는 경우
 		if (histories.isEmpty()) {
@@ -407,7 +407,7 @@ public class AptitudeService {
 
 			// 세션의 이력 조회
 			List<AptitudeTestHistory> histories = aptitudeTestHistoryRepository
-				.findBySessionIdOrderByStepAsc(sessionId);
+				.findBySessionIdAndMemberOrderByStepAsc(sessionId, member);
 
 			if (!histories.isEmpty()) {
 				// Redis 복구 - 세션 ID와 진행 상태
