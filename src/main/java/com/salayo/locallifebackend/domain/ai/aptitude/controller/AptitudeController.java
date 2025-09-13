@@ -9,6 +9,7 @@ import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeTextProgressRe
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.CanRetakeTestResponseDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.enums.AptitudeType;
 import com.salayo.locallifebackend.domain.ai.aptitude.service.AptitudeService;
+import com.salayo.locallifebackend.domain.ai.aptitude.service.AptitudeTestHistoryService;
 import com.salayo.locallifebackend.global.dto.CommonResponseDto;
 import com.salayo.locallifebackend.global.security.MemberDetails;
 import com.salayo.locallifebackend.global.success.SuccessCode;
@@ -40,6 +41,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AptitudeController {
 
 	private final AptitudeService aptitudeService;
+	private final AptitudeTestHistoryService testHistoryService;
 
 	@PostMapping("/test/start")
 	@PreAuthorize("hasRole('USER')")
@@ -215,7 +217,7 @@ public class AptitudeController {
 	public CommonResponseDto<List<AptitudeTestHistoryResponseDto>> getCompletedHistory(
 		@Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails) {
 		Long memberId = memberDetails.getMember().getId();
-		List<AptitudeTestHistoryResponseDto> response = aptitudeService.getCompletedTestHistory(memberId);
+		List<AptitudeTestHistoryResponseDto> response = testHistoryService.getCompletedTestHistory(memberId);
 		return CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, response);
 	}
 	
@@ -252,7 +254,7 @@ public class AptitudeController {
 		@Parameter(description = "조회할 세션 ID", required = true, example = "APT-1-1234567890")
 		@RequestParam String sessionId) {
 		Long memberId = memberDetails.getMember().getId();
-		List<AptitudeTestHistoryResponseDto> response = aptitudeService.getTestHistoryBySession(memberId, sessionId);
+		List<AptitudeTestHistoryResponseDto> response = testHistoryService.getTestHistoryBySession(memberId, sessionId);
 		return CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, response);
 	}
 
