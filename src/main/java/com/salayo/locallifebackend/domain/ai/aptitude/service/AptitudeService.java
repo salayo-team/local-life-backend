@@ -78,8 +78,11 @@ public class AptitudeService {
 		// Redis에 세션 ID 저장
 		aptitudeCacheService.saveSessionId(memberId, sessionId);
 
-		// 첫 질문 가져오기
-		AptitudeQuestionResponseDto firstQuestion = aptitudeAiService.getNextQuestion(0);
+		// 첫 질문 가져오기 - AI가 동적으로 생성
+		AptitudeQuestionResponseDto firstQuestion = aptitudeAiService.getNextQuestion(memberId, 1);
+		
+		// 첫 질문을 Redis에 저장
+		aptitudeCacheService.saveQuestion(memberId, 1, firstQuestion.getQuestion());
 
 		return new AptitudeTestStartResponseDto(1, CacheKeyPrefix.APTITUDE_TOTAL_QUESTIONS, firstQuestion);
 	}
@@ -112,10 +115,12 @@ public class AptitudeService {
 			aptitudeCacheService.refreshSession(memberId);
 		}
 
-		// 답변 분석 (JSON 파싱된 객체 반환)
+		// 답변 분석 (JSON 파싱된 객체 반환) - 대화 맥락 포함
 		AiAptitudeAnalysisResponseDto aiAnalysis = aptitudeAiService.analyzeResponse(
 			aptitudeAnswerRequestDto.getAnswer(),
-			aptitudeAiService.getNextQuestion(aptitudeAnswerRequestDto.getStep() - 1)
+			member.getId(),
+			aptitudeAnswerRequestDto.getStep(),
+			aptitudeAnswerRequestDto.getQuestionText()
 		);
 
 		// Redis에 답변 저장
@@ -172,8 +177,15 @@ public class AptitudeService {
 			// Redis 상태 업데이트
 			aptitudeCacheService.updateTestProgress(memberId, aptitudeAnswerRequestDto.getStep() + 1);
 
-			// 다음 질문
-			AptitudeQuestionResponseDto nextQuestion = aptitudeAiService.getNextQuestion(aptitudeAnswerRequestDto.getStep());
+			// 다음 질문 - AI가 대화 맥락을 고려하여 생성
+			AptitudeQuestionResponseDto nextQuestion = aptitudeAiService.getNextQuestion(
+				member.getId(), 
+				aptitudeAnswerRequestDto.getStep() + 1
+			);
+			
+			// 질문을 Redis에 저장
+			aptitudeCacheService.saveQuestion(memberId, aptitudeAnswerRequestDto.getStep() + 1, 
+				nextQuestion.getQuestion());
 			return new AptitudeTextProgressResponseDto(
 				aptitudeAnswerRequestDto.getStep() + 1,
 				CacheKeyPrefix.APTITUDE_TOTAL_QUESTIONS,
@@ -372,8 +384,11 @@ public class AptitudeService {
 						history.getUserResponse());
 				}
 
-				// 다음 질문 반환
-				AptitudeQuestionResponseDto nextQuestion = aptitudeAiService.getNextQuestion(lastStep);
+				// 다음 질문 반환 - AI가 대화 맥락을 고려하여 생성
+				AptitudeQuestionResponseDto nextQuestion = aptitudeAiService.getNextQuestion(
+					member.getId(),
+					lastStep + 1
+				);
 
 				return AptitudeResumeResponseDto.builder()
 					.sessionId(sessionId)
