@@ -140,10 +140,17 @@ public class AptitudeService {
 			aiAnalysis.getConfidenceScore());
 		
 		// 이력 저장용 AI 응답 문자열 생성
-		String aiResponseStr = String.format("%s - %s (신뢰도: %.2f)", 
-			aiAnalysis.getAptitudeType(), 
-			aiAnalysis.getReason(), 
-			aiAnalysis.getConfidenceScore());
+		String aiResponseStr;
+		if (aiAnalysis.getAptitudeType() != null) {
+			aiResponseStr = String.format("%s - %s (신뢰도: %.2f)", 
+				aiAnalysis.getAptitudeType(), 
+				aiAnalysis.getReason(), 
+				aiAnalysis.getConfidenceScore());
+		} else {
+			// 무효 답변인 경우
+			aiResponseStr = String.format("무효 답변 - %s", 
+				aiAnalysis.getReason() != null ? aiAnalysis.getReason() : "적성 판단 불가");
+		}
 		
 		// 디버깅용 로그
 		Map<AptitudeType, Integer> currentScores = aptitudeCacheService.getAllAptitudeScores(memberId);
@@ -292,6 +299,13 @@ public class AptitudeService {
 
 	// AI 분석 결과에서 적성 점수 추출 및 Redis 업데이트 (JSON 객체 기반)
 	private void updateScoreFromAnalysis(Long memberId, AiAptitudeAnalysisResponseDto aiAnalysis) {
+		// NULL 체크 추가
+		if (aiAnalysis.getAptitudeType() == null) {
+			log.warn("AI 분석 결과 적성 타입이 NULL - 무효 답변으로 처리");
+			// 무효 답변인 경우 점수 업데이트 하지 않음
+			return;
+		}
+		
 		try {
 			// AI 분석 결과에서 적성 타입 추출
 			AptitudeType aptitudeType = AptitudeType.valueOf(aiAnalysis.getAptitudeType().toUpperCase());
