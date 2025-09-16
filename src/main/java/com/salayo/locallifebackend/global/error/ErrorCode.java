@@ -86,6 +86,7 @@ public enum ErrorCode {
     PGTID_NOT_FOUND(HttpStatus.NOT_FOUND, "pg_tid 값을 찾을 수 없습니다."),
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 결제를 찾을 수 없습니다."),
     IMPUID_NOT_FOUND_BY_IAMPORT(HttpStatus.NOT_FOUND, "iam_port에서 해당 결제를 찾을 수 없습니다."),
+    NO_INCOMPLETE_TEST(HttpStatus.NOT_FOUND, "이어할 수 있는 테스트가 없습니다."),
 
     // 408 REQUEST_TIMEOUT
     AI_TIMEOUT(HttpStatus.REQUEST_TIMEOUT, "AI 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요."),
