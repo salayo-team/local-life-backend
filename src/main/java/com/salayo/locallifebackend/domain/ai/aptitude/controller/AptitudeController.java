@@ -22,7 +22,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -36,12 +35,16 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 @RestController
 @RequestMapping("/ai/aptitude")
-@RequiredArgsConstructor
 @Tag(name = "Aptitude", description = "적성 검사 관련 API")
 public class AptitudeController {
 
 	private final AptitudeService aptitudeService;
 	private final AptitudeTestHistoryService testHistoryService;
+
+	public AptitudeController(AptitudeService aptitudeService, AptitudeTestHistoryService testHistoryService) {
+		this.aptitudeService = aptitudeService;
+		this.testHistoryService = testHistoryService;
+	}
 
 	@PostMapping("/test/start")
 	@PreAuthorize("hasRole('USER')")
