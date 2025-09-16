@@ -1,0 +1,197 @@
+package com.salayo.locallifebackend.domain.onboarding.service;
+
+import com.salayo.locallifebackend.domain.member.entity.Member;
+import com.salayo.locallifebackend.domain.member.repository.MemberRepository;
+import com.salayo.locallifebackend.domain.onboarding.dto.OnboardingProgressResponseDto;
+import com.salayo.locallifebackend.domain.onboarding.dto.OnboardingRegionRequestDto;
+import com.salayo.locallifebackend.domain.onboarding.dto.OnboardingAptitudeCheckRequestDto;
+import com.salayo.locallifebackend.domain.onboarding.entity.OnboardingProgress;
+import com.salayo.locallifebackend.domain.onboarding.enums.OnboardingStep;
+import com.salayo.locallifebackend.domain.onboarding.repository.OnboardingProgressRepository;
+import com.salayo.locallifebackend.global.error.ErrorCode;
+import com.salayo.locallifebackend.global.error.exception.CustomException;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
+
+/**
+ * 온보딩 서비스
+ */
+@Slf4j
+@Service
+public class OnboardingService {
+    
+    private final OnboardingProgressRepository onboardingProgressRepository;
+    private final MemberRepository memberRepository;
+
+	public OnboardingService(OnboardingProgressRepository onboardingProgressRepository, MemberRepository memberRepository) {
+		this.onboardingProgressRepository = onboardingProgressRepository;
+		this.memberRepository = memberRepository;
+	}
+
+	/**
+     * 온보딩 시작
+     */
+    @Transactional
+    public OnboardingProgressResponseDto startOnboarding(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+            .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+        
+        // 기존 온보딩 진행 상태 확인
+        OnboardingProgress progress = onboardingProgressRepository.findByMember(member)
+            .orElseGet(() -> {
+                // 새로운 온보딩 시작
+                String sessionId = generateSessionId(memberId);
+                OnboardingProgress newProgress = OnboardingProgress.builder()
+                    .member(member)
+                    .currentStep(OnboardingStep.MEMBER_INFO)
+                    .isCompleted(false)
+                    .sessionId(sessionId)
+                    .build();
+                return onboardingProgressRepository.save(newProgress);
+            });
+        
+        // 이미 완료된 경우
+        if (progress.getIsCompleted()) {
+            log.info("온보딩이 이미 완료됨 - memberId: {}", memberId);
+            return OnboardingProgressResponseDto.createCompleteResponse(
+                progress.getSessionId(), 
+                progress.getSelectedRegion()
+            );
+        }
+        
+        log.info("온보딩 시작 - memberId: {}, sessionId: {}", memberId, progress.getSessionId());
+        return OnboardingProgressResponseDto.createStartResponse(progress.getSessionId());
+    }
+    
+    /**
+     * 선호 지역 선택
+     */
+    @Transactional
+    public OnboardingProgressResponseDto selectRegion(Long memberId, OnboardingRegionRequestDto regionRequestDto) {
+        OnboardingProgress progress = getOnboardingProgress(memberId);
+        
+        // 현재 단계 검증
+        if (progress.getCurrentStep() != OnboardingStep.MEMBER_INFO && 
+            progress.getCurrentStep() != OnboardingStep.REGION_SELECT) {
+            throw new CustomException(ErrorCode.INVALID_ONBOARDING_STEP);
+        }
+        
+        // 지역 업데이트
+        String region = regionRequestDto.getRegion();
+//        if (regionRequestDto.getSubRegion() != null) {
+//            region = region + " " + regionRequestDto.getSubRegion();
+//        }
+        progress.updateRegion(region);
+        
+        // 다음 단계로 이동
+        progress.moveToNextStep(false);  // 아직 적성 인지 여부를 모름
+        onboardingProgressRepository.save(progress);
+        
+        log.info("선호 지역 선택 완료 - memberId: {}, region: {}", memberId, region);
+        return OnboardingProgressResponseDto.createRegionCompleteResponse(
+            progress.getSessionId(), 
+            region
+        );
+    }
+    
+    /**
+     * 적성 인지 여부 확인
+     */
+    @Transactional
+    public OnboardingProgressResponseDto checkAptitudeKnowledge(Long memberId, 
+                                                               OnboardingAptitudeCheckRequestDto aptitudeCheckRequestDto) {
+        OnboardingProgress progress = getOnboardingProgress(memberId);
+        
+        // 현재 단계 검증
+        if (progress.getCurrentStep() != OnboardingStep.APTITUDE_CHECK) {
+            throw new CustomException(ErrorCode.INVALID_ONBOARDING_STEP);
+        }
+        
+        // 적성 인지 여부 저장
+        boolean knowsAptitude = aptitudeCheckRequestDto.getKnowsAptitude();
+        progress.updateKnowsAptitude(knowsAptitude);
+        
+        // 다음 단계로 이동 (인지 여부에 따라 분기)
+        progress.moveToNextStep(knowsAptitude);
+        onboardingProgressRepository.save(progress);
+        
+        log.info("적성 인지 여부 확인 - memberId: {}, knowsAptitude: {}", memberId, knowsAptitude);
+        
+        // 응답 생성 (분기 처리)
+        if (knowsAptitude) {
+            // 적성을 알고 있는 경우 → 수동 선택 페이지로
+            return OnboardingProgressResponseDto.createManualAptitudeResponse(
+                progress.getSessionId(), 
+                progress.getSelectedRegion()
+            );
+        } else {
+            // 적성을 모르는 경우 → AI 검사 페이지로
+            return OnboardingProgressResponseDto.createAiTestResponse(
+                progress.getSessionId(), 
+                progress.getSelectedRegion()
+            );
+        }
+    }
+    
+    /**
+     * 온보딩 완료 처리
+     * (적성 선택 또는 AI 검사 완료 후 호출)
+     */
+    @Transactional
+    public OnboardingProgressResponseDto completeOnboarding(Long memberId) {
+        OnboardingProgress progress = getOnboardingProgress(memberId);
+        
+        // 적성 단계가 아닌 경우 에러
+        if (progress.getCurrentStep() != OnboardingStep.APTITUDE_MANUAL && 
+            progress.getCurrentStep() != OnboardingStep.APTITUDE_AI_TEST) {
+            throw new CustomException(ErrorCode.INVALID_ONBOARDING_STEP);
+        }
+        
+        // 온보딩 완료 처리
+        progress.complete();
+        onboardingProgressRepository.save(progress);
+        
+        log.info("온보딩 완료 - memberId: {}, region: {}", memberId, progress.getSelectedRegion());
+        return OnboardingProgressResponseDto.createCompleteResponse(
+            progress.getSessionId(), 
+            progress.getSelectedRegion()
+        );
+    }
+    
+    /**
+     * 현재 온보딩 진행 상태 조회
+     */
+    @Transactional(readOnly = true)
+    public OnboardingProgressResponseDto getCurrentProgress(Long memberId) {
+        OnboardingProgress progress = getOnboardingProgress(memberId);
+        
+        return OnboardingProgressResponseDto.builder()
+            .sessionId(progress.getSessionId())
+            .currentStep(progress.getCurrentStep())
+            .isCompleted(progress.getIsCompleted())
+            .selectedRegion(progress.getSelectedRegion())
+            .knowsAptitude(progress.getKnowsAptitude())
+            .build();
+    }
+    
+    /**
+     * 온보딩 진행 상태 조회 (내부 사용)
+     */
+    private OnboardingProgress getOnboardingProgress(Long memberId) {
+        return onboardingProgressRepository.findByMemberId(memberId)
+            .orElseThrow(() -> {
+                log.error("온보딩 진행 정보 없음 - memberId: {}", memberId);
+                return new CustomException(ErrorCode.ONBOARDING_NOT_STARTED);
+            });
+    }
+    
+    /**
+     * 세션 ID 생성
+     */
+    private String generateSessionId(Long memberId) {
+        return String.format("ONB-%d-%s", memberId, UUID.randomUUID().toString().substring(0, 8));
+    }
+}
