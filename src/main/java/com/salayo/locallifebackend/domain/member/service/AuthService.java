@@ -190,7 +190,7 @@ public class AuthService {
 			LocalCreator creator = localCreatorRepository.findByMemberId(member.getId())
 				.orElseThrow(() -> new CustomException(ErrorCode.INVALID_LOGIN));
 			if (!creator.isApproved()) {
-				throw new CustomException(ErrorCode.CREATOR_NOT_APPROVED);
+				throw new CustomException(ErrorCode.LOCAL_CREATOR_NOT_APPROVED);
 			}
 		}
 

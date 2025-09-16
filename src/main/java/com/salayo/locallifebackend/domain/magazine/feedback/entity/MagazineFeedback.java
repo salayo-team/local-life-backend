@@ -41,16 +41,24 @@ public class MagazineFeedback extends BaseEntity {
     @Column(nullable = false)
     private int revisionCount;
 
+    @Column(nullable = false)
+    private boolean reflected;
+
     @Builder
     public MagazineFeedback(Magazine magazine, LocalCreator localCreator, String content, int revisionCount) {
         this.magazine = magazine;
         this.localCreator = localCreator;
         this.content = content;
         this.revisionCount = revisionCount;
+        this.reflected = false;
     }
 
     public void updateContent(String content) {
         this.content = content;
+    }
+
+    public void markAsReflected() {
+        this.reflected = true;
     }
 
 }
