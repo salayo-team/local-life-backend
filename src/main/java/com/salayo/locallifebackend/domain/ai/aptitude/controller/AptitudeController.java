@@ -35,6 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 @RestController
 @RequestMapping("/ai/aptitude")
+@PreAuthorize("hasRole('USER')")
 @Tag(name = "Aptitude", description = "적성 검사 관련 API")
 public class AptitudeController {
 
@@ -47,7 +48,6 @@ public class AptitudeController {
 	}
 
 	@PostMapping("/test/start")
-	@PreAuthorize("hasRole('USER')")
 	@Operation(
 		summary = "적성 검사 시작",
 		description = "AI 기반 적성 검사를 시작합니다. 온보딩 시 첫 검사는 제한 없이 가능하며, 마이페이지에서는 최대 5회까지 가능합니다. 기존 진행 중인 테스트는 초기화됩니다."
@@ -83,7 +83,6 @@ public class AptitudeController {
 	}
 
 	@PostMapping("/test/answer")
-	@PreAuthorize("hasRole('USER')")
 	@Operation(
 		summary = "적성 검사 답변 제출",
 		description = "적성 검사 질문에 대한 답변을 제출하고 다음 질문을 받거나 최종 결과를 받습니다."
@@ -120,7 +119,6 @@ public class AptitudeController {
 	}
 
 	@PostMapping("/select")
-	@PreAuthorize("hasRole('USER')")
 	@Operation(
 		summary = "적성 수동 선택",
 		description = "AI 추천 없이 직접 적성을 선택합니다. 온보딩 시 '적성을 안다'를 선택한 경우 사용됩니다."
@@ -163,7 +161,6 @@ public class AptitudeController {
 	}
 
 	@GetMapping("/can-retake")
-	@PreAuthorize("hasRole('USER')")
 	@Operation(
 		summary = "재검사 가능 여부 확인",
 		description = "적성 재검사 가능 여부와 현재 검사 횟수를 확인합니다. 온보딩 완료 후 마이페이지에서 최대 5회까지 재검사 가능합니다."
@@ -194,7 +191,6 @@ public class AptitudeController {
 	}
 	
 	@GetMapping("/history")
-	@PreAuthorize("hasRole('USER')")
 	@Operation(
 		summary = "완료된 적성 검사 이력 조회",
 		description = "사용자의 완료된 적성 검사 이력을 조회합니다."
@@ -225,7 +221,6 @@ public class AptitudeController {
 	}
 	
 	@GetMapping("/history/session")
-	@PreAuthorize("hasRole('USER')")
 	@Operation(
 		summary = "특정 세션의 적성 검사 이력 조회",
 		description = "특정 세션 ID에 해당하는 적성 검사 이력을 조회합니다."
@@ -262,7 +257,6 @@ public class AptitudeController {
 	}
 
 	@GetMapping("/resume")
-	@PreAuthorize("hasRole('USER')")
 	@Operation(
 		summary = "중단된 적성 검사 이어하기",
 		description = "이전에 중단된 적성 검사를 이어서 진행합니다. 3단계 이상 진행한 테스트만 이어하기가 가능합니다."
