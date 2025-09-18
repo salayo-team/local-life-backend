@@ -1,13 +1,11 @@
 package com.salayo.locallifebackend.domain.onboarding.enums;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 /**
  * 온보딩 진행 단계
  */
 @Getter
-@RequiredArgsConstructor
 public enum OnboardingStep {
     MEMBER_INFO("회원 정보 입력"),
     REGION_SELECT("선호 지역 선택"),
@@ -17,8 +15,12 @@ public enum OnboardingStep {
     COMPLETED("온보딩 완료");
     
     private final String description;
-    
-    /**
+
+	OnboardingStep(String description) {
+		this.description = description;
+	}
+
+	/**
      * 다음 단계 결정
      */
     public OnboardingStep getNextStep(boolean knowsAptitude) {

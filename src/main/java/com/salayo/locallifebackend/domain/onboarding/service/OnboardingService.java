@@ -7,6 +7,7 @@ import com.salayo.locallifebackend.domain.onboarding.dto.OnboardingRegionRequest
 import com.salayo.locallifebackend.domain.onboarding.dto.OnboardingAptitudeCheckRequestDto;
 import com.salayo.locallifebackend.domain.onboarding.entity.OnboardingProgress;
 import com.salayo.locallifebackend.domain.onboarding.enums.OnboardingStep;
+import com.salayo.locallifebackend.domain.onboarding.enums.RegionType;
 import com.salayo.locallifebackend.domain.onboarding.repository.OnboardingProgressRepository;
 import com.salayo.locallifebackend.global.error.ErrorCode;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
@@ -16,9 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
-/**
- * 온보딩 서비스
- */
 @Slf4j
 @Service
 public class OnboardingService {
@@ -58,7 +56,7 @@ public class OnboardingService {
             log.info("온보딩이 이미 완료됨 - memberId: {}", memberId);
             return OnboardingProgressResponseDto.createCompleteResponse(
                 progress.getSessionId(), 
-                progress.getSelectedRegion()
+                progress.getRegionType()
             );
         }
         
@@ -67,7 +65,8 @@ public class OnboardingService {
     }
     
     /**
-     * 선호 지역 선택
+     * 선호 지역 특징 선택
+     * TODO: Issue #156 - 지역 특징별 자동 매핑 구현 예정
      */
     @Transactional
     public OnboardingProgressResponseDto selectRegion(Long memberId, OnboardingRegionRequestDto regionRequestDto) {
@@ -79,21 +78,18 @@ public class OnboardingService {
             throw new CustomException(ErrorCode.INVALID_ONBOARDING_STEP);
         }
         
-        // 지역 업데이트
-        String region = regionRequestDto.getRegion();
-//        if (regionRequestDto.getSubRegion() != null) {
-//            region = region + " " + regionRequestDto.getSubRegion();
-//        }
-        progress.updateRegion(region);
+        // 지역 특징 타입 저장
+        RegionType regionType = regionRequestDto.getRegionType();
+        progress.updateRegion(regionType);
         
         // 다음 단계로 이동
-        progress.moveToNextStep(false);  // 아직 적성 인지 여부를 모름
+        progress.moveToNextStep(false);
         onboardingProgressRepository.save(progress);
         
-        log.info("선호 지역 선택 완료 - memberId: {}, region: {}", memberId, region);
+        log.info("선호 지역 특징 선택 완료 - memberId: {}, regionType: {}", memberId, regionType);
         return OnboardingProgressResponseDto.createRegionCompleteResponse(
             progress.getSessionId(), 
-            region
+            regionType
         );
     }
     
@@ -125,13 +121,13 @@ public class OnboardingService {
             // 적성을 알고 있는 경우 → 수동 선택 페이지로
             return OnboardingProgressResponseDto.createManualAptitudeResponse(
                 progress.getSessionId(), 
-                progress.getSelectedRegion()
+                progress.getRegionType()
             );
         } else {
             // 적성을 모르는 경우 → AI 검사 페이지로
             return OnboardingProgressResponseDto.createAiTestResponse(
                 progress.getSessionId(), 
-                progress.getSelectedRegion()
+                progress.getRegionType()
             );
         }
     }
@@ -154,10 +150,10 @@ public class OnboardingService {
         progress.complete();
         onboardingProgressRepository.save(progress);
         
-        log.info("온보딩 완료 - memberId: {}, region: {}", memberId, progress.getSelectedRegion());
+        log.info("온보딩 완료 - memberId: {}, regionType: {}", memberId, progress.getRegionType());
         return OnboardingProgressResponseDto.createCompleteResponse(
             progress.getSessionId(), 
-            progress.getSelectedRegion()
+            progress.getRegionType()
         );
     }
     
@@ -172,7 +168,7 @@ public class OnboardingService {
             .sessionId(progress.getSessionId())
             .currentStep(progress.getCurrentStep())
             .isCompleted(progress.getIsCompleted())
-            .selectedRegion(progress.getSelectedRegion())
+            .regionType(progress.getRegionType())
             .knowsAptitude(progress.getKnowsAptitude())
             .build();
     }

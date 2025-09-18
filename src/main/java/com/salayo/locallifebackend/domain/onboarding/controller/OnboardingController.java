@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 @RestController
 @RequestMapping("/onboarding")
+@PreAuthorize("hasRole('USER')")
 @Tag(name = "OmBoarding", description = "온보딩 관련 API")
 public class OnboardingController {
 
@@ -35,7 +36,6 @@ public class OnboardingController {
 	}
 
     @PostMapping("/start")
-    @PreAuthorize("hasRole('USER')")
     @Operation(summary = "온보딩 시작", description = "회원 온보딩 프로세스를 시작합니다")
     public ResponseEntity<CommonResponseDto<OnboardingProgressResponseDto>> startOnboarding(
             @Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails) {
@@ -47,20 +47,18 @@ public class OnboardingController {
     }
 
     @PostMapping("/region")
-    @PreAuthorize("hasRole('USER')")
-    @Operation(summary = "선호 지역 선택", description = "온보딩 시 선호 지역을 선택합니다")
+    @Operation(summary = "선호 지역 특징 선택", description = "온보딩 시 선호 지역 특징(도시형/균형형/자연형)을 선택합니다")
     public ResponseEntity<CommonResponseDto<OnboardingProgressResponseDto>> selectRegion(
             @Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails,
             @Valid @RequestBody OnboardingRegionRequestDto regionRequestDto) {
 
        Long memberId = memberDetails.getMember().getId();
-       log.info("선호 지역 선택 요청 - memberId: {}, regionL {}", memberId, regionRequestDto.getRegion());
+       log.info("선호 지역 특징 선택 요청 - memberId: {}, regionType: {}", memberId, regionRequestDto.getRegionType());
        OnboardingProgressResponseDto progressResponseDto = onboardingService.selectRegion(memberId, regionRequestDto);
        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.UPDATE_SUCCESS, progressResponseDto)); // "선호 지역이 설정되었습니다"
     }
 
     @PostMapping("/aptitude-check")
-    @PreAuthorize("hasRole('USER')")
     @Operation(summary = "적성 인지 여부 확인",
               description = "적성을 알고 있는지 확인하고 수동 선택/AI 적성 검사로 분기합니다")
     public ResponseEntity<CommonResponseDto<OnboardingProgressResponseDto>> checkAptitudeKnowledge(
@@ -75,7 +73,6 @@ public class OnboardingController {
     }
 
     @PostMapping("/complete")
-    @PreAuthorize("hasRole('USER')")
     @Operation(summary = "온보딩 완료", description = "적성 설정 완료 후 온보딩을 완료합니다")
     public ResponseEntity<CommonResponseDto<OnboardingProgressResponseDto>> completeOnboarding(
             @Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails) {
@@ -87,7 +84,6 @@ public class OnboardingController {
     }
 
     @GetMapping("/progress")
-    @PreAuthorize("hasRole('USER')")
     @Operation(summary = "온보딩 진행 상태 조회", description = "현재 온보딩 진행 상태를 조회합니다")
     public ResponseEntity<CommonResponseDto<OnboardingProgressResponseDto>> getCurrentProgress(
             @Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails) {

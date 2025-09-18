@@ -1,6 +1,7 @@
 package com.salayo.locallifebackend.domain.onboarding.dto;
 
 import com.salayo.locallifebackend.domain.onboarding.enums.OnboardingStep;
+import com.salayo.locallifebackend.domain.onboarding.enums.RegionType;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -13,7 +14,7 @@ public class OnboardingProgressResponseDto {
     private final OnboardingStep currentStep;
     private final OnboardingStep nextStep;
     private final Boolean isCompleted;
-    private final String selectedRegion;
+    private final RegionType regionType;  // String에서 RegionType으로 변경
     private final Boolean knowsAptitude;
     private final String message;
     
@@ -24,12 +25,12 @@ public class OnboardingProgressResponseDto {
 
     @Builder
 	public OnboardingProgressResponseDto(String sessionId, OnboardingStep currentStep, OnboardingStep nextStep, Boolean isCompleted,
-		String selectedRegion, Boolean knowsAptitude, String message, NextAction nextAction) {
+		RegionType regionType, Boolean knowsAptitude, String message, NextAction nextAction) {
 		this.sessionId = sessionId;
 		this.currentStep = currentStep;
 		this.nextStep = nextStep;
 		this.isCompleted = isCompleted;
-		this.selectedRegion = selectedRegion;
+		this.regionType = regionType;
 		this.knowsAptitude = knowsAptitude;
 		this.message = message;
 		this.nextAction = nextAction;
@@ -63,27 +64,28 @@ public class OnboardingProgressResponseDto {
             .message("온보딩을 시작합니다. 선호 지역을 선택해주세요.")
             .nextAction(NextAction.builder()
                 .type("REGION_SELECT")
-                .endpoint("/api/onboarding/region")
+                .endpoint("/onboarding/region")
                 .method("POST")
-                .description("선호 지역 선택")
+                .description("선호 지역 특징 선택")
                 .build())
             .build();
     }
     
     /**
      * 지역 선택 완료 응답 생성
+     * TODO: Issue #156 - 지역 특징별 실제 지역 매핑 구현 예정
      */
-    public static OnboardingProgressResponseDto createRegionCompleteResponse(String sessionId, String region) {
+    public static OnboardingProgressResponseDto createRegionCompleteResponse(String sessionId, RegionType regionType) {
         return OnboardingProgressResponseDto.builder()
             .sessionId(sessionId)
             .currentStep(OnboardingStep.REGION_SELECT)
             .nextStep(OnboardingStep.APTITUDE_CHECK)
             .isCompleted(false)
-            .selectedRegion(region)
-            .message("선호 지역이 설정되었습니다. 적성을 알고 계신가요?")
+            .regionType(regionType)
+            .message("선호 지역 특징이 설정되었습니다. 적성을 알고 계신가요?")
             .nextAction(NextAction.builder()
                 .type("APTITUDE_CHECK")
-                .endpoint("/api/onboarding/aptitude-check")
+                .endpoint("/onboarding/aptitude-check")
                 .method("POST")
                 .description("적성 인지 여부 확인")
                 .build())
@@ -93,18 +95,18 @@ public class OnboardingProgressResponseDto {
     /**
      * 적성 확인 완료 응답 생성 (수동 선택)
      */
-    public static OnboardingProgressResponseDto createManualAptitudeResponse(String sessionId, String region) {
+    public static OnboardingProgressResponseDto createManualAptitudeResponse(String sessionId, RegionType regionType) {
         return OnboardingProgressResponseDto.builder()
             .sessionId(sessionId)
             .currentStep(OnboardingStep.APTITUDE_CHECK)
             .nextStep(OnboardingStep.APTITUDE_MANUAL)
             .isCompleted(false)
-            .selectedRegion(region)
+            .regionType(regionType)
             .knowsAptitude(true)
             .message("적성을 선택해주세요.")
             .nextAction(NextAction.builder()
                 .type("APTITUDE_MANUAL")
-                .endpoint("/api/ai/aptitude/select")
+                .endpoint("/ai/aptitude/select")
                 .method("POST")
                 .description("수동 적성 선택")
                 .build())
@@ -114,18 +116,18 @@ public class OnboardingProgressResponseDto {
     /**
      * 적성 확인 완료 응답 생성 (AI 검사)
      */
-    public static OnboardingProgressResponseDto createAiTestResponse(String sessionId, String region) {
+    public static OnboardingProgressResponseDto createAiTestResponse(String sessionId, RegionType regionType) {
         return OnboardingProgressResponseDto.builder()
             .sessionId(sessionId)
             .currentStep(OnboardingStep.APTITUDE_CHECK)
             .nextStep(OnboardingStep.APTITUDE_AI_TEST)
             .isCompleted(false)
-            .selectedRegion(region)
+            .regionType(regionType)
             .knowsAptitude(false)
             .message("AI 적성 검사를 시작합니다.")
             .nextAction(NextAction.builder()
                 .type("APTITUDE_AI")
-                .endpoint("/api/ai/aptitude/test/start")
+                .endpoint("/ai/aptitude/test/start")
                 .method("POST")
                 .description("AI 적성 검사 시작")
                 .build())
@@ -135,17 +137,17 @@ public class OnboardingProgressResponseDto {
     /**
      * 온보딩 완료 응답 생성
      */
-    public static OnboardingProgressResponseDto createCompleteResponse(String sessionId, String region) {
+    public static OnboardingProgressResponseDto createCompleteResponse(String sessionId, RegionType regionType) {
         return OnboardingProgressResponseDto.builder()
             .sessionId(sessionId)
             .currentStep(OnboardingStep.COMPLETED)
             .nextStep(null)
             .isCompleted(true)
-            .selectedRegion(region)
+            .regionType(regionType)
             .message("온보딩이 완료되었습니다!")
             .nextAction(NextAction.builder()
                 .type("COMPLETE")
-                .endpoint("/api/home")
+                .endpoint("/home")
                 .method("GET")
                 .description("홈 화면으로 이동")
                 .build())

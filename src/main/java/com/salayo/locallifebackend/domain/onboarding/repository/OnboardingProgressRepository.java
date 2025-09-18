@@ -9,9 +9,6 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
-/**
- * 온보딩 진행 상태 Repository
- */
 @Repository
 public interface OnboardingProgressRepository extends JpaRepository<OnboardingProgress, Long> {
     
