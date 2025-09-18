@@ -28,7 +28,7 @@ Content-Type: {{contentType}}
 ### ========================================
 
 ### 1. 온보딩 시작
-POST {{host}}/api/onboarding/start
+POST {{host}}/onboarding/start
 Authorization: Bearer {{accessToken}}
 Content-Type: {{contentType}}
 
@@ -51,20 +51,19 @@ Content-Type: {{contentType}}
 %}
 
 ### 2. 선호 지역 선택
-POST {{host}}/api/onboarding/region
+POST {{host}}/onboarding/region
 Authorization: Bearer {{accessToken}}
 Content-Type: {{contentType}}
 
 {
-  "region": "서울",
-  "subRegion": "강남구"
+  "regionType": "URBAN"
 }
 
 > {%
   const data = response.body.data;
   if (data) {
-    console.log("\n=== 선호 지역 선택 완료 ===");
-    console.log("선택한 지역:", data.selectedRegion);
+    console.log("\n=== 선호 지역 특징 선택 완료 ===");
+    console.log("선택한 지역 특징:", data.regionType);
     console.log("현재 단계:", data.currentStep);
     console.log("다음 단계:", data.nextStep);
     console.log("메시지:", data.message);
@@ -81,7 +80,7 @@ Content-Type: {{contentType}}
 ### ========================================
 
 ### 3-1. 적성을 알고 있는 경우 → 수동 선택으로 이동
-POST {{host}}/api/onboarding/aptitude-check
+POST {{host}}/onboarding/aptitude-check
 Authorization: Bearer {{accessToken}}
 Content-Type: {{contentType}}
 
@@ -106,7 +105,7 @@ Content-Type: {{contentType}}
 %}
 
 ### 3-2. 적성을 모르는 경우 → AI 검사로 이동
-POST {{host}}/api/onboarding/aptitude-check
+POST {{host}}/onboarding/aptitude-check
 Authorization: Bearer {{accessToken}}
 Content-Type: {{contentType}}
 
@@ -135,7 +134,7 @@ Content-Type: {{contentType}}
 ### ========================================
 
 ### 수동으로 NATURE 적성 선택
-POST {{host}}/api/ai/aptitude/select?aptitudeType=NATURE
+POST {{host}}/ai/aptitude/select?aptitudeType=NATURE
 Authorization: Bearer {{accessToken}}
 Content-Type: {{contentType}}
 
@@ -145,22 +144,22 @@ Content-Type: {{contentType}}
 %}
 
 ### 수동으로 ART_CREATION 적성 선택
-POST {{host}}/api/ai/aptitude/select?aptitudeType=ART_CREATION
+POST {{host}}/ai/aptitude/select?aptitudeType=ART_CREATION
 Authorization: Bearer {{accessToken}}
 Content-Type: {{contentType}}
 
 ### 수동으로 COMMUNITY 적성 선택
-POST {{host}}/api/ai/aptitude/select?aptitudeType=COMMUNITY
+POST {{host}}/ai/aptitude/select?aptitudeType=COMMUNITY
 Authorization: Bearer {{accessToken}}
 Content-Type: {{contentType}}
 
 ### 수동으로 TECH 적성 선택
-POST {{host}}/api/ai/aptitude/select?aptitudeType=TECH
+POST {{host}}/ai/aptitude/select?aptitudeType=TECH
 Authorization: Bearer {{accessToken}}
 Content-Type: {{contentType}}
 
 ### 수동으로 HISTORY_CULTURE 적성 선택
-POST {{host}}/api/ai/aptitude/select?aptitudeType=HISTORY_CULTURE
+POST {{host}}/ai/aptitude/select?aptitudeType=HISTORY_CULTURE
 Authorization: Bearer {{accessToken}}
 Content-Type: {{contentType}}
 
@@ -169,7 +168,7 @@ Content-Type: {{contentType}}
 ### ========================================
 
 ### AI 적성 검사 시작
-POST {{host}}/api/ai/aptitude/test/start
+POST {{host}}/ai/aptitude/test/start
 Authorization: Bearer {{accessToken}}
 Content-Type: {{contentType}}
 
@@ -186,7 +185,7 @@ Content-Type: {{contentType}}
 %}
 
 ### AI 검사 답변 제출 (5회 반복)
-POST {{host}}/api/ai/aptitude/test/answer
+POST {{host}}/ai/aptitude/test/answer
 Authorization: Bearer {{accessToken}}
 Content-Type: {{contentType}}
 
@@ -226,7 +225,7 @@ Content-Type: {{contentType}}
   if (data) {
     console.log("\n🎉 온보딩 완료!");
     console.log("세션 ID:", data.sessionId);
-    console.log("선택한 지역:", data.selectedRegion);
+    console.log("선택한 지역 특징:", data.regionType);
     console.log("완료 상태:", data.isCompleted);
     if (data.nextAction) {
       console.log("\n다음 이동:");
@@ -251,7 +250,7 @@ Authorization: Bearer {{accessToken}}
     console.log("세션 ID:", data.sessionId);
     console.log("현재 단계:", data.currentStep);
     console.log("완료 여부:", data.isCompleted);
-    console.log("선택한 지역:", data.selectedRegion);
+    console.log("선택한 지역 특징:", data.regionType);
     console.log("적성 인지 여부:", data.knowsAptitude);
   }
 %}
@@ -262,14 +261,14 @@ Authorization: Bearer {{accessToken}}
 
 ### 시나리오 A: 적성을 아는 사용자
 # 1. 온보딩 시작
-# 2. 지역 선택 (서울 강남구)
+# 2. 지역 특징 선택 (URBAN)
 # 3. 적성 인지 여부 (true - 알고있음)
 # 4. 수동 적성 선택 (NATURE)
 # 5. 온보딩 완료
 
 ### 시나리오 B: 적성을 모르는 사용자
 # 1. 온보딩 시작
-# 2. 지역 선택 (부산 해운대구)
+# 2. 지역 특징 선택 (BALANCED)
 # 3. 적성 인지 여부 (false - 모름)
 # 4. AI 적성 검사 (5단계)
 # 5. 온보딩 완료
@@ -279,17 +278,16 @@ Authorization: Bearer {{accessToken}}
 ### ========================================
 
 ### 잘못된 단계에서 지역 선택 시도
-POST {{host}}/api/onboarding/region
+POST {{host}}/onboarding/region
 Authorization: Bearer {{accessToken}}
 Content-Type: {{contentType}}
 
 {
-  "region": "서울",
-  "subRegion": "강남구"
+  "regionType": "URBAN"
 }
 
 ### 잘못된 단계에서 적성 확인 시도
-POST {{host}}/api/onboarding/aptitude-check
+POST {{host}}/onboarding/aptitude-check
 Authorization: Bearer {{accessToken}}
 Content-Type: {{contentType}}
 
@@ -298,7 +296,7 @@ Content-Type: {{contentType}}
 }
 
 ### 이미 완료된 온보딩 재시작 시도
-POST {{host}}/api/onboarding/start
+POST {{host}}/onboarding/start
 Authorization: Bearer {{accessToken}}
 Content-Type: {{contentType}}
 
