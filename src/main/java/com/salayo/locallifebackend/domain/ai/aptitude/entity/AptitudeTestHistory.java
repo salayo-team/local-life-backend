@@ -56,11 +56,11 @@ public class AptitudeTestHistory extends BaseEntity {
 	@Column(name = "session_id", length = 100)
 	private String sessionId; // 테스트 세션 ID
 	
-	@Column(name = "is_completed")
-	private Boolean isCompleted = false; // 테스트 완료 여부
+	@Column(name = "is_completed", nullable = false)
+	private boolean isCompleted = false; // 테스트 완료 여부
 	
-	@Column(name = "is_partial_save")
-	private Boolean isPartialSave = false; // 부분 저장 여부
+	@Column(name = "is_partial_save", nullable = false)
+	private boolean isPartialSave = false; // 부분 저장 여부
 	
 	@Column(name = "last_completed_step")
 	private Integer lastCompletedStep; // 마지막 완료 단계

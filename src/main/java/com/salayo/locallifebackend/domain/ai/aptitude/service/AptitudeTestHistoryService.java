@@ -98,7 +98,7 @@ public class AptitudeTestHistoryService {
             .aptitudeType(history.getAnalyzedAptitudeType())
             .confidenceScore(history.getConfidenceScore())
             .sessionId(history.getSessionId())
-            .isCompleted(history.getIsCompleted())
+            .isCompleted(history.isCompleted())
             .createdAt(history.getCreatedAt())
             .build();
     }
