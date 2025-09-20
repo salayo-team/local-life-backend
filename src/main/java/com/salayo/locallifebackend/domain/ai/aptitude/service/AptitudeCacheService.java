@@ -52,6 +52,32 @@ public class AptitudeCacheService {
 		log.debug("적성 테스트 답변 저장 - memberId: {}, step: {}, answer: {}", memberId, step, answer);
 	}
 	
+	// 답변 조회
+	public String getAnswer(Long memberId, int step) {
+		String key = CacheKeyPrefix.APTITUDE_TEST + memberId + ":answer:" + step;
+		return redisTemplate.opsForValue().get(key);
+	}
+	
+	// 질문 저장
+	public void saveQuestion(Long memberId, int step, String question) {
+		String key = CacheKeyPrefix.APTITUDE_TEST + memberId + ":question:" + step;
+		redisTemplate.opsForValue().set(key, question, CacheKeyPrefix.APTITUDE_TEST_TTL_HOURS, TimeUnit.HOURS);
+		log.debug("적성 테스트 질문 저장 - memberId: {}, step: {}, question: {}", memberId, step, question);
+	}
+	
+	// 질문 조회
+	public String getQuestion(Long memberId, int step) {
+		String key = CacheKeyPrefix.APTITUDE_TEST + memberId + ":question:" + step;
+		return redisTemplate.opsForValue().get(key);
+	}
+	
+	// 재질문 저장 (무효 답변 시)
+	public void saveFollowUpQuestion(Long memberId, int step, String followUpQuestion) {
+		String key = CacheKeyPrefix.APTITUDE_TEST + memberId + ":followup:" + step;
+		redisTemplate.opsForValue().set(key, followUpQuestion, CacheKeyPrefix.APTITUDE_TEST_TTL_HOURS, TimeUnit.HOURS);
+		log.debug("재질문 저장 - memberId: {}, step: {}, followup: {}", memberId, step, followUpQuestion);
+	}
+	
 	// 적성 점수 저장/업데이트
 	public void updateAptitudeScore(Long memberId, AptitudeType aptitudeType, int score) {
 		String key = CacheKeyPrefix.APTITUDE_TEST + memberId + ":score:" + aptitudeType.name();
@@ -121,7 +147,7 @@ public class AptitudeCacheService {
 		return redisTemplate.opsForValue().get(key);
 	}
 	
-	// 세션 TTL 갱신 (활동 시마다 호출)
+	// 세션 TTL 갱신 (답변 제출 시 호출)
 	public void refreshSession(Long memberId) {
 		String sessionKey = CacheKeyPrefix.APTITUDE_TEST + memberId + ":session";
 		Boolean refreshed = redisTemplate.expire(sessionKey, CacheKeyPrefix.SESSION_TIMEOUT_MINUTES, TimeUnit.MINUTES);

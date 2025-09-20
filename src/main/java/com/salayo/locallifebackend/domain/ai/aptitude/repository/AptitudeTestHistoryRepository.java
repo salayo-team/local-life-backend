@@ -16,8 +16,12 @@ public interface AptitudeTestHistoryRepository extends JpaRepository<AptitudeTes
 	// 멤버의 모든 이력 삭제 (테스트 시작 시 초기화용)
 	void deleteAllByMember(Member member);
 	
+	// 멤버의 미완료 이력만 삭제
+	@Modifying(clearAutomatically = true)
+	void deleteByMemberAndIsCompletedFalse(Member member);
+	
 	// 세션별 이력 조회
-	List<AptitudeTestHistory> findBySessionIdOrderByStepAsc(String sessionId);
+	List<AptitudeTestHistory> findBySessionIdAndMemberOrderByStepAsc(String sessionId, Member member);
 	
 	// 완료된 테스트 이력 조회
 	List<AptitudeTestHistory> findByMemberAndIsCompletedTrueOrderByCreatedAtDesc(Member member);
@@ -29,4 +33,11 @@ public interface AptitudeTestHistoryRepository extends JpaRepository<AptitudeTes
 	@Modifying
 	@Query("UPDATE AptitudeTestHistory h SET h.isCompleted = true WHERE h.sessionId = :sessionId")
 	void markSessionAsCompleted(@Param("sessionId") String sessionId);
+	
+	// 미완료 세션 조회
+	Optional<AptitudeTestHistory> findTopByMemberAndIsCompletedFalseOrderByCreatedAtDesc(Member member);
+	
+	// 세션의 최대 step 조회
+	@Query("SELECT MAX(h.step) FROM AptitudeTestHistory h WHERE h.sessionId = :sessionId")
+	Optional<Integer> findMaxStepBySessionId(@Param("sessionId") String sessionId);
 }
