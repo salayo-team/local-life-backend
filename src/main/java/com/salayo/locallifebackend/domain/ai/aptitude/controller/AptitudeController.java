@@ -2,6 +2,7 @@ package com.salayo.locallifebackend.domain.ai.aptitude.controller;
 
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeAnswerRequestDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeResumeResponseDto;
+import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeSelectRequestDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeTestHistoryResponseDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeTestResultResponseDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeTestStartResponseDto;
@@ -147,16 +148,10 @@ public class AptitudeController {
 	})
 	public CommonResponseDto<AptitudeTestResultResponseDto> selectManually(
 		@Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails,
-		@Parameter(
-			description = "선택할 적성 타입",
-			required = true,
-			example = "NATURE",
-			schema = @Schema(implementation = AptitudeType.class)
-		)
-		@RequestParam AptitudeType aptitudeType) {
+		@Valid @RequestBody AptitudeSelectRequestDto aptitudeSelectRequestDto) {
 		Long memberId = memberDetails.getMember().getId();
-		log.info("수동 선택 - memberId: {}, aptitude: {}", memberId, aptitudeType);
-		AptitudeTestResultResponseDto response = aptitudeService.selectAptitudeManually(memberId, aptitudeType);
+		log.info("수동 선택 - memberId: {}, aptitude: {}", memberId, aptitudeSelectRequestDto.aptitudeType());
+		AptitudeTestResultResponseDto response = aptitudeService.selectAptitudeManually(memberId, aptitudeSelectRequestDto.aptitudeType());
 		return CommonResponseDto.success(SuccessCode.CREATE_SUCCESS, response);
 	}
 
