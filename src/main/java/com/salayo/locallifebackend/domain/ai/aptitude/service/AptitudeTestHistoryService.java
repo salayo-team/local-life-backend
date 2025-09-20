@@ -44,11 +44,6 @@ public class AptitudeTestHistoryService {
             throw new CustomException(ErrorCode.SESSION_NOT_FOUND);
         }
 
-        // 세션은 존재하지만, 권한이 없는 경우
-        if (!histories.getFirst().getMember().getId().equals(memberId)) {
-            throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
-        }
-
         return histories.stream()
             .map(this::convertToDto)
             .toList();
