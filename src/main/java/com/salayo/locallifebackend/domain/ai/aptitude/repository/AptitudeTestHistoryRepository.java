@@ -17,6 +17,7 @@ public interface AptitudeTestHistoryRepository extends JpaRepository<AptitudeTes
 	void deleteAllByMember(Member member);
 	
 	// 멤버의 미완료 이력만 삭제
+	@Modifying(clearAutomatically = true)
 	void deleteByMemberAndIsCompletedFalse(Member member);
 	
 	// 세션별 이력 조회
