@@ -47,8 +47,7 @@ public class AptitudeService {
 
 	@Transactional
 	public AptitudeTestStartResponseDto startTest(Long memberId) {
-		Member member = memberRepository.findById(memberId)
-			.orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+		Member member = memberRepository.findByIdOrElseThrow(memberId);
 
 		// 테스트 가능 여부 확인
 		UserAptitude userAptitude = userAptitudeRepository.findByMember(member).orElse(null);
@@ -94,8 +93,7 @@ public class AptitudeService {
 
 	@Transactional
 	public AptitudeTextProgressResponseDto submitAnswer(Long memberId, AptitudeAnswerRequestDto aptitudeAnswerRequestDto) {
-		Member member = memberRepository.findById(memberId)
-			.orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+		Member member = memberRepository.findByIdOrElseThrow(memberId);
 
 		// Redis에서 현재 진행 상태 확인
 		String currentStepStr = aptitudeCacheService.getTestProgress(memberId);
@@ -256,8 +254,7 @@ public class AptitudeService {
 
 	@Transactional
 	public AptitudeTestResultResponseDto selectAptitudeManually(Long memberId, AptitudeType aptitudeType) {
-		Member member = memberRepository.findById(memberId)
-			.orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+		Member member = memberRepository.findByIdOrElseThrow(memberId);
 
 		UserAptitude userAptitude = userAptitudeRepository.findByMember(member)
 			.orElse(UserAptitude.builder()
@@ -278,8 +275,7 @@ public class AptitudeService {
 
 	@Transactional(readOnly = true)
 	public CanRetakeTestResponseDto canRetakeTest(Long memberId) {
-		Member member = memberRepository.findById(memberId)
-			.orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+		Member member = memberRepository.findByIdOrElseThrow(memberId);
 
 		return userAptitudeRepository.findByMember(member)
 			.map(aptitude -> {
@@ -369,8 +365,7 @@ public class AptitudeService {
 	// 이어하기 기능
 	@Transactional
 	public AptitudeResumeResponseDto resumeTest(Long memberId) {
-		Member member = memberRepository.findById(memberId)
-			.orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+		Member member = memberRepository.findByIdOrElseThrow(memberId);
 
 		// UserAptitude에서 부분 저장 정보 확인
 		UserAptitude userAptitude = userAptitudeRepository.findByMember(member).orElse(null);
