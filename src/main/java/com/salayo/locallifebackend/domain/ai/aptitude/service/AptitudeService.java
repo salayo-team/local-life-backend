@@ -408,7 +408,7 @@ public class AptitudeService {
 					.totalSteps(CacheKeyPrefix.APTITUDE_TOTAL_QUESTIONS)
 					.nextQuestion(nextQuestion)
 					.completedSteps(lastStep)
-					.message(String.format("%d단계부터 이어서 진행합니다.", lastStep + 1))
+					.resumeMessage(String.format("%d단계부터 이어서 진행합니다.", lastStep + 1))
 					.build();
 			}
 		}

@@ -10,17 +10,17 @@ public class AptitudeResumeResponseDto {
 	private final Integer totalSteps;
 	private final AptitudeQuestionResponseDto nextQuestion;
 	private final Integer completedSteps;
-	private final String message;
+	private final String resumeMessage;
 	
 	@Builder
 	public AptitudeResumeResponseDto(String sessionId, Integer nextStep,
 		Integer totalSteps, AptitudeQuestionResponseDto nextQuestion,
-		Integer completedSteps, String message) {
+		Integer completedSteps, String resumeMessage) {
 		this.sessionId = sessionId;
 		this.nextStep = nextStep;
 		this.totalSteps = totalSteps;
 		this.nextQuestion = nextQuestion;
 		this.completedSteps = completedSteps;
-		this.message = message;
+		this.resumeMessage = resumeMessage;
 	}
 }
