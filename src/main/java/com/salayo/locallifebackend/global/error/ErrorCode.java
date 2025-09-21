@@ -93,6 +93,7 @@ public enum ErrorCode {
     NO_INCOMPLETE_TEST(HttpStatus.NOT_FOUND, "진행 중인 테스트가 없습니다."),
     ONBOARDING_NOT_STARTED(HttpStatus.NOT_FOUND, "온보딩이 시작되지 않았습니다."),
     INVALID_ONBOARDING_STEP(HttpStatus.BAD_REQUEST, "올바르지 않은 온보딩 단계입니다."),
+    NO_INCOMPLETE_TEST(HttpStatus.NOT_FOUND, "이어할 수 있는 테스트가 없습니다."),
 
     // 408 REQUEST_TIMEOUT
     AI_TIMEOUT(HttpStatus.REQUEST_TIMEOUT, "AI 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요."),
