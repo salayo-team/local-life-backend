@@ -41,7 +41,14 @@ public class MagazineFeedbackService {
             throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
         }
 
-        int feedbackCount = magazineFeedbackRepository.findByMagazineIdAndLocalCreatorId(magazineId, localCreator.getId()).size();
+        magazineFeedbackRepository.findTopByMagazineIdAndLocalCreatorIdOrderByCreatedAtDesc(magazineId, localCreator.getId())
+            .ifPresent(lastFeedback -> {
+                if (!lastFeedback.isReflected()) {
+                    throw new CustomException(ErrorCode.PREVIOUS_FEEDBACK_NOT_REFLECTED);
+                }
+            });
+
+        int feedbackCount = magazineFeedbackRepository.countByMagazineIdAndLocalCreatorId(magazineId, localCreator.getId());
 
         if (feedbackCount >= 3) {
             throw new CustomException(ErrorCode.FEEDBACK_LIMIT_EXCEEDED);
