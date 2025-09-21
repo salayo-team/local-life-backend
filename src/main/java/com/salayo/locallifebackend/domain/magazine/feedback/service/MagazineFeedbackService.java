@@ -64,7 +64,7 @@ public class MagazineFeedbackService {
         magazineFeedbackRepository.save(magazineFeedback);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<MagazineFeedbackResponseDto> getMyFeedbacks(Long magazineId, Long memberId) {
         LocalCreator localCreator = localCreatorRepository.findByMemberId(memberId)
             .orElseThrow(() -> new CustomException(ErrorCode.LOCAL_CREATOR_NOT_FOUND));
@@ -90,5 +90,20 @@ public class MagazineFeedbackService {
             .stream()
             .map(MagazineFeedbackResponseDto::new)
             .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void deleteFeedback(Long magazineId, Long feedbackId) {
+        MagazineFeedback feedback = magazineFeedbackRepository.findById(feedbackId).orElseThrow(() -> new CustomException(ErrorCode.FEEDBACK_NOT_FOUND));
+
+        if (!feedback.getMagazine().getId().equals(magazineId)) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
+        }
+
+        if (feedback.isReflected()) {
+            throw new CustomException(ErrorCode.FEEDBACK_ALREADY_REFLECTED);
+        }
+
+        magazineFeedbackRepository.delete(feedback);
     }
 }
