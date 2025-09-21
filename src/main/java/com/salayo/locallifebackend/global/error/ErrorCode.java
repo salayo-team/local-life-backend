@@ -41,6 +41,21 @@ public enum ErrorCode {
     PROGRAM_DELETED(HttpStatus.BAD_REQUEST, "삭제된 체험 프로그램입니다."),
     APTITUDE_TEST_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "마이페이지에서 적성 검사는 최대 5회까지만 가능합니다."),
     FEEDBACK_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "피드백은 최대 3회까지만 작성할 수 있습니다."),
+    MAGAZINE_REVISION_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "매거진 수정은 최대 3회까지만 할 수 있습니다."),
+    ALREADY_RESERVATION(HttpStatus.BAD_REQUEST, "이미 예약된 스케줄입니다."),
+    PAYMENT_VERIFICATION_FAILED(HttpStatus.BAD_REQUEST, "결제 상태가 유효하지 않습니다."),
+    PAYMENT_METHOD_MISMATCH(HttpStatus.BAD_REQUEST, "결제 수단 정보가 일치하지 않습니다."),
+    MERCHANT_UID_MISMATCH(HttpStatus.BAD_REQUEST,"주문 번호 정보가 일치하지 않습니다."),
+    PGTID_MISMATCH(HttpStatus.BAD_REQUEST, "pg_tid 정보가 일치하지 않습니다."),
+    PAYMENT_AMOUNT_MISMATCH(HttpStatus.BAD_REQUEST, "결제 금액이 일치하지 않습니다."),
+    PAYMENT_ALREADY_VERIFIED(HttpStatus.BAD_REQUEST, "이미 검증된 결제입니다."),
+    INVALID_RESERVATION_STATUS(HttpStatus.BAD_REQUEST, "예약 상태가 올바르지 않습니다."),
+    INVALID_PAYMENT_METHODTYPE(HttpStatus.BAD_REQUEST, "결제 수단 값이 올바르지 않습니다."),
+    INVALID_PAYMENT_PROVIDER(HttpStatus.BAD_REQUEST, "결제 대행사 값이 올바르지 않습니다."),
+    FEEDBACK_ALREADY_REFLECTED(HttpStatus.BAD_REQUEST, "이미 반영된 피드백입니다."),
+    MAGAZINE_PREVIEW_NOT_SENT(HttpStatus.BAD_REQUEST, "초안이 먼저 전송되어야 합니다."),
+    MAGAZINE_PREVIEW_EXPIRED(HttpStatus.BAD_REQUEST, "초안 확인 기간이 만료되었습니다."),
+    REVISION_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "아직 수정안이 없어 전송할 수 없습니다."),
 
     // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
@@ -52,10 +67,10 @@ public enum ErrorCode {
 
     // 403 Forbidden
     FORBIDDEN_ACCESS(HttpStatus.FORBIDDEN, "접근이 거부됐습니다."),
-    CREATOR_NOT_APPROVED(HttpStatus.FORBIDDEN, "관리자 승인 후 로그인 가능합니다."),
     LOCAL_CREATOR_NOT_APPROVED(HttpStatus.FORBIDDEN, "로컬 크리에이터로 승인되지 않은 유저입니다."),
     RESERVATION_NOT_ALLOWED(HttpStatus.FORBIDDEN, "예약을 할 수 있는 권한이 없습니다."),
     REVIEW_PERIOD_EXPIRED(HttpStatus.FORBIDDEN, "리뷰 작성 기한이 만료되었습니다."),
+    MAGAZINE_FORBIDDEN(HttpStatus.FORBIDDEN, "이 매거진에 대한 권한이 없습니다."),
 
     // 404 NOT_FOUND
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 회원을 찾을 수 없습니다."),
@@ -69,10 +84,17 @@ public enum ErrorCode {
     RESERVATION_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 예약을 찾을 수 없습니다."),
     REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 리뷰를 찾을 수 없습니다."),
     MAGAZINE_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 매거진을 찾을 수 없습니다."),
+    SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 세션을 찾을 수 없습니다."),
+    IMPUID_NOT_FOUND(HttpStatus.NOT_FOUND, "imp_uid 값을 찾을 수 없습니다."),
+    PGTID_NOT_FOUND(HttpStatus.NOT_FOUND, "pg_tid 값을 찾을 수 없습니다."),
+    PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 결제를 찾을 수 없습니다."),
+    IMPUID_NOT_FOUND_BY_IAMPORT(HttpStatus.NOT_FOUND, "iam_port에서 해당 결제를 찾을 수 없습니다."),
+    FEEDBACK_NOT_FOUND(HttpStatus.NOT_FOUND, "피드백을 찾을 수 없습니다."),
+    NO_INCOMPLETE_TEST(HttpStatus.NOT_FOUND, "이어할 수 있는 테스트가 없습니다."),
 
     // 408 REQUEST_TIMEOUT
     AI_TIMEOUT(HttpStatus.REQUEST_TIMEOUT, "AI 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요."),
-    
+
     // 422 UNPROCESSABLE_ENTITY
     AI_RESPONSE_INVALID_FORMAT(HttpStatus.UNPROCESSABLE_ENTITY, "AI 응답 형식이 올바르지 않습니다."),
 
@@ -89,7 +111,7 @@ public enum ErrorCode {
     FILE_UPLOAD_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "파일 업로드에 실패했습니다."),
     AI_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "AI 처리 중 오류가 발생했습니다."),
 
-    ;
+	;
 
 
     private final HttpStatus status;

@@ -2,7 +2,10 @@ package com.salayo.locallifebackend.domain.paymenthistory.entity;
 
 import com.salayo.locallifebackend.domain.member.entity.Member;
 import com.salayo.locallifebackend.domain.payment.entity.Payment;
+import com.salayo.locallifebackend.domain.payment.enums.PaymentMethodType;
+import com.salayo.locallifebackend.domain.payment.enums.PaymentProvider;
 import com.salayo.locallifebackend.domain.paymenthistory.enums.PaymentHistoryStatus;
+import com.salayo.locallifebackend.domain.review.enums.ReviewStatus;
 import com.salayo.locallifebackend.global.entity.BaseEntity;
 import com.salayo.locallifebackend.global.enums.DeletedStatus;
 import jakarta.persistence.Column;
@@ -51,8 +54,13 @@ public class PaymentHistory extends BaseEntity {
 	@Column(nullable = false, precision = 12, scale = 2)
 	private BigDecimal paymentCost; //결제 금액
 
-	@Column(nullable = false, length = 50)
-	private String paymentCard; //결제 카드 정보
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false, length = 100)
+	private PaymentMethodType paymentMethodType; //결제 수단 타입
+
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false, length = 100)
+	private PaymentProvider paymentProvider; //결제 대행사
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 50)
@@ -62,27 +70,38 @@ public class PaymentHistory extends BaseEntity {
 	private String refundReason; //환불 사유
 
 	@Column(nullable = true)
+	private LocalDateTime refundAttemptedAt; //환불 요청 발생 일시
+
+	@Column(nullable = true)
 	private LocalDateTime canceledAt; //결제 취소일
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 50)
 	private DeletedStatus deletedStatus; //결제 내역 삭제 상태
-	
-	//TODO : ReviewStatus 추가하기
-	
+
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false, length = 50)
+	private ReviewStatus reviewStatus; //리뷰 작성 상태
+
+	@Column(nullable = true, length = 100)
+	private String paymentCardSnapshot; //카드 스냅샷
 
 	@Builder
-	public PaymentHistory(Payment payment, Member member, String pgTid, String impUid, BigDecimal paymentCost, String paymentCard,
-		PaymentHistoryStatus paymentHistoryStatus, String refundReason, LocalDateTime canceledAt, DeletedStatus deletedStatus) {
+	public PaymentHistory(Payment payment, Member member, String pgTid, String impUid, BigDecimal paymentCost,
+		PaymentMethodType paymentMethodType, PaymentProvider paymentProvider, PaymentHistoryStatus paymentHistoryStatus,
+		String refundReason, LocalDateTime canceledAt, DeletedStatus deletedStatus, ReviewStatus reviewStatus, String paymentCardSnapshot) {
 		this.payment = payment;
 		this.member = member;
 		this.pgTid = pgTid;
 		this.impUid = impUid;
 		this.paymentCost = paymentCost;
-		this.paymentCard = paymentCard;
+		this.paymentMethodType = paymentMethodType;
+		this.paymentProvider = paymentProvider;
 		this.paymentHistoryStatus = paymentHistoryStatus;
 		this.refundReason = refundReason;
 		this.canceledAt = canceledAt;
 		this.deletedStatus = deletedStatus;
+		this.reviewStatus = reviewStatus;
+		this.paymentCardSnapshot = paymentCardSnapshot;
 	}
 }

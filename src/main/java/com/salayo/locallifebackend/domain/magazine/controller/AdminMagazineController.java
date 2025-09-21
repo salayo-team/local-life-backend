@@ -5,7 +5,10 @@ import com.salayo.locallifebackend.domain.magazine.dto.MagazineCreateRequestDto;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineDraftDetailResponseDto;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineDraftListResponseDto;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineFileUploadResponseDto;
+import com.salayo.locallifebackend.domain.magazine.dto.MagazineRevisionResponseDto;
+import com.salayo.locallifebackend.domain.magazine.dto.MagazineUpdateRequestDto;
 import com.salayo.locallifebackend.domain.magazine.service.MagazineFileService;
+import com.salayo.locallifebackend.domain.magazine.service.MagazineRevisionService;
 import com.salayo.locallifebackend.domain.magazine.service.MagazineService;
 import com.salayo.locallifebackend.global.dto.CommonResponseDto;
 import com.salayo.locallifebackend.global.dto.PaginationResponseDto;
@@ -24,6 +27,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -38,10 +42,12 @@ public class AdminMagazineController {
 
     private final MagazineService magazineService;
     private final MagazineFileService magazineFileService;
+    private final MagazineRevisionService magazineRevisionService;
 
-    public AdminMagazineController(MagazineService magazineService, MagazineFileService magazineFileService) {
+    public AdminMagazineController(MagazineService magazineService, MagazineFileService magazineFileService, MagazineRevisionService magazineRevisionService) {
         this.magazineService = magazineService;
         this.magazineFileService = magazineFileService;
+        this.magazineRevisionService = magazineRevisionService;
     }
 
     @Operation(summary = "매거진 임시 저장 - 로컬 크리에이터 확인용", description = "관리자가 로컬 크리에이터를 인터뷰한 매거진을 임시 상태로 저장")
@@ -96,4 +102,36 @@ public class AdminMagazineController {
 
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.EMAIL_SEND_SUCCESS, null));
     }
+
+    @Operation(summary = "피드백 기반 매거진 수정(최대 3회)", description = "관리자가 로컬크리에이터의 피드백에 따라 매거진 본문을 수정하며, 수정은 최대 3회, 수정 기록도 최대 3회 저장됩니다.")
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/{magazineId}/feedback")
+    public ResponseEntity<CommonResponseDto<Void>> updateMagazineFromFeedback(
+        @PathVariable Long magazineId,
+        @RequestBody @Valid MagazineUpdateRequestDto magazineUpdateRequestDto,
+        @AuthenticationPrincipal MemberDetails memberDetails) {
+        magazineService.updateMagazineFromFeedback(magazineId, magazineUpdateRequestDto, memberDetails.getMember());
+
+        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.UPDATE_SUCCESS, null));
+    }
+
+    @Operation(summary = "매거진 수정 이력 조회", description = "관리자가 특정 매거진의 수정 이력 전체를 조회합니다.")
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/{magazineId}/revisions")
+    public ResponseEntity<CommonResponseDto<List<MagazineRevisionResponseDto>>> getMagazineRevisions(
+        @PathVariable Long magazineId
+    ) {
+        List<MagazineRevisionResponseDto> revisions = magazineRevisionService.getRevisions(magazineId);
+        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, revisions));
+    }
+
+    @Operation(summary = "매거진 수정본 확인 링크 전송", description = "로컬크리에이터에게 매거진 수정본 확인용 링크를 이메일로 전송합니다.")
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/{magazineId}/revision/send")
+    public ResponseEntity<CommonResponseDto<Void>> sendMagazineRevisionLink(@PathVariable Long magazineId) {
+        magazineService.sendRevisionLink(magazineId);
+
+        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.EMAIL_SEND_SUCCESS, null));
+    }
+
 }
