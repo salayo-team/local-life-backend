@@ -2,7 +2,7 @@ package com.salayo.locallifebackend.domain.ai.aptitude.service;
 
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeAnswerRequestDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeQuestionResponseDto;
-import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeTestHistoryResponseDto;
+import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeResumeResponseDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeTestStartResponseDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeTextProgressResponseDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeTestResultResponseDto;
@@ -10,7 +10,6 @@ import com.salayo.locallifebackend.domain.ai.aptitude.dto.CanRetakeTestResponseD
 import com.salayo.locallifebackend.domain.ai.aptitude.entity.AptitudeTestHistory;
 import com.salayo.locallifebackend.domain.ai.aptitude.entity.UserAptitude;
 import com.salayo.locallifebackend.domain.ai.aptitude.enums.AptitudeType;
-import com.salayo.locallifebackend.domain.ai.aptitude.repository.AptitudeTestHistoryRepository;
 import com.salayo.locallifebackend.domain.ai.aptitude.repository.UserAptitudeRepository;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AiAptitudeAnalysisResponseDto;
 import com.salayo.locallifebackend.domain.member.entity.Member;
@@ -18,13 +17,8 @@ import com.salayo.locallifebackend.domain.member.repository.MemberRepository;
 import com.salayo.locallifebackend.global.error.ErrorCode;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
 import com.salayo.locallifebackend.global.util.CacheKeyPrefix;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,18 +28,18 @@ import org.springframework.transaction.annotation.Transactional;
 public class AptitudeService {
 
 	private final UserAptitudeRepository userAptitudeRepository;
-	private final AptitudeTestHistoryRepository aptitudeTestHistoryRepository;
+	private final AptitudeTestHistoryService testHistoryService;
 	private final MemberRepository memberRepository;
 	private final AptitudeAiService aptitudeAiService;
 	private final AptitudeCacheService aptitudeCacheService;
 
-	public AptitudeService(UserAptitudeRepository userAptitudeRepository, 
-			AptitudeTestHistoryRepository aptitudeTestHistoryRepository,
-			MemberRepository memberRepository, 
+	public AptitudeService(UserAptitudeRepository userAptitudeRepository,
+			AptitudeTestHistoryService testHistoryService,
+			MemberRepository memberRepository,
 			AptitudeAiService aptitudeAiService,
 			AptitudeCacheService aptitudeCacheService) {
 			this.userAptitudeRepository = userAptitudeRepository;
-			this.aptitudeTestHistoryRepository = aptitudeTestHistoryRepository;
+			this.testHistoryService = testHistoryService;
 			this.memberRepository = memberRepository;
 			this.aptitudeAiService = aptitudeAiService;
 			this.aptitudeCacheService = aptitudeCacheService;
@@ -53,8 +47,7 @@ public class AptitudeService {
 
 	@Transactional
 	public AptitudeTestStartResponseDto startTest(Long memberId) {
-		Member member = memberRepository.findById(memberId)
-			.orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+		Member member = memberRepository.findByIdOrElseThrow(memberId);
 
 		// 테스트 가능 여부 확인
 		UserAptitude userAptitude = userAptitudeRepository.findByMember(member).orElse(null);
@@ -70,13 +63,11 @@ public class AptitudeService {
 
 		// 세션 ID 생성
 		String sessionId = generateSessionId(memberId);
-		
-		/**
-		 * 기존 테스트 이력 삭제 -> 사용자가 여러번 테스트 시작했다가 중도 이탈 시 불필요한 이력 삭제가 발생할 수 있음.
-		 * - TODO : 테스트 시작이 아닌 완료 시점에만 testCount를 증가시키고 완료되지 않은 테스트는 deleteAllByMember로 삭제하는 정책으로 수정
-		 */
-		aptitudeTestHistoryRepository.deleteAllByMember(member);
-		
+
+		// 미완료된 테스트 이력만 삭제 (완료된 이력은 보존)
+		// TODO: 테스트 완료 시점에만 testCount 증가하도록 수정 필요
+		testHistoryService.deleteIncompleteTests(member);
+
 		// Redis 기존 데이터 정리 (중복 방지)
 		aptitudeCacheService.deleteAllTestData(memberId);
 
@@ -86,8 +77,11 @@ public class AptitudeService {
 		// Redis에 세션 ID 저장
 		aptitudeCacheService.saveSessionId(memberId, sessionId);
 
-		// 첫 질문 가져오기
-		AptitudeQuestionResponseDto firstQuestion = aptitudeAiService.getNextQuestion(0);
+		// 첫 질문 가져오기 - AI가 동적으로 생성
+		AptitudeQuestionResponseDto firstQuestion = aptitudeAiService.getNextQuestion(memberId, 1);
+		
+		// 첫 질문을 Redis에 저장
+		aptitudeCacheService.saveQuestion(memberId, 1, firstQuestion.getQuestion());
 
 		return new AptitudeTestStartResponseDto(1, CacheKeyPrefix.APTITUDE_TOTAL_QUESTIONS, firstQuestion);
 	}
@@ -99,8 +93,7 @@ public class AptitudeService {
 
 	@Transactional
 	public AptitudeTextProgressResponseDto submitAnswer(Long memberId, AptitudeAnswerRequestDto aptitudeAnswerRequestDto) {
-		Member member = memberRepository.findById(memberId)
-			.orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+		Member member = memberRepository.findByIdOrElseThrow(memberId);
 
 		// Redis에서 현재 진행 상태 확인
 		String currentStepStr = aptitudeCacheService.getTestProgress(memberId);
@@ -116,14 +109,16 @@ public class AptitudeService {
 			aptitudeCacheService.saveSessionId(memberId, sessionId);
 			log.warn("세션이 없어 재생성 - memberId: {}, newSessionId: {}", memberId, sessionId);
 		} else {
-			// 세션 TTL 갱신 (30분 연장)
+			// 세션 TTL 갱신 (60분 연장)
 			aptitudeCacheService.refreshSession(memberId);
 		}
 
-		// 답변 분석 (JSON 파싱된 객체 반환)
+		// 답변 분석 (JSON 파싱된 객체 반환) - 대화 맥락 포함
 		AiAptitudeAnalysisResponseDto aiAnalysis = aptitudeAiService.analyzeResponse(
 			aptitudeAnswerRequestDto.getAnswer(),
-			aptitudeAiService.getNextQuestion(aptitudeAnswerRequestDto.getStep() - 1)
+			member.getId(),
+			aptitudeAnswerRequestDto.getStep(),
+			aptitudeAnswerRequestDto.getQuestionText()
 		);
 
 		// Redis에 답변 저장
@@ -143,17 +138,24 @@ public class AptitudeService {
 			aiAnalysis.getConfidenceScore());
 		
 		// 이력 저장용 AI 응답 문자열 생성
-		String aiResponseStr = String.format("%s - %s (신뢰도: %.2f)", 
-			aiAnalysis.getAptitudeType(), 
-			aiAnalysis.getReason(), 
-			aiAnalysis.getConfidenceScore());
+		String aiResponseStr;
+		if (aiAnalysis.getAptitudeType() != null) {
+			aiResponseStr = String.format("%s - %s (신뢰도: %.2f)", 
+				aiAnalysis.getAptitudeType(), 
+				aiAnalysis.getReason(), 
+				aiAnalysis.getConfidenceScore());
+		} else {
+			// 무효 답변인 경우
+			aiResponseStr = String.format("무효 답변 - %s", 
+				aiAnalysis.getReason() != null ? aiAnalysis.getReason() : "적성 판단 불가");
+		}
 		
 		// 디버깅용 로그
 		Map<AptitudeType, Integer> currentScores = aptitudeCacheService.getAllAptitudeScores(memberId);
 		log.info("[TEST] 현재 적성 점수 상태: {}", currentScores);
 
 		// 이력 저장 (AI 분석 결과를 포함하여 저장)
-		AptitudeTestHistory aptitudeTestHistory = AptitudeTestHistory.builder()
+		AptitudeTestHistory history = AptitudeTestHistory.builder()
 			.member(member)
 			.step(aptitudeAnswerRequestDto.getStep())
 			.questionText(aptitudeAnswerRequestDto.getQuestionText())
@@ -164,10 +166,11 @@ public class AptitudeService {
 			.sessionId(sessionId)
 			.isCompleted(false)
 			.build();
-		aptitudeTestHistoryRepository.save(aptitudeTestHistory);
 		
-		log.info("[이력 저장] Step {} 저장 완료 - sessionId: {}, aptitudeType: {}", 
-			aptitudeAnswerRequestDto.getStep(), sessionId, aiAnalysis.getAptitudeType());
+		testHistoryService.saveTestHistory(member, history);
+
+		// 모든 단계에서 부분 저장 (중단 시 이어하기 가능)
+		savePartialResult(member, sessionId, aptitudeAnswerRequestDto.getStep());
 
 		// 다음 단계 처리
 		if (aptitudeAnswerRequestDto.getStep() >= CacheKeyPrefix.APTITUDE_TOTAL_QUESTIONS) {
@@ -179,8 +182,15 @@ public class AptitudeService {
 			// Redis 상태 업데이트
 			aptitudeCacheService.updateTestProgress(memberId, aptitudeAnswerRequestDto.getStep() + 1);
 
-			// 다음 질문
-			AptitudeQuestionResponseDto nextQuestion = aptitudeAiService.getNextQuestion(aptitudeAnswerRequestDto.getStep());
+			// 다음 질문 - AI가 대화 맥락을 고려하여 생성
+			AptitudeQuestionResponseDto nextQuestion = aptitudeAiService.getNextQuestion(
+				member.getId(), 
+				aptitudeAnswerRequestDto.getStep() + 1
+			);
+			
+			// 질문을 Redis에 저장
+			aptitudeCacheService.saveQuestion(memberId, aptitudeAnswerRequestDto.getStep() + 1, 
+				nextQuestion.getQuestion());
 			return new AptitudeTextProgressResponseDto(
 				aptitudeAnswerRequestDto.getStep() + 1,
 				CacheKeyPrefix.APTITUDE_TOTAL_QUESTIONS,
@@ -205,6 +215,7 @@ public class AptitudeService {
 		UserAptitude userAptitude = userAptitudeRepository.findByMember(member)
 			.orElse(UserAptitude.builder()
 				.member(member)
+				.aptitudeType(finalAptitude)
 				.testCount(0)
 				.mypageTestCount(0)
 				.isOnboardingCompleted(false)
@@ -216,13 +227,15 @@ public class AptitudeService {
 		} else {
 			userAptitude.updateAptitudeFromMypage(finalAptitude);
 		}
-		
+
+		// 부분 저장 정보 초기화
+		userAptitude.clearPartialProgress();
 		userAptitudeRepository.save(userAptitude);
 		
 		// 세션의 모든 이력을 완료 처리
 		if (sessionId != null) {
-			aptitudeTestHistoryRepository.markSessionAsCompleted(sessionId);
-			log.info("[테스트 완료] 세션 {} 완료 처리 - 최종 적성: {}", sessionId, finalAptitude);
+			testHistoryService.markSessionAsCompleted(sessionId);
+			log.info("[테스트 완료] 최종 적성: {}", finalAptitude);
 		}
 		
 		// Redis 데이터 정리
@@ -241,12 +254,12 @@ public class AptitudeService {
 
 	@Transactional
 	public AptitudeTestResultResponseDto selectAptitudeManually(Long memberId, AptitudeType aptitudeType) {
-		Member member = memberRepository.findById(memberId)
-			.orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+		Member member = memberRepository.findByIdOrElseThrow(memberId);
 
 		UserAptitude userAptitude = userAptitudeRepository.findByMember(member)
 			.orElse(UserAptitude.builder()
 				.member(member)
+				.aptitudeType(aptitudeType)
 				.testCount(0)
 				.mypageTestCount(0)
 				.isOnboardingCompleted(false)
@@ -262,8 +275,7 @@ public class AptitudeService {
 
 	@Transactional(readOnly = true)
 	public CanRetakeTestResponseDto canRetakeTest(Long memberId) {
-		Member member = memberRepository.findById(memberId)
-			.orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+		Member member = memberRepository.findByIdOrElseThrow(memberId);
 
 		return userAptitudeRepository.findByMember(member)
 			.map(aptitude -> {
@@ -280,97 +292,16 @@ public class AptitudeService {
 			})
 			.orElse(new CanRetakeTestResponseDto(true, 0, CacheKeyPrefix.APTITUDE_MAX_TEST_COUNT));
 	}
-	
-	// 테스트 이력 조회 (세션별)
-	@Transactional(readOnly = true)
-	public List<AptitudeTestHistoryResponseDto> getTestHistoryBySession(Long memberId, String sessionId) {
-		Member member = memberRepository.findById(memberId)
-			.orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
-		
-		List<AptitudeTestHistory> histories = aptitudeTestHistoryRepository.findBySessionIdOrderByStepAsc(sessionId);
-		
-		// 세션이 존재하지 않거나, 이력이 없는 경우
-		if (histories.isEmpty()) {
-			throw new CustomException(ErrorCode.SESSION_NOT_FOUND);
-		}
-
-		// 세션은 존재하지만, 권한이 없는 경우
-		if (!histories.get(0).getMember().getId().equals(memberId)) {
-			throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
-		}
-		
-		return histories.stream()
-			.map(this::convertToDto)
-			.toList();
-	}
-	
-	// 완료된 테스트 이력 조회
-	@Transactional(readOnly = true)
-	public List<AptitudeTestHistoryResponseDto> getCompletedTestHistory(Long memberId) {
-		Member member = memberRepository.findById(memberId)
-			.orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
-		
-		return aptitudeTestHistoryRepository.findByMemberAndIsCompletedTrueOrderByCreatedAtDesc(member)
-			.stream()
-			.map(this::convertToDto)
-			.toList();
-	}
-	
-	// Entity -> DTO 변환 메소드
-	private AptitudeTestHistoryResponseDto convertToDto(AptitudeTestHistory history) {
-		return AptitudeTestHistoryResponseDto.builder()
-			.historyId(history.getId())
-			.step(history.getStep())
-			.questionText(history.getQuestionText())
-			.userResponse(history.getUserResponse())
-			.aiResponse(history.getAiResponse())
-			.aptitudeType(history.getAnalyzedAptitudeType() != null ?
-				AptitudeType.valueOf(history.getAnalyzedAptitudeType().name()) : null)
-			.confidenceScore(history.getConfidenceScore())
-			.sessionId(history.getSessionId())
-			.isCompleted(history.getIsCompleted())
-			.createdAt(history.getCreatedAt())
-			.build();
-	}
-
-	private Map<AptitudeType, Integer> analyzeHistories(List<AptitudeTestHistory> histories) {
-		Map<AptitudeType, Integer> scores = new HashMap<>();
-		for (AptitudeType type : AptitudeType.values()) {
-			scores.put(type, 0);
-		}
-
-		/**
-		 * 정규식 패턴 생성 - 모든 적성 타입을 OR로 연결
-		 * TODO : HashMap 최적화
-		 */
-		String pattern = Arrays.stream(AptitudeType.values())
-			.map(type -> type.name() + "|" + type.getTitle())
-			.collect(Collectors.joining("|"));
-		Pattern aptitudePattern = Pattern.compile("(" + pattern + ")");
-
-		// AI 응답에서 적성 키워드 추출 및 점수 계산
-		for (AptitudeTestHistory history : histories) {
-			String aiResponse = history.getAiResponse();
-			if (aiResponse != null) {
-				Matcher matcher = aptitudePattern.matcher(aiResponse);
-				while (matcher.find()) {
-					String matchedCode = matcher.group();
-					// 매칭된 코드가 어떤 적성 타입인지 확인
-					for (AptitudeType type : AptitudeType.values()) {
-						if (matchedCode.equals(type.name()) || matchedCode.equals(type.getTitle())) {
-							scores.put(type, scores.get(type) + 1);
-							break;
-						}
-					}
-				}
-			}
-		}
-
-		return scores;
-	}
 
 	// AI 분석 결과에서 적성 점수 추출 및 Redis 업데이트 (JSON 객체 기반)
 	private void updateScoreFromAnalysis(Long memberId, AiAptitudeAnalysisResponseDto aiAnalysis) {
+		// NULL 체크 추가
+		if (aiAnalysis.getAptitudeType() == null) {
+			log.warn("AI 분석 결과 적성 타입이 NULL - 무효 답변으로 처리");
+			// 무효 답변인 경우 점수 업데이트 하지 않음
+			return;
+		}
+		
 		try {
 			// AI 분석 결과에서 적성 타입 추출
 			AptitudeType aptitudeType = AptitudeType.valueOf(aiAnalysis.getAptitudeType().toUpperCase());
@@ -408,5 +339,80 @@ public class AptitudeService {
 			log.warn("유효하지 않은 적성 타입 문자열: {}, 기본값 NATURE 반환", aptitudeTypeStr);
 			return AptitudeType.NATURE; // 기본값
 		}
+	}
+
+	// 부분 저장 메소드
+	private void savePartialResult(Member member, String sessionId, int currentStep) {
+		// 모든 단계에서 저장 (테스트 완료 전까지)
+		if (currentStep < CacheKeyPrefix.APTITUDE_TOTAL_QUESTIONS) {
+			UserAptitude userAptitude = userAptitudeRepository.findByMember(member)
+				.orElse(UserAptitude.builder()
+					.member(member)
+					.aptitudeType(AptitudeType.NATURE)
+					.testCount(0)
+					.mypageTestCount(0)
+					.isOnboardingCompleted(false)
+					.build());
+
+			userAptitude.updatePartialProgress(currentStep, sessionId);
+			userAptitudeRepository.save(userAptitude);
+
+			log.info("[부분 저장] memberId: {}, step: {}, sessionId: {}",
+				member.getId(), currentStep, sessionId);
+		}
+	}
+
+	// 이어하기 기능
+	@Transactional
+	public AptitudeResumeResponseDto resumeTest(Long memberId) {
+		Member member = memberRepository.findByIdOrElseThrow(memberId);
+
+		// UserAptitude에서 부분 저장 정보 확인
+		UserAptitude userAptitude = userAptitudeRepository.findByMember(member).orElse(null);
+
+		if (userAptitude != null && userAptitude.getPartialSessionId() != null) {
+			String sessionId = userAptitude.getPartialSessionId();
+			Integer lastStep = userAptitude.getLastPartialStep();
+
+			// 세션의 이력 조회
+			List<AptitudeTestHistory> histories = testHistoryService
+				.getSessionHistories(sessionId, member);
+
+			if (!histories.isEmpty()) {
+				// Redis 복구 - 세션 ID와 진행 상태
+				aptitudeCacheService.saveSessionId(memberId, sessionId);
+				aptitudeCacheService.saveTestProgress(memberId, String.valueOf(lastStep + 1));
+
+				// 기존 점수 복구
+				for (AptitudeTestHistory history : histories) {
+					if (history.getAnalyzedAptitudeType() != null) {
+						int score = history.getConfidenceScore() > 0.7 ? 2 : 1;
+						aptitudeCacheService.updateAptitudeScore(memberId,
+							history.getAnalyzedAptitudeType(), score);
+					}
+
+					// 답변도 복구
+					aptitudeCacheService.saveAnswer(memberId, history.getStep(),
+						history.getUserResponse());
+				}
+
+				// 다음 질문 반환 - AI가 대화 맥락을 고려하여 생성
+				AptitudeQuestionResponseDto nextQuestion = aptitudeAiService.getNextQuestion(
+					member.getId(),
+					lastStep + 1
+				);
+
+				return AptitudeResumeResponseDto.builder()
+					.sessionId(sessionId)
+					.nextStep(lastStep + 1)
+					.totalSteps(CacheKeyPrefix.APTITUDE_TOTAL_QUESTIONS)
+					.nextQuestion(nextQuestion)
+					.completedSteps(lastStep)
+					.resumeMessage(String.format("%d단계부터 이어서 진행합니다.", lastStep + 1))
+					.build();
+			}
+		}
+
+		throw new CustomException(ErrorCode.NO_INCOMPLETE_TEST);
 	}
 }

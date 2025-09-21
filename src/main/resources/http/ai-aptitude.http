@@ -1,173 +1,558 @@
-### 일반 사용자 로그인 testuser2
-POST http://localhost:8080/auth/login
-Content-Type: application/json
+### ========================================
+### AI 적성 검사 API 테스트 (대화형 AI 버전)
+### ========================================
+### 환경: local, dev, prod
+@host = http://localhost:8080
+@contentType = application/json
+
+### ===== 인증 =====
+
+### 일반 사용자 로그인 (testuser2)
+POST {{host}}/auth/login
+Content-Type: {{contentType}}
 
 {
-  "email": "testuser2@example.com",
-  "password": "Test1234!"
+  "email": "testuser1@example.com",
+  "password": "test1234!"
 }
 
 > {%
   const json = response.body;
   const accessToken = json.data.accessToken;
   client.global.set("accessToken", accessToken);
+  console.log("🎉 로그인 성공! Access Token 저장됨");
 %}
 
-### ===== AI 적성 검사 전체 플로우 테스트 =====
+### ========================================
+### AI 대화형 적성 검사 - 실제 AI가 주도하는 테스트
+### ========================================
 
-### 1. 적성 테스트 시작
-POST http://localhost:8080/ai/aptitude/test/start
+### 1. 적성 검사 시작 - AI가 첫 질문 생성
+# @name startTest
+POST {{host}}/ai/aptitude/test/start
 Authorization: Bearer {{accessToken}}
-Content-Type: application/json
+Content-Type: {{contentType}}
 
 > {%
-  // 응답에서 첫 번째 질문 정보 저장
-  console.log("테스트 시작 응답:", JSON.stringify(response.body));
   const data = response.body.data;
-  if (data && data.aptitudeQuestionResponseDto) {
-    client.global.set("currentStep", data.step);
-    client.global.set("currentQuestion", data.aptitudeQuestionResponseDto.question);
-    console.log("다음 단계:", data.step, "질문:", data.aptitudeQuestionResponseDto.question);
-  } else {
-    console.log("응답에 질문 정보가 없습니다");
-  }
-%}
-
-### 2. 적성 테스트 답변 제출 - 동적 처리
-# 이 요청을 5번 반복 실행하면 됩니다
-POST http://localhost:8080/ai/aptitude/test/answer
-Authorization: Bearer {{accessToken}}
-Content-Type: application/json
-
-{
-  "step": {{currentStep}},
-  "questionText": "{{currentQuestion}}",
-  "answer": "나는 자연과 관련된 활동을 정말 좋아해. 숲에서 시간을 보내고, 환경을 보호하는 일에 관심이 많아."
-}
-
-> {%
-  // 응답 처리
-  console.log("답변 제출 응답:", JSON.stringify(response.body));
-  const data = response.body.data;
-
   if (data) {
-    if (data.isComplete) {
-      console.log("테스트 완료! 최종 적성:", data.finalAptitude);
-      client.global.set("testComplete", true);
-      client.global.set("finalAptitude", data.finalAptitude);
-    } else if (data.aptitudeQuestionResponseDto) {
-      // 다음 질문 정보 저장
-      client.global.set("currentStep", data.step);
+    // 다음 단계와 질문 내용을 변수로 저장 (이어하기 테스트를 위해)
+    client.global.set("nextStep", data.step);
+    client.global.set("currentStep", data.step);
+    client.global.set("totalSteps", data.totalSteps);
+    
+    if (data.aptitudeQuestionResponseDto) {
+      // AI가 생성한 실제 질문 저장
+      client.global.set("questionText", data.aptitudeQuestionResponseDto.question);
       client.global.set("currentQuestion", data.aptitudeQuestionResponseDto.question);
-      console.log("다음 단계:", data.step, "질문:", data.aptitudeQuestionResponseDto.question);
+      console.log("=== AI 적성 검사 시작 ===");
+      console.log("현재 단계:", data.step, "/", data.totalSteps);
+      console.log("\n🔮 AI 질문:", data.aptitudeQuestionResponseDto.question);
+      console.log("\n💭 이 질문에 자유롭게 답변하세요!");
     }
   }
 %}
 
-### 3. 재검사 가능 여부 확인
-GET http://localhost:8080/ai/aptitude/can-retake
-Authorization: Bearer {{accessToken}}
-Content-Type: application/json
+### ========================================
+### [시나리오 1] 테스트 이어하기 (Resume) - 가장 중요
+### ========================================
 
-### ===== 적성 검사 이력 조회 =====
-
-### 4. 완료된 적성 검사 이력 조회
-GET http://localhost:8080/ai/aptitude/history
+### 2. 첫 번째 답변만 제출 (테스트 중단 상황 가정)
+POST {{host}}/ai/aptitude/test/answer
 Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
 
-### 5. 특정 세션의 적성 검사 이력 조회
-# sessionId를 실제 세션 ID로 변경해서 사용
-GET http://localhost:8080/ai/aptitude/history/session?sessionId=APT-1-1234567890
-Authorization: Bearer {{accessToken}}
+{
+  "step": {{nextStep}},
+  "questionText": "{{questionText}}",
+  "answer": "저는 사람들과 협력하며 함께 문제를 해결할 때 가장 큰 성취감을 느낍니다."
+}
 
 > {%
-  // 세션 ID 예시 출력
-  console.log("세션 ID 예시: APT-{userId}-{timestamp}");
-  console.log("실제 테스트 후 반환된 세션 ID를 사용할 것");
+  const data = response.body.data;
+  if (data) {
+    // 다음 질문 정보 업데이트
+    client.global.set("nextStep", data.step);
+    client.global.set("currentStep", data.step);
+    if (data.aptitudeQuestionResponseDto) {
+      client.global.set("questionText", data.aptitudeQuestionResponseDto.question);
+      client.global.set("currentQuestion", data.aptitudeQuestionResponseDto.question);
+    }
+    console.log("✅ 첫 번째 답변 제출 완료");
+    console.log("📍 진행 상황:", data.step, "/", data.totalSteps);
+    console.log("⏸️ 여기서 테스트를 중단한다고 가정...");
+  }
 %}
 
-### ===== 개별 단계별 테스트 (디버깅용) =====
-# 테스트 시작을 먼저 실행한 후 아래 요청들을 순서대로 실행
-
-### Step 1 - 고정값
-POST http://localhost:8080/ai/aptitude/test/answer
+### 3. 테스트 이어하기 요청
+# 이 요청은 DB에 저장된 부분 저장 정보를 기반으로 Redis 상태를 복구하고
+# 다음 질문을 반환해야 합니다.
+POST {{host}}/ai/aptitude/test/resume
 Authorization: Bearer {{accessToken}}
-Content-Type: application/json
+Content-Type: {{contentType}}
+
+> {%
+  const data = response.body.data;
+  if (data) {
+    client.global.set("nextStep", data.step);
+    client.global.set("currentStep", data.step);
+    if (data.aptitudeQuestionResponseDto) {
+      client.global.set("questionText", data.aptitudeQuestionResponseDto.question);
+      client.global.set("currentQuestion", data.aptitudeQuestionResponseDto.question);
+    }
+    console.log("🔄 테스트 이어하기 성공!");
+    console.log("📍 복구된 단계:", data.step, "/", data.totalSteps);
+    console.log("🔮 다음 질문:", data.aptitudeQuestionResponseDto?.question);
+  }
+%}
+
+### 4. 이어진 테스트에서 두 번째 답변 제출
+POST {{host}}/ai/aptitude/test/answer
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
 
 {
-  "step": 1,
-  "questionText": "너가 제일 좋아하는 활동은 뭐야?",
-  "answer": "자연 속에서 산책하는 것을 좋아해"
+  "step": {{nextStep}},
+  "questionText": "{{questionText}}",
+  "answer": "특히 브레인스토밍 세션에서 다양한 아이디어가 나올 때 흥미롭습니다."
 }
 
-### Step 2 - 고정값
-POST http://localhost:8080/ai/aptitude/test/answer
+> {%
+  const data = response.body.data;
+  if (data) {
+    client.global.set("nextStep", data.step);
+    client.global.set("currentStep", data.step);
+    if (data.aptitudeQuestionResponseDto) {
+      client.global.set("questionText", data.aptitudeQuestionResponseDto.question);
+      client.global.set("currentQuestion", data.aptitudeQuestionResponseDto.question);
+    }
+    console.log("✅ 이어진 테스트에서 답변 제출 성공");
+  }
+%}
+
+### ========================================
+### [시나리오 2] 테스트 시작부터 끝까지 (체이닝 강화)
+### ========================================
+
+### 1. 새 테스트 시작 (체이닝용)
+# @name chainedStart
+POST {{host}}/ai/aptitude/test/start
 Authorization: Bearer {{accessToken}}
-Content-Type: application/json
+Content-Type: {{contentType}}
+
+> {%
+  // 응답에서 다음 단계와 질문 내용을 변수로 저장
+  const data = response.body.data;
+  client.global.set("nextStep", data.step);
+  client.global.set("questionText", data.aptitudeQuestionResponseDto.question);
+  console.log("🚀 체이닝 테스트 시작");
+  console.log("Step:", data.step, "Question:", data.aptitudeQuestionResponseDto.question);
+%}
+
+### 2. Step 1/5 - 첫 번째 답변
+POST {{host}}/ai/aptitude/test/answer
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
 
 {
-  "step": 2,
-  "questionText": "주말에 뭐하면서 시간 보내는 걸 좋아해?",
-  "answer": "산이나 바다로 나가서 힐링하기"
+  "step": {{nextStep}},
+  "questionText": "{{questionText}}",
+  "answer": "저는 혼자 깊이 파고드는 연구 활동을 선호합니다. 특히 데이터를 분석하고 패턴을 찾는 것을 즐깁니다."
 }
 
-### Step 3 - 고정값
-POST http://localhost:8080/ai/aptitude/test/answer
+> {%
+  // 응답에서 다음 단계와 질문 내용을 다시 업데이트
+  const data = response.body.data;
+  if (!data.isComplete) {
+    client.global.set("nextStep", data.step);
+    client.global.set("questionText", data.aptitudeQuestionResponseDto.question);
+    console.log("✅ Step 1 완료");
+    console.log("Next Step:", data.step, "Next Question:", data.aptitudeQuestionResponseDto.question);
+  }
+%}
+
+### 3. Step 2/5 - 두 번째 답변
+POST {{host}}/ai/aptitude/test/answer
 Authorization: Bearer {{accessToken}}
-Content-Type: application/json
+Content-Type: {{contentType}}
 
 {
-  "step": 3,
-  "questionText": "만약 지역에서 프로젝트를 한다면 어떤 걸 하고 싶어?",
-  "answer": "생태 체험 프로그램이나 친환경 농업"
+  "step": {{nextStep}},
+  "questionText": "{{questionText}}",
+  "answer": "복잡한 알고리즘을 설계하고 최적화하는 과정이 가장 재미있습니다. 효율성을 높이는 것에 보람을 느낍니다."
 }
 
-### Step 4 - 고정값
-POST http://localhost:8080/ai/aptitude/test/answer
+> {%
+  const data = response.body.data;
+  if (!data.isComplete) {
+    client.global.set("nextStep", data.step);
+    client.global.set("questionText", data.aptitudeQuestionResponseDto.question);
+    console.log("✅ Step 2 완료");
+    console.log("Next Step:", data.step, "Next Question:", data.aptitudeQuestionResponseDto.question);
+  }
+%}
+
+### 4. Step 3/5 - 세 번째 답변
+POST {{host}}/ai/aptitude/test/answer
 Authorization: Bearer {{accessToken}}
-Content-Type: application/json
+Content-Type: {{contentType}}
 
 {
-  "step": 4,
-  "questionText": "어떤 환경에서 일할 때 가장 행복해?",
-  "answer": "자연과 가까운 조용한 환경"
+  "step": {{nextStep}},
+  "questionText": "{{questionText}}",
+  "answer": "머신러닝 모델을 트레이닝하고 성능을 개선하는 작업에 몰입합니다. 새로운 기술을 배우는 것도 좋아합니다."
 }
 
-### Step 5 - 고정값 (최종)
-POST http://localhost:8080/ai/aptitude/test/answer
+> {%
+  const data = response.body.data;
+  if (!data.isComplete) {
+    client.global.set("nextStep", data.step);
+    client.global.set("questionText", data.aptitudeQuestionResponseDto.question);
+    console.log("✅ Step 3 완료");
+    console.log("Next Step:", data.step, "Next Question:", data.aptitudeQuestionResponseDto.question);
+  }
+%}
+
+### 5. Step 4/5 - 네 번째 답변
+POST {{host}}/ai/aptitude/test/answer
 Authorization: Bearer {{accessToken}}
-Content-Type: application/json
+Content-Type: {{contentType}}
 
 {
-  "step": 5,
-  "questionText": "너의 강점은 뭐라고 생각해?",
-  "answer": "자연과 교감하고 지속가능한 삶을 추구하는 것"
+  "step": {{nextStep}},
+  "questionText": "{{questionText}}",
+  "answer": "오픈소스 프로젝트에 기여하면서 전 세계 개발자들과 협업하는 것이 흥미롭습니다."
 }
 
-### ===== 수동 선택 테스트 =====
+> {%
+  const data = response.body.data;
+  if (!data.isComplete) {
+    client.global.set("nextStep", data.step);
+    client.global.set("questionText", data.aptitudeQuestionResponseDto.question);
+    console.log("✅ Step 4 완료");
+    console.log("Next Step:", data.step, "Next Question:", data.aptitudeQuestionResponseDto.question);
+  }
+%}
+
+### 6. Step 5/5 - 마지막 답변 (테스트 완료)
+POST {{host}}/ai/aptitude/test/answer
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "step": {{nextStep}},
+  "questionText": "{{questionText}}",
+  "answer": "최신 기술 트렌드를 따라가고 새로운 프로그래밍 언어를 익히는 것이 제 취미입니다."
+}
+
+> {%
+  const data = response.body.data;
+  if (data.isComplete) {
+    console.log("\n🎉 체이닝 테스트 완료!");
+    console.log("최종 적성:", data.finalAptitude);
+    client.global.set("finalAptitude", data.finalAptitude);
+  } else {
+    console.log("✅ Step 5 완료");
+  }
+%}
+
+### ========================================
+### [시나리오 3] 중단 후 여러 번 이어하기
+### ========================================
+
+### 1. 새 테스트 시작 (중단 테스트용)
+POST {{host}}/ai/aptitude/test/start
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+> {%
+  const data = response.body.data;
+  client.global.set("nextStep", data.step);
+  client.global.set("questionText", data.aptitudeQuestionResponseDto.question);
+  console.log("🔵 중단 테스트 시작");
+%}
+
+### 2. 첫 답변 후 중단
+POST {{host}}/ai/aptitude/test/answer
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "step": {{nextStep}},
+  "questionText": "{{questionText}}",
+  "answer": "자연 속에서 시간을 보내는 것을 좋아합니다."
+}
+
+> {%
+  console.log("⏸️ 첫 번째 중단...");
+%}
+
+### 3. 첫 번째 이어하기
+POST {{host}}/ai/aptitude/test/resume
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+> {%
+  const data = response.body.data;
+  client.global.set("nextStep", data.step);
+  client.global.set("questionText", data.aptitudeQuestionResponseDto.question);
+  console.log("🔄 첫 번째 이어하기 성공");
+%}
+
+### 4. 두 번째 답변 후 또 중단
+POST {{host}}/ai/aptitude/test/answer
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "step": {{nextStep}},
+  "questionText": "{{questionText}}",
+  "answer": "캠핑과 하이킹을 자주 갑니다."
+}
+
+> {%
+  const data = response.body.data;
+  client.global.set("nextStep", data.step);
+  client.global.set("questionText", data.aptitudeQuestionResponseDto.question);
+  console.log("⏸️ 두 번째 중단...");
+%}
+
+### 5. 두 번째 이어하기
+POST {{host}}/ai/aptitude/test/resume
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+> {%
+  const data = response.body.data;
+  client.global.set("nextStep", data.step);
+  client.global.set("questionText", data.aptitudeQuestionResponseDto.question);
+  console.log("🔄 두 번째 이어하기 성공");
+  console.log("📍 현재 단계:", data.step, "/", data.totalSteps);
+%}
+
+### ========================================
+### 다양한 답변 시나리오 - AI가 동적으로 처리
+### ========================================
+
+### 자연친화적 답변 시나리오
+POST {{host}}/ai/aptitude/test/answer
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "step": {{currentStep}},
+  "questionText": "{{currentQuestion}}",
+  "answer": "저는 숲에서 새소리 듣는 것을 좋아해요. 자연과 함께 있을 때 마음이 편안해집니다."
+}
+
+> {%
+  const data = response.body.data;
+  if (data) {
+    if (data.isComplete) {
+      console.log("\n🎉 테스트 완료!");
+      console.log("AI가 분석한 당신의 적성:", data.finalAptitude);
+      client.global.set("finalAptitude", data.finalAptitude);
+    } else {
+      client.global.set("currentStep", data.step);
+      client.global.set("nextStep", data.step);
+      if (data.aptitudeQuestionResponseDto) {
+        client.global.set("currentQuestion", data.aptitudeQuestionResponseDto.question);
+        client.global.set("questionText", data.aptitudeQuestionResponseDto.question);
+        console.log("\n--- 다음 단계 ---");
+        console.log("\n➡️ 진행 상황:", data.step, "/", data.totalSteps);
+        console.log("\n🔮 AI 질문:", data.aptitudeQuestionResponseDto.question);
+      }
+    }
+  }
+%}
+
+### 예술창작적 답변 시나리오
+POST {{host}}/ai/aptitude/test/answer
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "step": {{currentStep}},
+  "questionText": "{{currentQuestion}}",
+  "answer": "그림 그리고 뭔가 만드는 걸 좋아해요. 손으로 직접 창작하는 활동이 제일 즐거워요."
+}
+
+### 기술중심 답변 시나리오
+POST {{host}}/ai/aptitude/test/answer
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "step": {{currentStep}},
+  "questionText": "{{currentQuestion}}",
+  "answer": "코딩하고 앱 개발하는 게 재밌어요. 기술로 문제를 해결하는 것에 관심이 많아요."
+}
+
+### 커뮤니티 중심 답변 시나리오
+POST {{host}}/ai/aptitude/test/answer
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "step": {{currentStep}},
+  "questionText": "{{currentQuestion}}",
+  "answer": "사람들과 만나서 이야기하는 게 좋아요. 함께 모여서 뭔가 하는 활동이 즐거워요."
+}
+
+### 역사문화 관심 답변 시나리오
+POST {{host}}/ai/aptitude/test/answer
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "step": {{currentStep}},
+  "questionText": "{{currentQuestion}}",
+  "answer": "옛날 이야기나 전통 문화에 관심이 많아요. 박물관이나 고택 방문하는 걸 좋아해요."
+}
+
+### ========================================
+### 예외 상황 처리 - AI가 대화 유도
+### ========================================
+
+### 엉뚱한 답변 - AI가 다시 질문 유도
+POST {{host}}/ai/aptitude/test/answer
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "step": {{currentStep}},
+  "questionText": "{{currentQuestion}}",
+  "answer": "배고파요. 점심 뭐 먹을까요?"
+}
+
+> {%
+  console.log("💬 예외 답변 처리 - AI가 어떻게 대화를 이어가는지 확인");
+  const data = response.body.data;
+  if (data && data.aptitudeQuestionResponseDto) {
+    console.log("🔮 AI 반응:", data.aptitudeQuestionResponseDto.question);
+    console.log("AI가 자연스럽게 다시 적성 검사로 유도하는지 확인!");
+  }
+%}
+
+### 너무 짧은 답변
+POST {{host}}/ai/aptitude/test/answer
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "step": {{currentStep}},
+  "questionText": "{{currentQuestion}}",
+  "answer": "몰라요"
+}
+
+### 질문과 무관한 답변
+POST {{host}}/ai/aptitude/test/answer
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "step": {{currentStep}},
+  "questionText": "{{currentQuestion}}",
+  "answer": "오늘 날씨가 좋네요. 비 올 것 같기도 하고요."
+}
+
+### ========================================
+### 복합적 답변 - AI의 판단력 테스트
+### ========================================
+
+### 여러 적성이 섞인 답변
+POST {{host}}/ai/aptitude/test/answer
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "step": {{currentStep}},
+  "questionText": "{{currentQuestion}}",
+  "answer": "자연 속에서 사람들과 함께 예술 활동하는 것을 좋아해요. 특히 디지털 아트로 자연을 표현하는 것에 관심이 있어요."
+}
+
+> {%
+  console.log("🔎 복합 답변 분석 - AI가 어떤 적성을 우선시하는지 확인");
+%}
+
+### 모호한 답변
+POST {{host}}/ai/aptitude/test/answer
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "step": {{currentStep}},
+  "questionText": "{{currentQuestion}}",
+  "answer": "그냥 이것저것 다 좋아해요. 특별히 좋아하는 건 없는 것 같아요."
+}
+
+### ========================================
+### 기타 기능 테스트
+### ========================================
+
+### 재검사 가능 여부 확인
+GET {{host}}/ai/aptitude/can-retake
+Authorization: Bearer {{accessToken}}
+
+### 테스트 이력 조회
+GET {{host}}/ai/aptitude/history
+Authorization: Bearer {{accessToken}}
+
+### 중단된 테스트 존재 여부 확인
+GET {{host}}/ai/aptitude/has-incomplete
+Authorization: Bearer {{accessToken}}
+
+### ===== 수동 적성 선택 (AI 추천 건너뛰기) =====
 
 ### 적성 수동 선택 (NATURE)
-POST http://localhost:8080/ai/aptitude/select?aptitudeType=NATURE
+POST {{host}}/ai/aptitude/select?aptitudeType=NATURE
 Authorization: Bearer {{accessToken}}
-Content-Type: application/json
+Content-Type: {{contentType}}
 
 ### 적성 수동 선택 (ART_CREATION)
-POST http://localhost:8080/ai/aptitude/select?aptitudeType=ART_CREATION
+POST {{host}}/ai/aptitude/select?aptitudeType=ART_CREATION
 Authorization: Bearer {{accessToken}}
-Content-Type: application/json
+Content-Type: {{contentType}}
 
 ### 적성 수동 선택 (COMMUNITY)
-POST http://localhost:8080/ai/aptitude/select?aptitudeType=COMMUNITY
+POST {{host}}/ai/aptitude/select?aptitudeType=COMMUNITY
 Authorization: Bearer {{accessToken}}
-Content-Type: application/json
+Content-Type: {{contentType}}
 
 ### 적성 수동 선택 (TECH)
-POST http://localhost:8080/ai/aptitude/select?aptitudeType=TECH
+POST {{host}}/ai/aptitude/select?aptitudeType=TECH
 Authorization: Bearer {{accessToken}}
-Content-Type: application/json
+Content-Type: {{contentType}}
 
 ### 적성 수동 선택 (HISTORY_CULTURE)
-POST http://localhost:8080/ai/aptitude/select?aptitudeType=HISTORY_CULTURE
+POST {{host}}/ai/aptitude/select?aptitudeType=HISTORY_CULTURE
 Authorization: Bearer {{accessToken}}
-Content-Type: application/json
+Content-Type: {{contentType}}
 
+### ========================================
+### 주의사항 및 테스트 가이드
+### ========================================
+
+# ⚠️ 중요: Redis 의존성이 강화된 테스트
+# 1. resumeTest 기능이 Redis 상태 복구를 수행
+# 2. 각 단계마다 nextStep과 questionText 변수가 자동 업데이트
+# 3. 테스트 중단 및 이어하기가 가능
+# 4. 체이닝된 요청으로 실제 클라이언트 동작 시뮬레이션
+
+# 📝 테스트 순서:
+# 1. [시나리오 1] 테스트 이어하기 - 가장 중요한 기능 검증
+# 2. [시나리오 2] 체이닝 테스트 - 변수 연결 확인
+# 3. [시나리오 3] 여러 번 중단/이어하기 - 안정성 확인
+
+# 💡 변수 설명:
+# - nextStep: 다음 단계 번호 (submitAnswer에 필요)
+# - questionText: AI가 생성한 질문 내용 (submitAnswer에 필요)
+# - currentStep: 현재 단계 (= nextStep과 동일, 호환성용)
+# - currentQuestion: 현재 질문 (= questionText와 동일, 호환성용)
+# - totalSteps: 전체 단계 수 (보통 5)
+# - finalAptitude: 최종 판정된 적성
+
+# 🔄 Redis 관련:
+# - 각 테스트 세션은 Redis에 상태 저장
+# - resumeTest는 DB → Redis 복구 수행
+# - 테스트 완료 시 Redis 정리
