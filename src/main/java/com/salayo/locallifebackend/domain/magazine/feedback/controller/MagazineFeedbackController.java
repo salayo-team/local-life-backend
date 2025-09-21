@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/localcreator/magazines/{magazineId}/feedbacks")
+@RequestMapping("/magazines/{magazineId}/feedbacks")
 @Tag(name = "Magazine Feedback | LocalCreator", description = "로컬 크리에이터 매거진 피드백 API")
 public class MagazineFeedbackController {
 
@@ -44,16 +44,22 @@ public class MagazineFeedbackController {
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.CREATE_SUCCESS, null));
     }
 
-    @Operation(summary = "내가 작성한 피드백 조회", description = "로컬 크리에이터가 본인의 인터뷰 매거진에 남긴 피드백 목록을 조회합니다.")
-    @PreAuthorize("hasRole('LOCAL_CREATOR')")
+    @Operation(summary = "매거진 피드백 조회", description = "로컬 크리에이터: 본인이 작성한 피드백만 조회 / 관리자: 해당 매거진의 전체 피드백 조회")
+    @PreAuthorize("hasAnyRole('LOCAL_CREATOR','ADMIN')")
     @GetMapping
-    public ResponseEntity<CommonResponseDto<List<MagazineFeedbackResponseDto>>> getMyFeedbacks(
+    public ResponseEntity<CommonResponseDto<List<MagazineFeedbackResponseDto>>> getFeedbacks(
         @PathVariable Long magazineId,
-        @AuthenticationPrincipal MemberDetails memberDetails) {
-
-        List<MagazineFeedbackResponseDto> feedbacks = magazineFeedbackService
-            .getMyFeedbacks(magazineId, memberDetails.getMember().getId());
+        @AuthenticationPrincipal MemberDetails memberDetails
+    ) {
+        List<MagazineFeedbackResponseDto> feedbacks;
+        if (memberDetails.getAuthorities().stream()
+            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+            feedbacks = magazineFeedbackService.getFeedbacksForAdmin(magazineId);
+        } else {
+            feedbacks = magazineFeedbackService.getMyFeedbacks(magazineId, memberDetails.getMember().getId());
+        }
 
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, feedbacks));
     }
+
 }

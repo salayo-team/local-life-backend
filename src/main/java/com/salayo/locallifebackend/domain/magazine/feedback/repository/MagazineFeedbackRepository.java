@@ -14,4 +14,6 @@ public interface MagazineFeedbackRepository extends JpaRepository<MagazineFeedba
     Optional<MagazineFeedback> findTopByMagazineIdAndLocalCreatorIdOrderByCreatedAtDesc(Long magazineId, Long localCreatorId);
 
     int countByMagazineIdAndLocalCreatorId(Long magazineId, Long localCreatorId);
+
+    List<MagazineFeedback> findByMagazineId(Long magazineId);
 }

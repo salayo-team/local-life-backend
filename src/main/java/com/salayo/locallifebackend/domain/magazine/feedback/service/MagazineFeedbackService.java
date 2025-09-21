@@ -81,4 +81,14 @@ public class MagazineFeedbackService {
             .map(MagazineFeedbackResponseDto::new)
             .collect(Collectors.toList());
     }
+
+    @Transactional(readOnly = true)
+    public List<MagazineFeedbackResponseDto> getFeedbacksForAdmin(Long magazineId) {
+        magazineRepository.findById(magazineId).orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_NOT_FOUND));
+
+        return magazineFeedbackRepository.findByMagazineId(magazineId)
+            .stream()
+            .map(MagazineFeedbackResponseDto::new)
+            .collect(Collectors.toList());
+    }
 }
