@@ -53,10 +53,6 @@ public class MagazineFeedback extends BaseEntity {
         this.reflected = false;
     }
 
-    public void updateContent(String content) {
-        this.content = content;
-    }
-
     public void markAsReflected() {
         this.reflected = true;
     }
