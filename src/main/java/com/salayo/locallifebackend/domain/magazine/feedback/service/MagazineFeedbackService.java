@@ -41,7 +41,14 @@ public class MagazineFeedbackService {
             throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
         }
 
-        int feedbackCount = magazineFeedbackRepository.findByMagazineIdAndLocalCreatorId(magazineId, localCreator.getId()).size();
+        magazineFeedbackRepository.findTopByMagazineIdAndLocalCreatorIdOrderByCreatedAtDesc(magazineId, localCreator.getId())
+            .ifPresent(lastFeedback -> {
+                if (!lastFeedback.isReflected()) {
+                    throw new CustomException(ErrorCode.PREVIOUS_FEEDBACK_NOT_REFLECTED);
+                }
+            });
+
+        int feedbackCount = magazineFeedbackRepository.countByMagazineIdAndLocalCreatorId(magazineId, localCreator.getId());
 
         if (feedbackCount >= 3) {
             throw new CustomException(ErrorCode.FEEDBACK_LIMIT_EXCEEDED);
@@ -57,7 +64,7 @@ public class MagazineFeedbackService {
         magazineFeedbackRepository.save(magazineFeedback);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<MagazineFeedbackResponseDto> getMyFeedbacks(Long magazineId, Long memberId) {
         LocalCreator localCreator = localCreatorRepository.findByMemberId(memberId)
             .orElseThrow(() -> new CustomException(ErrorCode.LOCAL_CREATOR_NOT_FOUND));
@@ -73,5 +80,30 @@ public class MagazineFeedbackService {
             .stream()
             .map(MagazineFeedbackResponseDto::new)
             .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<MagazineFeedbackResponseDto> getFeedbacksForAdmin(Long magazineId) {
+        magazineRepository.findById(magazineId).orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_NOT_FOUND));
+
+        return magazineFeedbackRepository.findByMagazineId(magazineId)
+            .stream()
+            .map(MagazineFeedbackResponseDto::new)
+            .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void deleteFeedback(Long magazineId, Long feedbackId) {
+        MagazineFeedback feedback = magazineFeedbackRepository.findById(feedbackId).orElseThrow(() -> new CustomException(ErrorCode.FEEDBACK_NOT_FOUND));
+
+        if (!feedback.getMagazine().getId().equals(magazineId)) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
+        }
+
+        if (feedback.isReflected()) {
+            throw new CustomException(ErrorCode.FEEDBACK_ALREADY_REFLECTED);
+        }
+
+        magazineFeedbackRepository.delete(feedback);
     }
 }

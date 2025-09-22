@@ -192,13 +192,11 @@ public class MagazineService {
         }
 
         MagazineFeedback lastFeedback = magazineFeedbackRepository.findTopByMagazineIdOrderByCreatedAtDesc(magazineId)
-                .orElseThrow(() -> new CustomException(ErrorCode.FEEDBACK_NOT_FOUND));
+            .orElseThrow(() -> new CustomException(ErrorCode.FEEDBACK_NOT_FOUND));
 
         if (lastFeedback.isReflected()) {
             throw new CustomException(ErrorCode.FEEDBACK_ALREADY_REFLECTED);
         }
-
-        magazine.updateContent(magazineUpdateRequestDto.getContent());
 
         int revisionCount = magazineRevisionRepository.countByMagazineId(magazineId);
 
@@ -206,8 +204,13 @@ public class MagazineService {
             throw new CustomException(ErrorCode.MAGAZINE_REVISION_LIMIT_EXCEEDED);
         }
 
-        MagazineRevision magazineRevision = new MagazineRevision(magazine, magazineUpdateRequestDto.getContent(), revisionCount + 1);
+        MagazineRevision magazineRevision = new MagazineRevision(
+            magazine,
+            magazineUpdateRequestDto.getContent(),
+            revisionCount + 1);
         magazineRevisionRepository.save(magazineRevision);
+
+        magazine.updateContent(magazineUpdateRequestDto.getContent());
 
         lastFeedback.markAsReflected();
     }
@@ -223,7 +226,7 @@ public class MagazineService {
         }
 
         MagazinePreviewToken previewToken = magazinePreviewTokenRepository.findByMagazineId(magazineId)
-                .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_PREVIEW_NOT_SENT));
+            .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_PREVIEW_NOT_SENT));
 
         if (previewToken.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new CustomException(ErrorCode.MAGAZINE_PREVIEW_EXPIRED);
@@ -241,7 +244,7 @@ public class MagazineService {
         String messageHeader;
 
         if (revisionCount <= 3) {
-            subject ="[LocalLife] 로컬매거진 수정안 (" + revisionCount + " / 3) 확인 요청";
+            subject = "[LocalLife] 로컬매거진 수정안 (" + revisionCount + " / 3) 확인 요청";
             messageHeader = "매거진" + revisionCount + "차 수정안이 작성되어 확인 요청드립니다.";
         } else {
             subject = "[LocalLife] 로컬매거진 추가 수정안(" + revisionCount + "회차) 확인 요청";

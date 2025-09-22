@@ -13,6 +13,7 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,8 +22,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/localcreator/magazines/{magazineId}/feedbacks")
-@Tag(name = "Magazine Feedback | LocalCreator", description = "로컬 크리에이터 매거진 피드백 API")
+@RequestMapping("/magazines/{magazineId}/feedbacks")
+@Tag(name = "Magazine Feedback", description = "매거진 피드백 API")
 public class MagazineFeedbackController {
 
     private final MagazineFeedbackService magazineFeedbackService;
@@ -44,16 +45,33 @@ public class MagazineFeedbackController {
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.CREATE_SUCCESS, null));
     }
 
-    @Operation(summary = "내가 작성한 피드백 조회", description = "로컬 크리에이터가 본인의 인터뷰 매거진에 남긴 피드백 목록을 조회합니다.")
-    @PreAuthorize("hasRole('LOCAL_CREATOR')")
+    @Operation(summary = "매거진 피드백 조회", description = "로컬 크리에이터: 본인이 작성한 피드백만 조회 / 관리자: 해당 매거진의 전체 피드백 조회")
+    @PreAuthorize("hasAnyRole('LOCAL_CREATOR','ADMIN')")
     @GetMapping
-    public ResponseEntity<CommonResponseDto<List<MagazineFeedbackResponseDto>>> getMyFeedbacks(
+    public ResponseEntity<CommonResponseDto<List<MagazineFeedbackResponseDto>>> getFeedbacks(
         @PathVariable Long magazineId,
-        @AuthenticationPrincipal MemberDetails memberDetails) {
-
-        List<MagazineFeedbackResponseDto> feedbacks = magazineFeedbackService
-            .getMyFeedbacks(magazineId, memberDetails.getMember().getId());
+        @AuthenticationPrincipal MemberDetails memberDetails
+    ) {
+        List<MagazineFeedbackResponseDto> feedbacks;
+        if (memberDetails.getAuthorities().stream()
+            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+            feedbacks = magazineFeedbackService.getFeedbacksForAdmin(magazineId);
+        } else {
+            feedbacks = magazineFeedbackService.getMyFeedbacks(magazineId, memberDetails.getMember().getId());
+        }
 
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, feedbacks));
     }
+
+    @Operation(summary = "매거진 피드백 삭제 (관리자)", description = "관리자가 특정 매거진의 피드백을 삭제합니다. (로컬크리에이터가 실수로 등록 시 구제용)")
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{feedbackId}")
+    public ResponseEntity<CommonResponseDto<Void>> deleteFeedback(
+        @PathVariable Long magazineId,
+        @PathVariable Long feedbackId
+    ) {
+        magazineFeedbackService.deleteFeedback(magazineId, feedbackId);
+        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.DELETE_SUCCESS, null));
+    }
+
 }
