@@ -134,34 +134,75 @@ Content-Type: {{contentType}}
 ### ========================================
 
 ### 수동으로 NATURE 적성 선택
-POST {{host}}/ai/aptitude/select?aptitudeType=NATURE
+POST {{host}}/ai/aptitude/select
 Authorization: Bearer {{accessToken}}
 Content-Type: {{contentType}}
+
+{
+  "aptitudeType": "NATURE"
+}
 
 > {%
   console.log("\n✅ 수동 적성 선택 완료: NATURE");
   console.log("온보딩 플로우 계속...");
 %}
 
-### 수동으로 ART_CREATION 적성 선택
-POST {{host}}/ai/aptitude/select?aptitudeType=ART_CREATION
-Authorization: Bearer {{accessToken}}
-Content-Type: {{contentType}}
-
-### 수동으로 COMMUNITY 적성 선택
-POST {{host}}/ai/aptitude/select?aptitudeType=COMMUNITY
-Authorization: Bearer {{accessToken}}
-Content-Type: {{contentType}}
-
-### 수동으로 TECH 적성 선택
-POST {{host}}/ai/aptitude/select?aptitudeType=TECH
-Authorization: Bearer {{accessToken}}
-Content-Type: {{contentType}}
 
 ### 수동으로 HISTORY_CULTURE 적성 선택
-POST {{host}}/ai/aptitude/select?aptitudeType=HISTORY_CULTURE
+POST {{host}}/ai/aptitude/select
 Authorization: Bearer {{accessToken}}
 Content-Type: {{contentType}}
+
+{
+  "aptitudeType": "HISTORY_CULTURE"
+}
+
+> {%
+  console.log("\n✅ 수동 적성 선택 완료: HISTORY_CULTURE");
+  console.log("온보딩 플로우 계속...");
+%}
+
+### 수동으로 ART_CREATION 적성 선택
+POST {{host}}/ai/aptitude/select
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "aptitudeType": "ART_CREATION"
+}
+
+> {%
+  console.log("\n✅ 수동 적성 선택 완료: ART_CREATION");
+  console.log("온보딩 플로우 계속...");
+%}
+
+### 수동으로 COMMUNITY 적성 선택
+POST {{host}}/ai/aptitude/select
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "aptitudeType": "COMMUNITY"
+}
+
+> {%
+  console.log("\n✅ 수동 적성 선택 완료: COMMUNITY");
+  console.log("온보딩 플로우 계속...");
+%}
+
+### 수동으로 TECH 적성 선택
+POST {{host}}/ai/aptitude/select
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "aptitudeType": "TECH"
+}
+
+> {%
+  console.log("\n✅ 수동 적성 선택 완료: TECH");
+  console.log("온보딩 플로우 계속...");
+%}
 
 ### ========================================
 ### 4-B. AI 적성 검사 (knowsAptitude: false)
