@@ -71,7 +71,8 @@ public class OnboardingService {
      */
     @Transactional
     public OnboardingProgressResponseDto selectRegion(Long memberId, OnboardingRegionRequestDto regionRequestDto) {
-        OnboardingProgress progress = getOnboardingProgress(memberId);
+        Member member = memberRepository.findByIdOrElseThrow(memberId);
+        OnboardingProgress progress = getOnboardingProgress(member);
         
         // 현재 단계 검증
         if (progress.getCurrentStep() != OnboardingStep.MEMBER_INFO && 
@@ -100,7 +101,8 @@ public class OnboardingService {
     @Transactional
     public OnboardingProgressResponseDto checkAptitudeKnowledge(Long memberId, 
                                                                OnboardingAptitudeCheckRequestDto aptitudeCheckRequestDto) {
-        OnboardingProgress progress = getOnboardingProgress(memberId);
+        Member member = memberRepository.findByIdOrElseThrow(memberId);
+        OnboardingProgress progress = getOnboardingProgress(member);
         
         // 현재 단계 검증
         if (progress.getCurrentStep() != OnboardingStep.APTITUDE_CHECK) {
@@ -139,7 +141,8 @@ public class OnboardingService {
      */
     @Transactional
     public OnboardingProgressResponseDto completeOnboarding(Long memberId) {
-        OnboardingProgress progress = getOnboardingProgress(memberId);
+        Member member = memberRepository.findByIdOrElseThrow(memberId);
+        OnboardingProgress progress = getOnboardingProgress(member);
         
         // 적성 단계가 아닌 경우 에러
         if (progress.getCurrentStep() != OnboardingStep.APTITUDE_MANUAL && 
@@ -163,7 +166,9 @@ public class OnboardingService {
      */
     @Transactional(readOnly = true)
     public OnboardingStatusResponseDto getOnboardingStatus(Long memberId) {
-        return onboardingProgressRepository.findByMemberId(memberId)
+        Member member = memberRepository.findByIdOrElseThrow(memberId);
+
+        return onboardingProgressRepository.findByMember(member)
             .filter(progress -> !progress.isCompleted())  // 완료되지 않은 경우만
             .map(progress -> OnboardingStatusResponseDto.inProgress(progress.getCurrentStep(), progress.getSessionId()))
             .orElseGet(OnboardingStatusResponseDto::complete);  // 없거나 완료된 경우
@@ -174,7 +179,8 @@ public class OnboardingService {
      */
     @Transactional(readOnly = true)
     public OnboardingProgressResponseDto getCurrentProgress(Long memberId) {
-        OnboardingProgress progress = getOnboardingProgress(memberId);
+        Member member = memberRepository.findByIdOrElseThrow(memberId);
+        OnboardingProgress progress = getOnboardingProgress(member);
         
         return OnboardingProgressResponseDto.builder()
             .sessionId(progress.getSessionId())
@@ -188,10 +194,10 @@ public class OnboardingService {
     /**
      * 온보딩 진행 상태 조회 (내부 사용)
      */
-    private OnboardingProgress getOnboardingProgress(Long memberId) {
-        return onboardingProgressRepository.findByMemberId(memberId)
+    private OnboardingProgress getOnboardingProgress(Member member) {
+        return onboardingProgressRepository.findByMember(member)
             .orElseThrow(() -> {
-                log.error("온보딩 진행 정보 없음 - memberId: {}", memberId);
+                log.error("온보딩 진행 정보 없음 - memberId: {}", member.getId());
                 return new CustomException(ErrorCode.ONBOARDING_NOT_STARTED);
             });
     }
