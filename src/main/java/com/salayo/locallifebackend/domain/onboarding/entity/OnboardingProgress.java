@@ -40,7 +40,7 @@ public class OnboardingProgress extends BaseEntity {
     private OnboardingStep currentStep;
     
     @Column(name = "is_completed", nullable = false)
-    private Boolean isCompleted;
+    private boolean isCompleted;
     
     @Column(name = "knows_aptitude")
     private Boolean knowsAptitude;  // 적성 인지 여부
@@ -54,11 +54,11 @@ public class OnboardingProgress extends BaseEntity {
     
     @Builder
     public OnboardingProgress(Member member, OnboardingStep currentStep, 
-                             Boolean isCompleted, Boolean knowsAptitude, 
+                             boolean isCompleted, Boolean knowsAptitude,
                              RegionType regionType, String sessionId) {
         this.member = member;
         this.currentStep = currentStep != null ? currentStep : OnboardingStep.MEMBER_INFO;
-        this.isCompleted = isCompleted != null ? isCompleted : false;
+        this.isCompleted = isCompleted;
         this.knowsAptitude = knowsAptitude;
         this.regionType = regionType;
         this.sessionId = sessionId;

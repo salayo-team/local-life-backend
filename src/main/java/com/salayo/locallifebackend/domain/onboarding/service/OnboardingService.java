@@ -53,7 +53,7 @@ public class OnboardingService {
             });
         
         // 이미 완료된 경우
-        if (progress.getIsCompleted()) {
+        if (progress.isCompleted()) {
             log.info("온보딩이 이미 완료됨 - memberId: {}", memberId);
             return OnboardingProgressResponseDto.createCompleteResponse(
                 progress.getSessionId(), 
@@ -164,7 +164,7 @@ public class OnboardingService {
     @Transactional(readOnly = true)
     public OnboardingStatusResponseDto getOnboardingStatus(Long memberId) {
         return onboardingProgressRepository.findByMemberId(memberId)
-            .filter(progress -> !progress.getIsCompleted())  // 완료되지 않은 경우만
+            .filter(progress -> !progress.isCompleted())  // 완료되지 않은 경우만
             .map(progress -> OnboardingStatusResponseDto.inProgress(progress.getCurrentStep(), progress.getSessionId()))
             .orElseGet(OnboardingStatusResponseDto::complete);  // 없거나 완료된 경우
     }
@@ -179,7 +179,7 @@ public class OnboardingService {
         return OnboardingProgressResponseDto.builder()
             .sessionId(progress.getSessionId())
             .currentStep(progress.getCurrentStep())
-            .isCompleted(progress.getIsCompleted())
+            .isCompleted(progress.isCompleted())
             .regionType(progress.getRegionType())
             .knowsAptitude(progress.getKnowsAptitude())
             .build();
