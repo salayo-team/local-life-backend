@@ -257,7 +257,7 @@ Content-Type: {{contentType}}
 ### ========================================
 
 ### 온보딩 완료 처리
-POST {{host}}/api/onboarding/complete
+POST {{host}}/onboarding/complete
 Authorization: Bearer {{accessToken}}
 Content-Type: {{contentType}}
 
@@ -281,7 +281,7 @@ Content-Type: {{contentType}}
 ### ========================================
 
 ### 현재 온보딩 진행 상태 조회
-GET {{host}}/api/onboarding/progress
+GET {{host}}/onboarding/progress
 Authorization: Bearer {{accessToken}}
 
 > {%

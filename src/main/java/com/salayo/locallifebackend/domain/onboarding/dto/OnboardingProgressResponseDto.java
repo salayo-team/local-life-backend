@@ -14,9 +14,9 @@ public class OnboardingProgressResponseDto {
 	private final OnboardingStep currentStep;
 	private final OnboardingStep nextStep;
 	private final Boolean isCompleted;
-	private final RegionType regionType;  // String에서 RegionType으로 변경
+	private final RegionType regionType;
 	private final Boolean knowsAptitude;
-	private final String message;
+	private final String guideMessage;
 
 	/**
 	 * 다음 액션 정보
@@ -25,20 +25,20 @@ public class OnboardingProgressResponseDto {
 
 	@Builder
 	public OnboardingProgressResponseDto(String sessionId, OnboardingStep currentStep, OnboardingStep nextStep, Boolean isCompleted,
-		RegionType regionType, Boolean knowsAptitude, String message, NextAction nextAction) {
+		RegionType regionType, Boolean knowsAptitude, String guideMessage, NextAction nextAction) {
 		this.sessionId = sessionId;
 		this.currentStep = currentStep;
 		this.nextStep = nextStep;
 		this.isCompleted = isCompleted;
 		this.regionType = regionType;
 		this.knowsAptitude = knowsAptitude;
-		this.message = message;
+		this.guideMessage = guideMessage;
 		this.nextAction = nextAction;
 	}
 
 	@Getter
 	public static class NextAction {
-		private final OnboardingStep type;  // OnboardingStep enum 사용
+		private final OnboardingStep type;
 		private final String endpoint;
 		private final String method;
 		private final String description;
@@ -61,7 +61,7 @@ public class OnboardingProgressResponseDto {
 			.currentStep(OnboardingStep.MEMBER_INFO)
 			.nextStep(OnboardingStep.REGION_SELECT)
 			.isCompleted(false)
-			.message("온보딩을 시작합니다. 선호 지역을 선택해주세요.")
+			.guideMessage("온보딩을 시작합니다. 선호 지역을 선택해주세요.")
 			.nextAction(NextAction.builder()
 				.type(OnboardingStep.REGION_SELECT)
 				.endpoint("/onboarding/region")
@@ -82,7 +82,7 @@ public class OnboardingProgressResponseDto {
 			.nextStep(OnboardingStep.APTITUDE_CHECK)
 			.isCompleted(false)
 			.regionType(regionType)
-			.message("선호 지역 특징이 설정되었습니다. 적성을 알고 계신가요?")
+			.guideMessage("선호 지역 특징이 설정되었습니다. 적성을 알고 계신가요?")
 			.nextAction(NextAction.builder()
 				.type(OnboardingStep.APTITUDE_CHECK)
 				.endpoint("/onboarding/aptitude-check")
@@ -103,7 +103,7 @@ public class OnboardingProgressResponseDto {
 			.isCompleted(false)
 			.regionType(regionType)
 			.knowsAptitude(true)
-			.message("적성을 선택해주세요.")
+			.guideMessage("적성을 선택해주세요.")
 			.nextAction(NextAction.builder()
 				.type(OnboardingStep.APTITUDE_MANUAL)
 				.endpoint("/ai/aptitude/select")
@@ -124,7 +124,7 @@ public class OnboardingProgressResponseDto {
 			.isCompleted(false)
 			.regionType(regionType)
 			.knowsAptitude(false)
-			.message("AI 적성 검사를 시작합니다.")
+			.guideMessage("AI 적성 검사를 시작합니다.")
 			.nextAction(NextAction.builder()
 				.type(OnboardingStep.APTITUDE_AI_TEST)
 				.endpoint("/ai/aptitude/test/start")
@@ -144,7 +144,7 @@ public class OnboardingProgressResponseDto {
 			.nextStep(null)
 			.isCompleted(true)
 			.regionType(regionType)
-			.message("온보딩이 완료되었습니다!")
+			.guideMessage("온보딩이 완료되었습니다!")
 			.nextAction(NextAction.builder()
 				.type(OnboardingStep.COMPLETED)
 				.endpoint("/home")
