@@ -5,6 +5,7 @@ import com.salayo.locallifebackend.domain.member.repository.MemberRepository;
 import com.salayo.locallifebackend.domain.onboarding.dto.OnboardingProgressResponseDto;
 import com.salayo.locallifebackend.domain.onboarding.dto.OnboardingRegionRequestDto;
 import com.salayo.locallifebackend.domain.onboarding.dto.OnboardingAptitudeCheckRequestDto;
+import com.salayo.locallifebackend.domain.onboarding.dto.OnboardingStatusResponseDto;
 import com.salayo.locallifebackend.domain.onboarding.entity.OnboardingProgress;
 import com.salayo.locallifebackend.domain.onboarding.enums.OnboardingStep;
 import com.salayo.locallifebackend.domain.onboarding.enums.RegionType;
@@ -79,7 +80,7 @@ public class OnboardingService {
         }
         
         // 지역 특징 타입 저장
-        RegionType regionType = regionRequestDto.getRegionType();
+        RegionType regionType = regionRequestDto.regionType();
         progress.updateRegion(regionType);
         
         // 다음 단계로 이동
@@ -107,7 +108,7 @@ public class OnboardingService {
         }
         
         // 적성 인지 여부 저장
-        boolean knowsAptitude = aptitudeCheckRequestDto.getKnowsAptitude();
+        boolean knowsAptitude = aptitudeCheckRequestDto.knowsAptitude();
         progress.updateKnowsAptitude(knowsAptitude);
         
         // 다음 단계로 이동 (인지 여부에 따라 분기)
@@ -156,9 +157,20 @@ public class OnboardingService {
             progress.getRegionType()
         );
     }
-    
+
     /**
-     * 현재 온보딩 진행 상태 조회
+     * 온보딩 이어하기(Resume) 여부 판단을 위한 진행 상태 조회
+     */
+    @Transactional(readOnly = true)
+    public OnboardingStatusResponseDto getOnboardingStatus(Long memberId) {
+        return onboardingProgressRepository.findByMemberId(memberId)
+            .filter(progress -> !progress.getIsCompleted())  // 완료되지 않은 경우만
+            .map(progress -> OnboardingStatusResponseDto.inProgress(progress.getCurrentStep(), progress.getSessionId()))
+            .orElseGet(OnboardingStatusResponseDto::complete);  // 없거나 완료된 경우
+    }
+
+    /**
+     * 현재 온보딩 단계의 상세 정보 조회
      */
     @Transactional(readOnly = true)
     public OnboardingProgressResponseDto getCurrentProgress(Long memberId) {
