@@ -91,6 +91,8 @@ public enum ErrorCode {
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 결제를 찾을 수 없습니다."),
     IMPUID_NOT_FOUND_BY_IAMPORT(HttpStatus.NOT_FOUND, "iam_port에서 해당 결제를 찾을 수 없습니다."),
     FEEDBACK_NOT_FOUND(HttpStatus.NOT_FOUND, "피드백을 찾을 수 없습니다."),
+    ONBOARDING_NOT_STARTED(HttpStatus.NOT_FOUND, "온보딩이 시작되지 않았습니다."),
+    INVALID_ONBOARDING_STEP(HttpStatus.BAD_REQUEST, "올바르지 않은 온보딩 단계입니다."),
     NO_INCOMPLETE_TEST(HttpStatus.NOT_FOUND, "이어할 수 있는 테스트가 없습니다."),
 
     // 408 REQUEST_TIMEOUT
