@@ -1,0 +1,363 @@
+### ========================================
+### 온보딩 플로우 API 테스트
+### ========================================
+### 환경: local
+@host = http://localhost:8080
+@contentType = application/json
+
+### ===== Step 0: 인증 =====
+
+### 일반 사용자 로그인 (testuser2)
+POST {{host}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "testuser1@example.com",
+  "password": "test1234!"
+}
+
+> {%
+  const json = response.body;
+  const accessToken = json.data.accessToken;
+  client.global.set("accessToken", accessToken);
+  console.log("로그인 성공! Access Token 저장됨");
+%}
+
+### ========================================
+### 온보딩 플로우
+### ========================================
+
+### 1. 온보딩 시작
+POST {{host}}/onboarding/start
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+> {%
+  const data = response.body.data;
+  if (data) {
+    client.global.set("sessionId", data.sessionId);
+    console.log("\n=== 온보딩 시작 ===");
+    console.log("세션 ID:", data.sessionId);
+    console.log("현재 단계:", data.currentStep);
+    console.log("다음 단계:", data.nextStep);
+    console.log("메시지:", data.message);
+    if (data.nextAction) {
+      console.log("\n다음 액션:");
+      console.log("- Type:", data.nextAction.type);
+      console.log("- Endpoint:", data.nextAction.endpoint);
+      console.log("- Method:", data.nextAction.method);
+    }
+  }
+%}
+
+### 2. 선호 지역 선택
+POST {{host}}/onboarding/region
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "regionType": "URBAN"
+}
+
+> {%
+  const data = response.body.data;
+  if (data) {
+    console.log("\n=== 선호 지역 특징 선택 완료 ===");
+    console.log("선택한 지역 특징:", data.regionType);
+    console.log("현재 단계:", data.currentStep);
+    console.log("다음 단계:", data.nextStep);
+    console.log("메시지:", data.message);
+    if (data.nextAction) {
+      console.log("\n다음 액션:");
+      console.log("- Type:", data.nextAction.type);
+      console.log("- Endpoint:", data.nextAction.endpoint);
+    }
+  }
+%}
+
+### ========================================
+### 3. 적성 인지 여부 확인 (분기점)
+### ========================================
+
+### 3-1. 적성을 알고 있는 경우 → 수동 선택으로 이동
+POST {{host}}/onboarding/aptitude-check
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "knowsAptitude": true
+}
+
+> {%
+  const data = response.body.data;
+  if (data) {
+    console.log("\n=== 적성 인지 확인 (알고있음) ===");
+    console.log("적성 인지:", data.knowsAptitude);
+    console.log("현재 단계:", data.currentStep);
+    console.log("다음 단계:", data.nextStep);
+    console.log("메시지:", data.message);
+    if (data.nextAction) {
+      console.log("\n✍️ 다음 액션: 수동 적성 선택");
+      console.log("- Endpoint:", data.nextAction.endpoint);
+      console.log("- Description:", data.nextAction.description);
+    }
+  }
+%}
+
+### 3-2. 적성을 모르는 경우 → AI 검사로 이동
+POST {{host}}/onboarding/aptitude-check
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "knowsAptitude": false
+}
+
+> {%
+  const data = response.body.data;
+  if (data) {
+    console.log("\n=== 적성 인지 확인 (모름) ===");
+    console.log("적성 인지:", data.knowsAptitude);
+    console.log("현재 단계:", data.currentStep);
+    console.log("다음 단계:", data.nextStep);
+    console.log("메시지:", data.message);
+    if (data.nextAction) {
+      console.log("\n🔮 다음 액션: AI 적성 검사");
+      console.log("- Endpoint:", data.nextAction.endpoint);
+      console.log("- Description:", data.nextAction.description);
+    }
+  }
+%}
+
+### ========================================
+### 4-A. 수동 적성 선택 (knowsAptitude: true)
+### ========================================
+
+### 수동으로 NATURE 적성 선택
+POST {{host}}/ai/aptitude/select
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "aptitudeType": "NATURE"
+}
+
+> {%
+  console.log("\n✅ 수동 적성 선택 완료: NATURE");
+  console.log("온보딩 플로우 계속...");
+%}
+
+
+### 수동으로 HISTORY_CULTURE 적성 선택
+POST {{host}}/ai/aptitude/select
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "aptitudeType": "HISTORY_CULTURE"
+}
+
+> {%
+  console.log("\n✅ 수동 적성 선택 완료: HISTORY_CULTURE");
+  console.log("온보딩 플로우 계속...");
+%}
+
+### 수동으로 ART_CREATION 적성 선택
+POST {{host}}/ai/aptitude/select
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "aptitudeType": "ART_CREATION"
+}
+
+> {%
+  console.log("\n✅ 수동 적성 선택 완료: ART_CREATION");
+  console.log("온보딩 플로우 계속...");
+%}
+
+### 수동으로 COMMUNITY 적성 선택
+POST {{host}}/ai/aptitude/select
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "aptitudeType": "COMMUNITY"
+}
+
+> {%
+  console.log("\n✅ 수동 적성 선택 완료: COMMUNITY");
+  console.log("온보딩 플로우 계속...");
+%}
+
+### 수동으로 TECH 적성 선택
+POST {{host}}/ai/aptitude/select
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "aptitudeType": "TECH"
+}
+
+> {%
+  console.log("\n✅ 수동 적성 선택 완료: TECH");
+  console.log("온보딩 플로우 계속...");
+%}
+
+### ========================================
+### 4-B. AI 적성 검사 (knowsAptitude: false)
+### ========================================
+
+### AI 적성 검사 시작
+POST {{host}}/ai/aptitude/test/start
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+> {%
+  const data = response.body.data;
+  if (data) {
+    client.global.set("currentStep", data.step);
+    if (data.aptitudeQuestionResponseDto) {
+      client.global.set("currentQuestion", data.aptitudeQuestionResponseDto.question);
+      console.log("\n🔮 AI 적성 검사 시작");
+      console.log("질문:", data.aptitudeQuestionResponseDto.question);
+    }
+  }
+%}
+
+### AI 검사 답변 제출 (5회 반복)
+POST {{host}}/ai/aptitude/test/answer
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "step": {{currentStep}},
+  "questionText": "{{currentQuestion}}",
+  "answer": "자연 속에서 산책하는 것을 좋아해요"
+}
+
+> {%
+  const data = response.body.data;
+  if (data) {
+    if (data.isComplete) {
+      console.log("\n✅ AI 적성 검사 완료!");
+      console.log("최종 적성:", data.finalAptitude);
+    } else {
+      client.global.set("currentStep", data.step);
+      if (data.aptitudeQuestionResponseDto) {
+        client.global.set("currentQuestion", data.aptitudeQuestionResponseDto.question);
+        console.log("\n다음 질문:", data.aptitudeQuestionResponseDto.question);
+      }
+    }
+  }
+%}
+
+### ========================================
+### 5. 온보딩 완료
+### ========================================
+
+### 온보딩 완료 처리
+POST {{host}}/onboarding/complete
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+> {%
+  const data = response.body.data;
+  if (data) {
+    console.log("\n🎉 온보딩 완료!");
+    console.log("세션 ID:", data.sessionId);
+    console.log("선택한 지역 특징:", data.regionType);
+    console.log("완료 상태:", data.isCompleted);
+    if (data.nextAction) {
+      console.log("\n다음 이동:");
+      console.log("- Endpoint:", data.nextAction.endpoint);
+      console.log("- Description:", data.nextAction.description);
+    }
+  }
+%}
+
+### ========================================
+### 6. 진행 상태 조회
+### ========================================
+
+### 현재 온보딩 진행 상태 조회
+GET {{host}}/onboarding/progress
+Authorization: Bearer {{accessToken}}
+
+> {%
+  const data = response.body.data;
+  if (data) {
+    console.log("\n=== 현재 온보딩 상태 ===");
+    console.log("세션 ID:", data.sessionId);
+    console.log("현재 단계:", data.currentStep);
+    console.log("완료 여부:", data.isCompleted);
+    console.log("선택한 지역 특징:", data.regionType);
+    console.log("적성 인지 여부:", data.knowsAptitude);
+  }
+%}
+
+### ========================================
+### 시나리오별 전체 플로우 테스트
+### ========================================
+
+### 시나리오 A: 적성을 아는 사용자
+# 1. 온보딩 시작
+# 2. 지역 특징 선택 (URBAN)
+# 3. 적성 인지 여부 (true - 알고있음)
+# 4. 수동 적성 선택 (NATURE)
+# 5. 온보딩 완료
+
+### 시나리오 B: 적성을 모르는 사용자
+# 1. 온보딩 시작
+# 2. 지역 특징 선택 (BALANCED)
+# 3. 적성 인지 여부 (false - 모름)
+# 4. AI 적성 검사 (5단계)
+# 5. 온보딩 완료
+
+### ========================================
+### 예외 케이스 테스트
+### ========================================
+
+### 잘못된 단계에서 지역 선택 시도
+POST {{host}}/onboarding/region
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "regionType": "URBAN"
+}
+
+### 잘못된 단계에서 적성 확인 시도
+POST {{host}}/onboarding/aptitude-check
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "knowsAptitude": true
+}
+
+### 이미 완료된 온보딩 재시작 시도
+POST {{host}}/onboarding/start
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+### ========================================
+### 온보딩 플로우 다이어그램
+### ========================================
+# 
+#     [시작]
+#       ↓
+#   [회원 정보]
+#       ↓
+#   [지역 선택]
+#       ↓
+#  [적성 인지?]
+#    ↙    ↘
+#  [예]    [아니오]
+#   ↓        ↓
+# [수동]   [AI검사]
+#   ↓        ↓
+#   ↘      ↙
+#    [완료]
+#
+### ========================================
