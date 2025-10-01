@@ -204,10 +204,13 @@ public class MagazineService {
             throw new CustomException(ErrorCode.MAGAZINE_REVISION_LIMIT_EXCEEDED);
         }
 
-        MagazineRevision magazineRevision = new MagazineRevision(
-            magazine,
-            magazineUpdateRequestDto.getContent(),
-            revisionCount + 1);
+        MagazineRevision magazineRevision = MagazineRevision.builder()
+            .magazine(magazine)
+            .admin(member)
+            .content(magazineUpdateRequestDto.getContent())
+            .revisionNumber(revisionCount + 1)
+            .build();
+
         magazineRevisionRepository.save(magazineRevision);
 
         magazine.updateContent(magazineUpdateRequestDto.getContent());
@@ -279,6 +282,20 @@ public class MagazineService {
         MagazinePreviewToken newToken = new MagazinePreviewToken(magazine, email, token, expiresAt);
 
         return magazinePreviewTokenRepository.save(newToken);
+    }
+
+    @Transactional
+    public void updateMagazine(Long magazineId, MagazineUpdateRequestDto magazineUpdateRequestDto, Member admin) {
+        Magazine magazine = magazineRepository.findById(magazineId)
+            .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_NOT_FOUND));
+
+        magazine.updateContent(magazineUpdateRequestDto.getContent());
+
+        MagazineRevision magazineRevision = MagazineRevision.builder()
+            .magazine(magazine)
+            .content(magazineUpdateRequestDto.getContent())
+            .admin(admin)
+            .build();
     }
 
 }

@@ -45,7 +45,8 @@ public class AdminMagazineController {
     private final MagazineFileService magazineFileService;
     private final MagazineRevisionService magazineRevisionService;
 
-    public AdminMagazineController(MagazineService magazineService, MagazineFileService magazineFileService, MagazineRevisionService magazineRevisionService) {
+    public AdminMagazineController(MagazineService magazineService, MagazineFileService magazineFileService,
+        MagazineRevisionService magazineRevisionService) {
         this.magazineService = magazineService;
         this.magazineFileService = magazineFileService;
         this.magazineRevisionService = magazineRevisionService;
@@ -127,4 +128,13 @@ public class AdminMagazineController {
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.EMAIL_SEND_SUCCESS, null));
     }
 
+    @Operation(summary = "매거진 관리자 전용 수정", description = "관리자가 매거진 본문을 수정합니다. (피드백과 무관 -> 오타나 실수가 있었을 경우)")
+    @PutMapping("/{magazineId}")
+    public ResponseEntity<CommonResponseDto<Void>> updateMagazine(@PathVariable Long magazineId,
+        @RequestBody @Valid MagazineUpdateRequestDto magazineUpdateRequestDto,
+        @AuthenticationPrincipal MemberDetails memberDetails) {
+        magazineService.updateMagazine(magazineId, magazineUpdateRequestDto, memberDetails.getMember());
+
+        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.UPDATE_SUCCESS, null));
+    }
 }
