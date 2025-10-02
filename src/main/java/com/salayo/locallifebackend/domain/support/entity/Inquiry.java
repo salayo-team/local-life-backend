@@ -4,7 +4,7 @@ import com.salayo.locallifebackend.domain.member.entity.Member;
 import com.salayo.locallifebackend.domain.support.enums.InquiryStatus;
 import com.salayo.locallifebackend.domain.support.enums.InquiryType;
 import com.salayo.locallifebackend.global.entity.BaseEntity;
-import jakarta.persistence.CascadeType;
+import com.salayo.locallifebackend.global.enums.DeletedStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -16,6 +16,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
@@ -49,8 +50,11 @@ public class Inquiry extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     private Member assignee;
 
-    @OneToMany(mappedBy = "inquiry", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<InquiryFile> files = new ArrayList<>();
+    @Enumerated(EnumType.STRING)
+    private DeletedStatus deletedStatus = DeletedStatus.DISPLAYED;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     public Inquiry(String title, String content, InquiryType type, Member member) {
         this.title = title;
@@ -71,5 +75,10 @@ public class Inquiry extends BaseEntity {
 
     public void cancel() {
         this.status = InquiryStatus.CANCELED;
+    }
+
+    public void softDelete() {
+        this.deletedStatus = DeletedStatus.DELETED;
+        this.deletedAt = LocalDateTime.now();
     }
 }
