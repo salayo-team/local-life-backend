@@ -9,6 +9,54 @@ public enum ErrorCode {
     // 400 BAD_REQUEST
     INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "잘못된 입력입니다."),
     DUPLICATE_LOGIN_DETECTED(HttpStatus.BAD_REQUEST, "다른 기기에서 로그인되어 자동 로그아웃 되었습니다."),
+    INVALID_FILE_TYPE(HttpStatus.BAD_REQUEST, "지원되지 않는 파일 형식입니다."),
+    FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "파일 크기는 최대 10MB까지 가능합니다."),
+    FILE_EMPTY(HttpStatus.BAD_REQUEST, "파일이 비어 있습니다"),
+    INVALID_EMAIL_CODE(HttpStatus.BAD_REQUEST, "인증 코드가 일치하지 않습니다."),
+    MISSING_REQUIRED_FILE(HttpStatus.BAD_REQUEST, "필수 파일이 누락되었습니다."),
+    INVALID_FILE_PURPOSE_MAPPING(HttpStatus.BAD_REQUEST, "파일 개수와 파일 목적 개수가 일치하지 않습니다."),
+    INVALID_PARAMETER(HttpStatus.BAD_REQUEST, "필수 입력값이 누락되었거나 잘못되었습니다."),
+    INVALID_LOGIN(HttpStatus.BAD_REQUEST, "이메일 또는 비밀번호가 일치하지 않습니다."),
+    INVALID_START_DATE(HttpStatus.BAD_REQUEST, "시작일 값이 잘못되었습니다."),
+    INVALID_END_DATE(HttpStatus.BAD_REQUEST, "종료일 값이 잘못되었습니다."),
+    INVALID_CAPACITY_RANGE(HttpStatus.BAD_REQUEST, "정원 값이 잘못되었습니다."),
+    INVALID_PRICE_RANGE(HttpStatus.BAD_REQUEST, "가격 값이 잘못되었습니다."),
+    INVALID_TOKEN(HttpStatus.BAD_REQUEST, "유효하지 않은 토큰입니다."),
+    FILE_COUNT_EXCEEDED(HttpStatus.BAD_REQUEST, "업로드할 수 있는 파일 개수를 초과했습니다."),
+    THUMBNAIL_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "썸네일 이미지는 1개만 등록할 수 있습니다."),
+    THUMBNAIL_REQUIRED(HttpStatus.BAD_REQUEST, "썸네일 이미지는 필수입니다"),
+    ALREADY_PROCESSED_LOCALCREATOR(HttpStatus.BAD_REQUEST, "이미 승인된 로컬크리에이터입니다."),
+    SAME_AS_OLD_PASSWORD(HttpStatus.BAD_REQUEST, "이전과 동일한 비밀번호는 사용할 수 없습니다."),
+    INVALID_PASSWORD(HttpStatus.BAD_REQUEST, "현재 비밀번호가 일치하지 않습니다."),
+    MISSING_API_KEY(HttpStatus.BAD_REQUEST, "API KEY 값이 누락 되었습니다."),
+    EMAIL_NOT_VERIFIED(HttpStatus.BAD_REQUEST, "이메일 인증이 완료되지 않았습니다."),
+    INVALID_SORT_TYPE(HttpStatus.BAD_REQUEST, "정렬 조건이 올바르지 않습니다."),
+    DUPLICATE_REVIEW(HttpStatus.BAD_REQUEST, "이미 리뷰를 작성하셨습니다."),
+    DUPLICATE_REVIEW_REPLY(HttpStatus.BAD_REQUEST, "이미 답글을 작성하셨습니다."),
+    REVIEW_CONTENT_TOO_LONG(HttpStatus.BAD_REQUEST, "리뷰는 최대 500자까지 작성 가능합니다."),
+    CANNOT_UPDATE_REVIEW_WITH_REPLY(HttpStatus.BAD_REQUEST, "답글이 달린 리뷰는 수정할 수 없습니다."),
+    CANNOT_DELETE_BEFORE_START(HttpStatus.BAD_REQUEST, "시작일 7일 전에는 프로그램을 삭제할 수 없습니다."),
+    CANNOT_DELETE_COMPLETED_RESERVATION_EXISTS(HttpStatus.BAD_REQUEST, "체험 완료한 유저가 존재해 삭제할 수 없습니다."),
+    CANNOT_DELETE_ACTIVE_RESERVATION_EXIST(HttpStatus.BAD_REQUEST, "진행중인 예약이 있어 삭제할 수 없습니다."),
+    PROGRAM_DELETED(HttpStatus.BAD_REQUEST, "삭제된 체험 프로그램입니다."),
+    APTITUDE_TEST_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "마이페이지에서 적성 검사는 최대 5회까지만 가능합니다."),
+    FEEDBACK_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "피드백은 최대 3회까지만 작성할 수 있습니다."),
+    MAGAZINE_REVISION_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "매거진 수정은 최대 3회까지만 할 수 있습니다."),
+    ALREADY_RESERVATION(HttpStatus.BAD_REQUEST, "이미 예약된 스케줄입니다."),
+    PAYMENT_VERIFICATION_FAILED(HttpStatus.BAD_REQUEST, "결제 상태가 유효하지 않습니다."),
+    PAYMENT_METHOD_MISMATCH(HttpStatus.BAD_REQUEST, "결제 수단 정보가 일치하지 않습니다."),
+    MERCHANT_UID_MISMATCH(HttpStatus.BAD_REQUEST,"주문 번호 정보가 일치하지 않습니다."),
+    PGTID_MISMATCH(HttpStatus.BAD_REQUEST, "pg_tid 정보가 일치하지 않습니다."),
+    PAYMENT_AMOUNT_MISMATCH(HttpStatus.BAD_REQUEST, "결제 금액이 일치하지 않습니다."),
+    PAYMENT_ALREADY_VERIFIED(HttpStatus.BAD_REQUEST, "이미 검증된 결제입니다."),
+    INVALID_RESERVATION_STATUS(HttpStatus.BAD_REQUEST, "예약 상태가 올바르지 않습니다."),
+    INVALID_PAYMENT_METHODTYPE(HttpStatus.BAD_REQUEST, "결제 수단 값이 올바르지 않습니다."),
+    INVALID_PAYMENT_PROVIDER(HttpStatus.BAD_REQUEST, "결제 대행사 값이 올바르지 않습니다."),
+    FEEDBACK_ALREADY_REFLECTED(HttpStatus.BAD_REQUEST, "이미 반영된 피드백입니다."),
+    MAGAZINE_PREVIEW_NOT_SENT(HttpStatus.BAD_REQUEST, "초안이 먼저 전송되어야 합니다."),
+    MAGAZINE_PREVIEW_EXPIRED(HttpStatus.BAD_REQUEST, "초안 확인 기간이 만료되었습니다."),
+    REVISION_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "아직 수정안이 없어 전송할 수 없습니다."),
+    PREVIOUS_FEEDBACK_NOT_REFLECTED(HttpStatus.BAD_REQUEST, "이전 피드백이 반영되지 않았습니다."),
 
     // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
@@ -20,18 +68,54 @@ public enum ErrorCode {
 
     // 403 Forbidden
     FORBIDDEN_ACCESS(HttpStatus.FORBIDDEN, "접근이 거부됐습니다."),
+    LOCAL_CREATOR_NOT_APPROVED(HttpStatus.FORBIDDEN, "로컬 크리에이터로 승인되지 않은 유저입니다."),
+    RESERVATION_NOT_ALLOWED(HttpStatus.FORBIDDEN, "예약을 할 수 있는 권한이 없습니다."),
+    REVIEW_PERIOD_EXPIRED(HttpStatus.FORBIDDEN, "리뷰 작성 기한이 만료되었습니다."),
+    MAGAZINE_FORBIDDEN(HttpStatus.FORBIDDEN, "이 매거진에 대한 권한이 없습니다."),
 
     // 404 NOT_FOUND
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 회원을 찾을 수 없습니다."),
+    EMAIL_CODE_EXPIRED(HttpStatus.NOT_FOUND, "인증 코드가 만료되었거나 존재하지 않습니다."),
+    REGION_NOT_FOUND(HttpStatus.NOT_FOUND, "지역을 찾을 수 없습니다."),
+    APTITUDE_NOT_FOUND(HttpStatus.NOT_FOUND, "적성을 찾을 수 없습니다." ),
+    LOCAL_CREATOR_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 회원을 찾을 수 없습니다."),
+    NOT_FOUND_TEST_PROGRESS(HttpStatus.NOT_FOUND,"진행 중인 테스트가 없습니다."),
+    PROGRAM_SCHEDULE_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 프로그램 스케줄을 찾을 수 없습니다."),
+    PROGRAM_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 체험 프로그램을 찾을 수 없습니다."),
+    RESERVATION_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 예약을 찾을 수 없습니다."),
+    REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 리뷰를 찾을 수 없습니다."),
+    MAGAZINE_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 매거진을 찾을 수 없습니다."),
+    SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 세션을 찾을 수 없습니다."),
+    IMPUID_NOT_FOUND(HttpStatus.NOT_FOUND, "imp_uid 값을 찾을 수 없습니다."),
+    PGTID_NOT_FOUND(HttpStatus.NOT_FOUND, "pg_tid 값을 찾을 수 없습니다."),
+    PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 결제를 찾을 수 없습니다."),
+    IMPUID_NOT_FOUND_BY_IAMPORT(HttpStatus.NOT_FOUND, "iam_port에서 해당 결제를 찾을 수 없습니다."),
+    FEEDBACK_NOT_FOUND(HttpStatus.NOT_FOUND, "피드백을 찾을 수 없습니다."),
+    ONBOARDING_NOT_STARTED(HttpStatus.NOT_FOUND, "온보딩이 시작되지 않았습니다."),
+    INVALID_ONBOARDING_STEP(HttpStatus.BAD_REQUEST, "올바르지 않은 온보딩 단계입니다."),
+    NO_INCOMPLETE_TEST(HttpStatus.NOT_FOUND, "이어할 수 있는 테스트가 없습니다."),
+
+    // 408 REQUEST_TIMEOUT
+    AI_TIMEOUT(HttpStatus.REQUEST_TIMEOUT, "AI 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요."),
+
+    // 422 UNPROCESSABLE_ENTITY
+    AI_RESPONSE_INVALID_FORMAT(HttpStatus.UNPROCESSABLE_ENTITY, "AI 응답 형식이 올바르지 않습니다."),
 
     // 409 CONFLICT
     DUPLICATE_VALUE(HttpStatus.CONFLICT, "중복된 정보입니다."),
+    DUPLICATE_EMAIL(HttpStatus.CONFLICT, "이미 존재하는 이메일입니다."),
+    DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "이미 존재하는 닉네임입니다."),
 
     // 429 TOO_MANY_REQUESTS
     TOO_MANY_REQUESTS(HttpStatus.TOO_MANY_REQUESTS, "요청 횟수를 초과했습니다."),
 
     // 500 INTERNAL_SERVER_ERROR
-    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "redis 서버에서 오류가 발생했습니다.");
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버에서 오류가 발생했습니다."),
+    FILE_UPLOAD_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "파일 업로드에 실패했습니다."),
+    AI_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "AI 처리 중 오류가 발생했습니다."),
+
+	;
+
 
     private final HttpStatus status;
     private final String message;

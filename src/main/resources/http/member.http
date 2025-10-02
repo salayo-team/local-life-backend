@@ -1,0 +1,9 @@
+### 자신의 비밀번호 변경
+PATCH http://localhost:8080/user/me/password
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "currentPassword": "newpass1@",
+  "newPassword": "pass123!"
+}

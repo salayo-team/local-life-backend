@@ -1,0 +1,85 @@
+### 일반 회원 로그인
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "email": "testuser1@example.com",
+  "password": "test1234!"
+}
+
+> {%
+  const json = response.body;
+  const accessToken = json.data.accessToken;
+  client.global.set("accessToken", accessToken);
+%}
+
+### 로컬 크리에이터 로그인 (승인 여부 확인 포함)
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "email": "creator1@example.com",
+  "password": "Password123!"
+}
+
+> {%
+  const json = response.body;
+  const accessToken = json.data.accessToken;
+  client.global.set("accessToken", accessToken);
+%}
+
+### 체험 프로그램 생성 API - file 첨부 제외
+POST http://localhost:8080/localcreator/programs
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "aptitudeCategoryId": 1,
+  "regionCategoryId": 1,
+  "title": "도자기 체험",
+  "description": "이천 도자기를 직접 만들어보는 체험입니다.",
+  "curriculumDescription": "1. 도자기 이론 2. 실습 3. 결과물 포장",
+  "location": "경기도 이천시 경충대로2993번길",
+  "price": 100,
+  "percent": 5,
+  "minCapacity": 2,
+  "maxCapacity": 5,
+  "startDate": "2025-09-25",
+  "endDate": "2025-11-01",
+  "programDays": [
+    "MONDAY",
+    "WEDNESDAY",
+    "FRIDAY"
+  ],
+  "programScheduleTimes": [
+    {
+      "scheduleCount": 1,
+      "scheduleDuration": 3,
+      "startTime": "10:00"
+    },
+    {
+      "scheduleCount": 2,
+      "scheduleDuration": 3,
+      "startTime": "14:00"
+    }
+  ]
+}
+
+### 체험 프로그램 전체 조회 API
+GET http://localhost:8080/program/search?sort=LATEST
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+# 요청 파라미터 (생략 시 기본값 적용)
+# 예시
+?aptitudeIds=1
+&regionIds=1
+&sort=LATEST
+&page=0
+&size=10
+
+### 체험 프로그램 삭제 API - (soft-delete)
+PATCH http://localhost:8080/programs/3
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}

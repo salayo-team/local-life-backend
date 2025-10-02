@@ -10,6 +10,7 @@ import java.util.Date;
 import javax.crypto.SecretKey;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
@@ -21,7 +22,6 @@ public class JwtProvider {
 
     public static final String AUTH_HEADER = "Authorization";
     public static final String TOKEN_PREFIX = "Bearer ";
-
     private final RedisTemplate<String, String> redisTemplate;
 
     private final SecretKey key;
@@ -36,6 +36,7 @@ public class JwtProvider {
         @Value("${jwt.secret}") String secret,
         @Value("${jwt.expiry-millis}") long accessTokenExpiry,
         @Value("${jwt.refresh-expiry-millis}") long refreshTokenExpiry,
+        @Qualifier("blacklistRedisTemplate")
         RedisTemplate<String, String> redisTemplate
     ) {
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
