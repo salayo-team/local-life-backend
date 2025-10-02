@@ -28,7 +28,7 @@ Content-Type: application/json
 
 {
   "email": "testuser1@example.com",
-  "code": "681774"
+  "code": "164401"
 }
 
 ### 이메일 인증코드 확인 유저2
@@ -46,5 +46,5 @@ Content-Type: application/json
 
 {
   "email": "creator1@example.com",
-  "code": "735952"
+  "code": "134845"
 }

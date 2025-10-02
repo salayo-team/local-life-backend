@@ -58,7 +58,6 @@ public class MagazineFeedbackService {
             .magazine(magazine)
             .localCreator(localCreator)
             .content(createRequestDto.getContent())
-            .revisionCount(feedbackCount + 1)
             .build();
 
         magazineFeedbackRepository.save(magazineFeedback);

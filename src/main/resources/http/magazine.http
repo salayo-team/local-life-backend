@@ -88,7 +88,7 @@ GET http://localhost:8080/magazines/1/feedbacks
 Authorization: Bearer {{accessToken}}
 
 ### [관리자] 특정 피드백 삭제
-DELETE http://localhost:8080/magazines/17/feedbacks/16
+DELETE http://localhost:8080/magazines/1/feedbacks/16
 Authorization: Bearer {{accessToken}}
 
 ### [관리자] 매거진 수정 이력 조회
