@@ -1,11 +1,3 @@
-### 이메일 인증코드 전송
-POST http://localhost:8080/auth/email/send
-Content-Type: application/json
-
-{
-  "email": "rlawldbs9128@gmail.com"
-}
-
 ### 이메일 인증코드 전송 유저1
 POST http://localhost:8080/auth/email/send
 Content-Type: application/json
@@ -28,15 +20,6 @@ Content-Type: application/json
 
 {
   "email": "creator1@example.com"
-}
-
-### 이메일 인증코드 확인
-POST http://localhost:8080/auth/email/verify
-Content-Type: application/json
-
-{
-  "email": "rlawldbs9128@gmail.com",
-  "code": "297352"
 }
 
 ### 이메일 인증코드 확인 유저1
