@@ -6,5 +6,6 @@ public enum FilePurpose {
     SALES_LICENSE,
     ETC,
     THUMBNAIL,
-    DETAIL_IMAGE
+    DETAIL_IMAGE,
+    INQUIRY_ATTACHMENT
 }
