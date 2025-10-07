@@ -67,7 +67,7 @@ public class OnboardingProgress extends BaseEntity {
     /**
      * 다음 단계로 진행
      */
-    public void moveToNextStep(boolean knowsAptitude) {
+    public void moveToNextStep(Boolean knowsAptitude) {
         this.currentStep = this.currentStep.getNextStep(knowsAptitude);
         if (this.currentStep == OnboardingStep.COMPLETED) {
             this.isCompleted = true;
