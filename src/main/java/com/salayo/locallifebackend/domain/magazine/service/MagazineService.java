@@ -126,8 +126,12 @@ public class MagazineService {
     public PaginationResponseDto<MagazineDraftListResponseDto> getDraftMagazines(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
-        Page<Magazine> magazinePage = magazineRepository.findByMagazineStatusAndDeletedStatus(
-            MagazineStatus.DRAFT,
+        Page<Magazine> magazinePage = magazineRepository.findByMagazineStatusInAndDeletedStatus(
+            List.of(
+                MagazineStatus.DRAFT,
+                MagazineStatus.REQUEST_REVISION,
+                MagazineStatus.PENDING_CONFIRMATION
+            ),
             DeletedStatus.DISPLAYED,
             pageable
         );
@@ -323,6 +327,28 @@ public class MagazineService {
         magazine.softDelete();
 
         log.info("관리자(ID: {})가 매거진(ID: {})을 Soft Delete 처리했습니다.", adminId, magazineId);
+    }
+
+    @Transactional
+    public void finalizeCollaboation(Long magazineId) {
+        Magazine magazine = magazineRepository.findById(magazineId)
+            .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_NOT_FOUND));
+
+        if (!List.of(MagazineStatus.REQUEST_REVISION, MagazineStatus.PENDING_CONFIRMATION).contains(magazine.getMagazineStatus())) {
+            throw new CustomException(ErrorCode.COLLABORATION_NOT_IN_PROGRESS);
+        }
+
+        int revisionCount = magazineRevisionRepository.countByMagazineId(magazineId);
+        if (revisionCount >= 3) {
+            throw new CustomException(ErrorCode.MAGAZINE_REVISION_LIMIT_EXCEEDED);
+        }
+
+        magazine.updateStatus(MagazineStatus.DRAFT);
+
+        magazinePreviewTokenRepository.deleteByMagazineId(magazineId);
+        magazinePreviewTokenRepository.flush();
+
+        log.info("매거진(ID: {}) 협업 마무리 → DRAFT 상태로 복귀", magazineId);
     }
 
 }

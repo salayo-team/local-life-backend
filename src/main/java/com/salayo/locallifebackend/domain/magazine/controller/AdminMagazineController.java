@@ -148,4 +148,12 @@ public class AdminMagazineController {
 
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.DELETE_SUCCESS, null));
     }
+
+    @Operation(summary = "매거진 협업 종료 (최종 확인 또는 불발 시)", description = "로컬 크리에이터가 최종 확인을 눌렀거나 협업이 중단된 경우, 매거진 상태를 DRAFT로 되돌립니다.")
+    @PostMapping("/{magazineId}/finalize")
+    public ResponseEntity<CommonResponseDto<Void>> finalizeCollaboration(@PathVariable Long magazineId) {
+        magazineService.finalizeCollaboation(magazineId);
+
+        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.UPDATE_SUCCESS, null));
+    }
 }

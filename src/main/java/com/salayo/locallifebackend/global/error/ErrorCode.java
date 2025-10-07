@@ -59,6 +59,7 @@ public enum ErrorCode {
     PREVIOUS_FEEDBACK_NOT_REFLECTED(HttpStatus.BAD_REQUEST, "이전 피드백이 반영되지 않았습니다."),
     MAGAZINE_ALREADY_DELETED(HttpStatus.BAD_REQUEST, "이미 삭제된 매거진입니다."),
     MAGAZINE_DELETE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "매거진을 삭제할 수 있는 상태가 아닙니다."),
+    COLLABORATION_NOT_IN_PROGRESS(HttpStatus.BAD_REQUEST, "현재 협업 진행 중인 매거진이 아닙니다."),
 
     // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),

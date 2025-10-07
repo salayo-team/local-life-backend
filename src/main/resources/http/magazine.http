@@ -105,6 +105,11 @@ Authorization: Bearer {{accessToken}}
   "content": "관리자가 수정한 매거진 최신 내용입니다."
 }
 
+### 매거진 협업 종료 (관리자 전용)
+POST http://localhost:8080/magazines/2/finalize
+Authorization: Bearer {{accessToken}}
+Accept: application/json
+
 ### [관리자] 임시 매거진 삭제
 DELETE http://localhost:8080/magazines/3
 Authorization: Bearer {{accessToken}}
