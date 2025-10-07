@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -42,6 +43,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Slf4j
 public class MagazineService {
 
     private final MagazineRepository magazineRepository;
@@ -296,6 +298,31 @@ public class MagazineService {
             .content(magazineUpdateRequestDto.getContent())
             .admin(admin)
             .build();
+    }
+
+    @Transactional
+    public void deleteDraftMagazine(Long magazineId, Long adminId) {
+        Magazine magazine = magazineRepository.findById(magazineId)
+            .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_NOT_FOUND));
+
+        if (magazine.getDeletedStatus() == DeletedStatus.DELETED) {
+            throw new CustomException(ErrorCode.MAGAZINE_ALREADY_DELETED);
+        }
+
+        if (magazine.getMagazineStatus() != MagazineStatus.DRAFT) {
+            throw new CustomException(ErrorCode.MAGAZINE_DELETE_NOT_ALLOWED);
+        }
+
+        try {
+            magazinePreviewTokenRepository.deleteByMagazineId(magazineId);
+            magazinePreviewTokenRepository.flush();
+        } catch (Exception e) {
+            log.warn("매거진(ID: {}) 관련 토큰이 이미 존재하지 않습니다.", magazineId);
+        }
+
+        magazine.softDelete();
+
+        log.info("관리자(ID: {})가 매거진(ID: {})을 Soft Delete 처리했습니다.", adminId, magazineId);
     }
 
 }

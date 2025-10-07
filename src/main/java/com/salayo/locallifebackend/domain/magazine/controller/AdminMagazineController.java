@@ -24,6 +24,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -136,5 +137,15 @@ public class AdminMagazineController {
         magazineService.updateMagazine(magazineId, magazineUpdateRequestDto, memberDetails.getMember());
 
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.UPDATE_SUCCESS, null));
+    }
+
+    @Operation(summary = "임시 매거진 삭제", description = "관리자가 DRAFT 상태의 매거진을 Soft Delete 처리합니다.")
+    @DeleteMapping("/{magazineId}")
+    public ResponseEntity<CommonResponseDto<Void>> deleteDraftMagazine(
+        @PathVariable Long magazineId,
+        @AuthenticationPrincipal MemberDetails memberDetails) {
+        magazineService.deleteDraftMagazine(magazineId, memberDetails.getMember().getId());
+
+        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.DELETE_SUCCESS, null));
     }
 }
