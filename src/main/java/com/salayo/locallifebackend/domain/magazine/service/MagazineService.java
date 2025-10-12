@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -42,6 +43,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Slf4j
 public class MagazineService {
 
     private final MagazineRepository magazineRepository;
@@ -124,8 +126,12 @@ public class MagazineService {
     public PaginationResponseDto<MagazineDraftListResponseDto> getDraftMagazines(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
-        Page<Magazine> magazinePage = magazineRepository.findByMagazineStatusAndDeletedStatus(
-            MagazineStatus.DRAFT,
+        Page<Magazine> magazinePage = magazineRepository.findByMagazineStatusInAndDeletedStatus(
+            List.of(
+                MagazineStatus.DRAFT,
+                MagazineStatus.REQUEST_REVISION,
+                MagazineStatus.PENDING_CONFIRMATION
+            ),
             DeletedStatus.DISPLAYED,
             pageable
         );
@@ -296,6 +302,53 @@ public class MagazineService {
             .content(magazineUpdateRequestDto.getContent())
             .admin(admin)
             .build();
+    }
+
+    @Transactional
+    public void deleteDraftMagazine(Long magazineId, Long adminId) {
+        Magazine magazine = magazineRepository.findById(magazineId)
+            .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_NOT_FOUND));
+
+        if (magazine.getDeletedStatus() == DeletedStatus.DELETED) {
+            throw new CustomException(ErrorCode.MAGAZINE_ALREADY_DELETED);
+        }
+
+        if (magazine.getMagazineStatus() != MagazineStatus.DRAFT) {
+            throw new CustomException(ErrorCode.MAGAZINE_DELETE_NOT_ALLOWED);
+        }
+
+        try {
+            magazinePreviewTokenRepository.deleteByMagazineId(magazineId);
+            magazinePreviewTokenRepository.flush();
+        } catch (Exception e) {
+            log.warn("매거진(ID: {}) 관련 토큰이 이미 존재하지 않습니다.", magazineId);
+        }
+
+        magazine.softDelete();
+
+        log.info("관리자(ID: {})가 매거진(ID: {})을 Soft Delete 처리했습니다.", adminId, magazineId);
+    }
+
+    @Transactional
+    public void finalizeCollaboation(Long magazineId) {
+        Magazine magazine = magazineRepository.findById(magazineId)
+            .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_NOT_FOUND));
+
+        if (!List.of(MagazineStatus.REQUEST_REVISION, MagazineStatus.PENDING_CONFIRMATION).contains(magazine.getMagazineStatus())) {
+            throw new CustomException(ErrorCode.COLLABORATION_NOT_IN_PROGRESS);
+        }
+
+        int revisionCount = magazineRevisionRepository.countByMagazineId(magazineId);
+        if (revisionCount >= 3) {
+            throw new CustomException(ErrorCode.MAGAZINE_REVISION_LIMIT_EXCEEDED);
+        }
+
+        magazine.updateStatus(MagazineStatus.DRAFT);
+
+        magazinePreviewTokenRepository.deleteByMagazineId(magazineId);
+        magazinePreviewTokenRepository.flush();
+
+        log.info("매거진(ID: {}) 협업 마무리 → DRAFT 상태로 복귀", magazineId);
     }
 
 }
