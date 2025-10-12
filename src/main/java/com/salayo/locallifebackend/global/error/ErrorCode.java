@@ -40,7 +40,7 @@ public enum ErrorCode {
     CANNOT_DELETE_ACTIVE_RESERVATION_EXIST(HttpStatus.BAD_REQUEST, "진행중인 예약이 있어 삭제할 수 없습니다."),
     PROGRAM_DELETED(HttpStatus.BAD_REQUEST, "삭제된 체험 프로그램입니다."),
     APTITUDE_TEST_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "마이페이지에서 적성 검사는 최대 5회까지만 가능합니다."),
-    FEEDBACK_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "피드백은 최대 3회까지만 작성할 수 있습니다."),
+    FEEDBACK_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "수정 요청은 최대 3회까지 가능합니다. 추가 수정은 고객센터로 문의해주세요."),
     MAGAZINE_REVISION_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "매거진 수정은 최대 3회까지만 할 수 있습니다."),
     ALREADY_RESERVATION(HttpStatus.BAD_REQUEST, "이미 예약된 스케줄입니다."),
     PAYMENT_VERIFICATION_FAILED(HttpStatus.BAD_REQUEST, "결제 상태가 유효하지 않습니다."),
@@ -57,6 +57,9 @@ public enum ErrorCode {
     MAGAZINE_PREVIEW_EXPIRED(HttpStatus.BAD_REQUEST, "초안 확인 기간이 만료되었습니다."),
     REVISION_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "아직 수정안이 없어 전송할 수 없습니다."),
     PREVIOUS_FEEDBACK_NOT_REFLECTED(HttpStatus.BAD_REQUEST, "이전 피드백이 반영되지 않았습니다."),
+    MAGAZINE_ALREADY_DELETED(HttpStatus.BAD_REQUEST, "이미 삭제된 매거진입니다."),
+    MAGAZINE_DELETE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "매거진을 삭제할 수 있는 상태가 아닙니다."),
+    COLLABORATION_NOT_IN_PROGRESS(HttpStatus.BAD_REQUEST, "현재 협업 진행 중인 매거진이 아닙니다."),
 
     // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
@@ -94,6 +97,7 @@ public enum ErrorCode {
     ONBOARDING_NOT_STARTED(HttpStatus.NOT_FOUND, "온보딩이 시작되지 않았습니다."),
     INVALID_ONBOARDING_STEP(HttpStatus.BAD_REQUEST, "올바르지 않은 온보딩 단계입니다."),
     NO_INCOMPLETE_TEST(HttpStatus.NOT_FOUND, "이어할 수 있는 테스트가 없습니다."),
+    MAGAZINE_PREVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 매거진의 토큰이 존재하지 않습니다."),
 
     // 408 REQUEST_TIMEOUT
     AI_TIMEOUT(HttpStatus.REQUEST_TIMEOUT, "AI 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요."),
