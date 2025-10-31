@@ -49,10 +49,6 @@ public class Magazine extends BaseEntity {
     @Column(nullable = false, length = 50)
     private MagazineStatus magazineStatus;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private DeletedStatus deletedStatus;
-
     @Column(nullable = false)
     private Long views;
 
@@ -74,6 +70,13 @@ public class Magazine extends BaseEntity {
 
     @Column(name = "registered_at")
     private LocalDateTime registeredAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private DeletedStatus deletedStatus = DeletedStatus.DISPLAYED;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     @Builder
     public Magazine(String title, String content, String thumbnailUrl, MagazineStatus magazineStatus, DeletedStatus deletedStatus,
@@ -100,13 +103,13 @@ public class Magazine extends BaseEntity {
         this.views++;
     }
 
-    public void updateTitleAndContent(String title, String content) {
-        this.title = title;
-        this.content = content;
-    }
-
     public void updateContent(String newContent) {
         this.content = newContent;
+    }
+
+    public void softDelete() {
+        this.deletedStatus = DeletedStatus.DELETED;
+        this.deletedAt = LocalDateTime.now();
     }
 
 }

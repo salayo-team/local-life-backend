@@ -7,7 +7,7 @@ public final class CacheKeyPrefix {
 	public static final int APTITUDE_TOTAL_QUESTIONS = 5;
 	public static final String APTITUDE_TEST = "aptitude:test:";
 	public static final long APTITUDE_TEST_TTL_HOURS = 24L;
-	public static final long SESSION_TIMEOUT_MINUTES = 30;
+	public static final long SESSION_TIMEOUT_MINUTES = 60;
 
 	// 리뷰 관련 캐시 키 프리픽스
 	public static final String REVIEW_PROGRAM = "review:program:";
