@@ -46,12 +46,16 @@ public enum ErrorCode {
     PAYMENT_VERIFICATION_FAILED(HttpStatus.BAD_REQUEST, "결제 상태가 유효하지 않습니다."),
     PAYMENT_METHOD_MISMATCH(HttpStatus.BAD_REQUEST, "결제 수단 정보가 일치하지 않습니다."),
     MERCHANT_UID_MISMATCH(HttpStatus.BAD_REQUEST,"주문 번호 정보가 일치하지 않습니다."),
-    PGTID_MISMATCH(HttpStatus.BAD_REQUEST, "pg_tid 정보가 일치하지 않습니다."),
+    PG_TID_MISMATCH(HttpStatus.BAD_REQUEST, "pg_tid 정보가 일치하지 않습니다."),
     PAYMENT_AMOUNT_MISMATCH(HttpStatus.BAD_REQUEST, "결제 금액이 일치하지 않습니다."),
     PAYMENT_ALREADY_VERIFIED(HttpStatus.BAD_REQUEST, "이미 검증된 결제입니다."),
     INVALID_RESERVATION_STATUS(HttpStatus.BAD_REQUEST, "예약 상태가 올바르지 않습니다."),
     INVALID_PAYMENT_METHODTYPE(HttpStatus.BAD_REQUEST, "결제 수단 값이 올바르지 않습니다."),
     INVALID_PAYMENT_PROVIDER(HttpStatus.BAD_REQUEST, "결제 대행사 값이 올바르지 않습니다."),
+    SCHEDULE_NOT_REFUNDABLE(HttpStatus.BAD_REQUEST, "환불 불가능한 결제입니다."),
+    PAYMENT_REFUND_FAILED(HttpStatus.BAD_REQUEST, "결제 환불이 실패했습니다."),
+    PAYMENT_PROVIDER_MISMATCH(HttpStatus.BAD_REQUEST, "결제 대행사 정보가 일치하지 않습니다."),
+    IMP_UID_MISMATCH(HttpStatus.BAD_REQUEST, "imp_uid 정보가 일치하지 않습니다."),
 
     // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
@@ -66,6 +70,8 @@ public enum ErrorCode {
     CREATOR_NOT_APPROVED(HttpStatus.FORBIDDEN, "관리자 승인 후 로그인 가능합니다."),
     LOCAL_CREATOR_NOT_APPROVED(HttpStatus.FORBIDDEN, "로컬 크리에이터로 승인되지 않은 유저입니다."),
     RESERVATION_NOT_ALLOWED(HttpStatus.FORBIDDEN, "예약을 할 수 있는 권한이 없습니다."),
+    PAYMENT_NOT_ALLOWED(HttpStatus.FORBIDDEN, "결제를 할 수 있는 권한이 없습니다."),
+    PAYMENT_REFUND_NOT_ALLOWED(HttpStatus.FORBIDDEN, "환불을 할 수 있는 권한이 없습니다."),
     REVIEW_PERIOD_EXPIRED(HttpStatus.FORBIDDEN, "리뷰 작성 기한이 만료되었습니다."),
     MAGAZINE_FORBIDDEN(HttpStatus.FORBIDDEN, "이 매거진에 대한 권한이 없습니다."),
 
@@ -82,10 +88,12 @@ public enum ErrorCode {
     REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 리뷰를 찾을 수 없습니다."),
     MAGAZINE_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 매거진을 찾을 수 없습니다."),
     SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 세션을 찾을 수 없습니다."),
-    IMPUID_NOT_FOUND(HttpStatus.NOT_FOUND, "imp_uid 값을 찾을 수 없습니다."),
-    PGTID_NOT_FOUND(HttpStatus.NOT_FOUND, "pg_tid 값을 찾을 수 없습니다."),
+    IMP_UID_NOT_FOUND(HttpStatus.NOT_FOUND, "imp_uid 값을 찾을 수 없습니다."),
+    PG_TID_NOT_FOUND(HttpStatus.NOT_FOUND, "pg_tid 값을 찾을 수 없습니다."),
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 결제를 찾을 수 없습니다."),
-    IMPUID_NOT_FOUND_BY_IAMPORT(HttpStatus.NOT_FOUND, "iam_port에서 해당 결제를 찾을 수 없습니다."),
+    IMP_UID_NOT_FOUND_BY_IAMPORT(HttpStatus.NOT_FOUND, "iam_port에서 해당 결제를 찾을 수 없습니다."),
+    PAYMENT_HISTORY_NOT_FOUND(HttpStatus.NOT_FOUND, "결제 내역을 찾을 수 없습니다."),
+    PAYMENT_HISTORY_NOT_FOUND_FOR_USER(HttpStatus.NOT_FOUND, "해당 유저의 결제 내역이 아닙니다."),
 
     // 408 REQUEST_TIMEOUT
     AI_TIMEOUT(HttpStatus.REQUEST_TIMEOUT, "AI 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요."),
