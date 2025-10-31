@@ -40,10 +40,7 @@ public class SecurityConfig {
                     "/auth/password/**",
                     "/swagger-ui/**",
                     "/api-docs/**",
-                    "/swagger-ui.html",
-                    "/reservations/test",
-                    "/payments/{reservationId}/test",
-                    "/payments/{paymentId}/verify/test"
+                    "/swagger-ui.html"
                 ).permitAll()
                 .anyRequest().authenticated()
             )
