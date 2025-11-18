@@ -7,15 +7,18 @@ import com.salayo.locallifebackend.domain.onboarding.dto.OnboardingRegionRequest
 import com.salayo.locallifebackend.domain.onboarding.dto.OnboardingAptitudeCheckRequestDto;
 import com.salayo.locallifebackend.domain.onboarding.dto.OnboardingStatusResponseDto;
 import com.salayo.locallifebackend.domain.onboarding.entity.OnboardingProgress;
+import com.salayo.locallifebackend.domain.onboarding.entity.UserPreferredRegions;
 import com.salayo.locallifebackend.domain.onboarding.enums.OnboardingStep;
 import com.salayo.locallifebackend.domain.onboarding.enums.RegionType;
 import com.salayo.locallifebackend.domain.onboarding.repository.OnboardingProgressRepository;
+import com.salayo.locallifebackend.domain.onboarding.repository.UserPreferredRegionsRepository;
 import com.salayo.locallifebackend.global.error.ErrorCode;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -23,10 +26,14 @@ import java.util.UUID;
 public class OnboardingService {
     
     private final OnboardingProgressRepository onboardingProgressRepository;
+    private final UserPreferredRegionsRepository userPreferredRegionsRepository;
     private final MemberRepository memberRepository;
 
-	public OnboardingService(OnboardingProgressRepository onboardingProgressRepository, MemberRepository memberRepository) {
+	public OnboardingService(OnboardingProgressRepository onboardingProgressRepository, 
+                            UserPreferredRegionsRepository userPreferredRegionsRepository,
+                            MemberRepository memberRepository) {
 		this.onboardingProgressRepository = onboardingProgressRepository;
+		this.userPreferredRegionsRepository = userPreferredRegionsRepository;
 		this.memberRepository = memberRepository;
 	}
 
@@ -66,8 +73,8 @@ public class OnboardingService {
     }
     
     /**
-     * 선호 지역 특징 선택
-     * TODO: Issue #156 - 지역 특징별 자동 매핑 구현 예정
+     * 선호 지역 특징 선택 및 자동 지역 매핑
+     * Issue #156 - 지역 특징별 자동 매핑 구현
      */
     @Transactional
     public OnboardingProgressResponseDto selectRegion(Long memberId, OnboardingRegionRequestDto regionRequestDto) {
@@ -84,11 +91,28 @@ public class OnboardingService {
         RegionType regionType = regionRequestDto.regionType();
         progress.updateRegion(regionType);
         
+        // 기존 선호 지역 삭제 (재선택 시)
+        userPreferredRegionsRepository.deleteAllByMember(member);
+        
+        // 선택한 특징에 따른 지역 자동 매핑
+        List<String> regions = regionType.getRegions();
+        for (String regionName : regions) {
+            UserPreferredRegions preferredRegion = UserPreferredRegions.builder()
+                .member(member)
+                .regionName(regionName)
+                .isActive(true)
+                .build();
+            userPreferredRegionsRepository.save(preferredRegion);
+        }
+        
         // 다음 단계로 이동
         progress.moveToNextStep(false);
         onboardingProgressRepository.save(progress);
         
-        log.info("선호 지역 특징 선택 완료 - memberId: {}, regionType: {}", memberId, regionType);
+        log.info("선호 지역 특징 선택 완료 - memberId: {}, regionType: {}, 매핑된 지역 수: {}", 
+            memberId, regionType, regions.size());
+        log.debug("매핑된 지역 목록: {}", regions);
+        
         return OnboardingProgressResponseDto.createRegionCompleteResponse(
             progress.getSessionId(), 
             regionType

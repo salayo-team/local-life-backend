@@ -70,7 +70,6 @@ public class OnboardingController {
         log.info("적성 인지 여부 확인 - memberId: {}, knows: {}", memberId, aptitudeCheckRequestDto.knowsAptitude());
         OnboardingProgressResponseDto onboardingProgressResponseDto = onboardingService.checkAptitudeKnowledge(memberId, aptitudeCheckRequestDto);
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.UPDATE_SUCCESS, onboardingProgressResponseDto));
-
     }
 
     @PostMapping("/complete")
@@ -84,7 +83,7 @@ public class OnboardingController {
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.UPDATE_SUCCESS, progressResponseDto)); // "온보딩이 완료되었습니다"
     }
     @GetMapping("/status")
-    @Operation(summary = "온보딩 진행 상태 조회(이어하기 용)", description = "완료되지 않은 온보딩이 있는지 확인하고, 있다면 현재 단계를 반환합니다")
+    @Operation(summary = "온보딩 진행 상태 조회(이어하기용)", description = "완료되지 않은 온보딩이 있는지 확인하고, 있다면 현재 단계를 반환합니다")
     public ResponseEntity<CommonResponseDto<OnboardingStatusResponseDto>> getOnboardingStatus(
         @Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails) {
 

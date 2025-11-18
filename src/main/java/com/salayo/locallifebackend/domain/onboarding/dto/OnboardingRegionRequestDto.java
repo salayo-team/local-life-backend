@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotNull;
 
 /**
  * 선호 지역 특징 선택 요청 DTO
- * TODO: Issue #156 - 지역 특징별 자동 매핑 구현 예정
  */
 public record OnboardingRegionRequestDto(
     
