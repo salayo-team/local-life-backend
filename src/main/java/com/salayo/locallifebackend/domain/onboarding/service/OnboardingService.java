@@ -7,19 +7,15 @@ import com.salayo.locallifebackend.domain.onboarding.dto.OnboardingRegionRequest
 import com.salayo.locallifebackend.domain.onboarding.dto.OnboardingAptitudeCheckRequestDto;
 import com.salayo.locallifebackend.domain.onboarding.dto.OnboardingStatusResponseDto;
 import com.salayo.locallifebackend.domain.onboarding.entity.OnboardingProgress;
-import com.salayo.locallifebackend.domain.onboarding.entity.UserPreferredRegions;
 import com.salayo.locallifebackend.domain.onboarding.enums.OnboardingStep;
 import com.salayo.locallifebackend.domain.onboarding.enums.RegionType;
 import com.salayo.locallifebackend.domain.onboarding.repository.OnboardingProgressRepository;
-import com.salayo.locallifebackend.domain.onboarding.repository.UserPreferredRegionsRepository;
 import com.salayo.locallifebackend.global.error.ErrorCode;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
-import java.util.ArrayList;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -27,15 +23,15 @@ import java.util.UUID;
 public class OnboardingService {
     
     private final OnboardingProgressRepository onboardingProgressRepository;
-    private final UserPreferredRegionsRepository userPreferredRegionsRepository;
     private final MemberRepository memberRepository;
+    private final UserPreferredRegionService userPreferredRegionService;
 
 	public OnboardingService(OnboardingProgressRepository onboardingProgressRepository, 
-                            UserPreferredRegionsRepository userPreferredRegionsRepository,
-                            MemberRepository memberRepository) {
+                            MemberRepository memberRepository,
+                            UserPreferredRegionService userPreferredRegionService) {
 		this.onboardingProgressRepository = onboardingProgressRepository;
-		this.userPreferredRegionsRepository = userPreferredRegionsRepository;
 		this.memberRepository = memberRepository;
+		this.userPreferredRegionService = userPreferredRegionService;
 	}
 
 	/**
@@ -92,27 +88,15 @@ public class OnboardingService {
         RegionType regionType = regionRequestDto.regionType();
         progress.updateRegion(regionType);
         
-        // 기존 선호 지역 삭제 (재선택 시)
-        userPreferredRegionsRepository.deleteAllByMember(member);
-        
-        // 선택한 특징에 따른 지역 자동 매핑
-        List<String> regions = regionType.getRegions();
-        for (String regionName : regions) {
-            UserPreferredRegions preferredRegion = UserPreferredRegions.builder()
-                .member(member)
-                .regionName(regionName)
-                .isActive(true)
-                .build();
-            userPreferredRegionsRepository.save(preferredRegion);
-        }
+        // UserPreferredRegionService를 통한 지역 설정
+        userPreferredRegionService.setPreferredRegionsForOnboarding(member, regionType);
         
         // 다음 단계로 이동
         progress.moveToNextStep(false);
         onboardingProgressRepository.save(progress);
         
-        log.info("선호 지역 특징 선택 완료 - memberId: {}, regionType: {}, 매핑된 지역 수: {}", 
-            memberId, regionType, regions.size());
-        log.debug("매핑된 지역 목록: {}", regions);
+        log.info("선호 지역 특징 선택 완료 - memberId: {}, regionType: {}", 
+            memberId, regionType);
         
         return OnboardingProgressResponseDto.createRegionCompleteResponse(
             progress.getSessionId(), 
@@ -232,83 +216,5 @@ public class OnboardingService {
      */
     private String generateSessionId(Long memberId) {
         return String.format("ONB-%d-%s", memberId, UUID.randomUUID().toString().substring(0, 8));
-    }
-    
-    /**
-     * 사용자의 선호 지역 목록 조회
-     */
-    @Transactional(readOnly = true)
-    public List<String> getUserPreferredRegions(Long memberId) {
-        Member member = memberRepository.findByIdOrElseThrow(memberId);
-
-        OnboardingProgress progress = onboardingProgressRepository.findByMember(member)
-            .orElseThrow(() -> new CustomException(ErrorCode.ONBOARDING_NOT_STARTED));
-
-        if (!progress.isCompleted()) {
-            throw new CustomException(ErrorCode.ONBOARDING_NOT_COMPLETED);
-        }
-
-        List<UserPreferredRegions> preferredRegions = userPreferredRegionsRepository.findByMemberAndIsActiveTrue(member);
-
-        if (preferredRegions.isEmpty()) {
-            log.warn("선호 지역이 설정되지 않음 - memberId: {}", memberId);
-
-            return new ArrayList<>();
-        }
-        
-        return preferredRegions.stream()
-            .map(UserPreferredRegions::getRegionName)
-            .toList();
-    }
-    
-    /**
-     * 선호 지역 특징별 지역 목록 조회
-     */
-    public List<String> getRegionsByType(RegionType regionType) {
-        return regionType.getRegions();
-    }
-    
-    /**
-     * 사용자 선호 지역 업데이트 (지역 특징 재선택)
-     */
-    @Transactional
-    public List<String> updateUserPreferredRegions(Long memberId, RegionType newRegionType) {
-        Member member = memberRepository.findByIdOrElseThrow(memberId);
-
-        OnboardingProgress progress = onboardingProgressRepository.findByMember(member)
-            .orElseThrow(() -> new CustomException(ErrorCode.ONBOARDING_NOT_STARTED));
-
-        if (!progress.isCompleted()) {
-            throw new CustomException(ErrorCode.ONBOARDING_NOT_COMPLETED);
-        }
-
-        // 동일한 지역 특징 선택 시 현재 지역 목록 반환
-        if (progress.getRegionType() == newRegionType) {
-            log.info("동일한 지역 특징 선택 - memberId: {}, regionType: {}", memberId, newRegionType);
-
-            return newRegionType.getRegions();
-        }
-
-        // 기존 선호 지역 삭제
-        userPreferredRegionsRepository.deleteAllByMember(member);
-        
-        // 새로운 지역 특징에 따른 지역 매핑
-        List<String> regions = newRegionType.getRegions();
-        for (String regionName : regions) {
-            UserPreferredRegions preferredRegion = UserPreferredRegions.builder()
-                .member(member)
-                .regionName(regionName)
-                .isActive(true)
-                .build();
-            userPreferredRegionsRepository.save(preferredRegion);
-        }
-
-        progress.updateRegion(newRegionType);
-        onboardingProgressRepository.save(progress);
-        
-        log.info("선호 지역 업데이트 완료 - memberId: {}, 새로운 regionType: {}, 매핑된 지역 수: {}", 
-            memberId, newRegionType, regions.size());
-
-        return regions;
     }
 }
