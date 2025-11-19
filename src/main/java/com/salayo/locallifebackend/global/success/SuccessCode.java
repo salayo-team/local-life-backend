@@ -20,7 +20,8 @@ public enum SuccessCode {
     LOGIN_SUCCESS(HttpStatus.OK, "로그인이 완료되었습니다."),
     LOGOUT_SUCCESS(HttpStatus.OK, "로그아웃이 완료되었습니다."),
 
-    VERIFICATION_SUCCESS(HttpStatus.OK, "검증이 완료되었습니다.")
+    VERIFICATION_SUCCESS(HttpStatus.OK, "검증이 완료되었습니다."),
+    REFUND_SUCCESS(HttpStatus.OK, "결제 환불이 완료되었습니다.")
 
     ;
 

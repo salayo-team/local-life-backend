@@ -4,33 +4,31 @@ package com.salayo.locallifebackend.domain.payment.service;
 import com.salayo.locallifebackend.domain.member.entity.Member;
 import com.salayo.locallifebackend.domain.member.enums.MemberRole;
 import com.salayo.locallifebackend.domain.member.repository.MemberRepository;
-import com.salayo.locallifebackend.domain.payment.dto.PaymentCreateRequestDto;
+import com.salayo.locallifebackend.domain.payment.dto.PaymentRequestDto;
 import com.salayo.locallifebackend.domain.payment.dto.PaymentResponseDto;
 import com.salayo.locallifebackend.domain.payment.entity.Payment;
 import com.salayo.locallifebackend.domain.payment.enums.PaymentMethodType;
 import com.salayo.locallifebackend.domain.payment.enums.PaymentProvider;
 import com.salayo.locallifebackend.domain.payment.enums.PaymentStatus;
+import com.salayo.locallifebackend.domain.payment.paymenthistory.service.PaymentHistoryService;
 import com.salayo.locallifebackend.domain.payment.repository.PaymentRepository;
-import com.salayo.locallifebackend.domain.paymenthistory.entity.PaymentHistory;
-import com.salayo.locallifebackend.domain.paymenthistory.enums.PaymentHistoryStatus;
-import com.salayo.locallifebackend.domain.paymenthistory.repository.PaymentHistoryRepository;
+import com.salayo.locallifebackend.domain.payment.paymenthistory.entity.PaymentHistory;
+import com.salayo.locallifebackend.domain.payment.paymenthistory.repository.PaymentHistoryRepository;
 import com.salayo.locallifebackend.domain.reservation.entity.Reservation;
 import com.salayo.locallifebackend.domain.reservation.enums.ReservationStatus;
 import com.salayo.locallifebackend.domain.reservation.repository.ReservationRepository;
-import com.salayo.locallifebackend.domain.review.enums.ReviewStatus;
-import com.salayo.locallifebackend.global.enums.DeletedStatus;
 import com.salayo.locallifebackend.global.error.ErrorCode;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
 import com.siot.IamportRestClient.IamportClient;
 import com.siot.IamportRestClient.exception.IamportResponseException;
 import com.siot.IamportRestClient.response.IamportResponse;
-import jakarta.validation.Valid;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -45,15 +43,18 @@ public class PaymentService {
 	private final PaymentHistoryRepository paymentHistoryRepository;
 	private final ReservationRepository reservationRepository;
 	private final IamportClient iamportClient;
+	private final PaymentHistoryService paymentHistoryService;
 
 	public PaymentService(MemberRepository memberRepository, PaymentRepository paymentRepository,
-		PaymentHistoryRepository paymentHistoryRepository, ReservationRepository reservationRepository, IamportClient iamportClient
+		PaymentHistoryRepository paymentHistoryRepository, ReservationRepository reservationRepository, IamportClient iamportClient,
+		PaymentHistoryService paymentHistoryService
 	) {
 		this.memberRepository = memberRepository;
 		this.paymentRepository = paymentRepository;
 		this.paymentHistoryRepository = paymentHistoryRepository;
 		this.reservationRepository = reservationRepository;
 		this.iamportClient = iamportClient;
+		this.paymentHistoryService = paymentHistoryService;
 	}
 
 	/**
@@ -62,40 +63,37 @@ public class PaymentService {
 	 * - TODO : 예약, 결제 만료 처리 스케줄러 구현
 	 */
 	@Transactional
-	public PaymentResponseDto createPayment(Long memberId, Long reservationId, PaymentCreateRequestDto requestDto) {
+	public PaymentResponseDto createPayment(Long memberId, Long reservationId, PaymentRequestDto requestDto) {
 
 		Member member = memberRepository.findByIdOrElseThrow(memberId);
 		if (member.getMemberRole().equals(MemberRole.LOCAL_CREATOR)) {
-			throw new CustomException(ErrorCode.RESERVATION_NOT_ALLOWED);
+			throw new CustomException(ErrorCode.PAYMENT_NOT_ALLOWED);
 		}
 
 		Reservation reservation = reservationRepository.findByIdOrElseThrow(reservationId);
-		if(reservation.getReservationStatus() != ReservationStatus.REQUESTED){
+		if (reservation.getReservationStatus() != ReservationStatus.REQUESTED) {
 			throw new CustomException(ErrorCode.INVALID_RESERVATION_STATUS);
 		}
-		reservation.updateReservationStatus(ReservationStatus.PAYMENT_PENDING);
+		reservation.changeToPaymentPending();
 
 		String merchantUid = generateUniqueMerchantUid(reservation.getId());
 
 		PaymentProvider paymentProvider = PaymentProvider.from(requestDto.getPaymentProvider())
-			.orElse(null);
+			.orElseThrow(() -> new CustomException(ErrorCode.INVALID_PAYMENT_PROVIDER));
 
 		PaymentMethodType paymentMethodType = PaymentMethodType.from(requestDto.getPaymentMethodType())
-			.orElse(null);
+			.orElseThrow(() -> new CustomException(ErrorCode.INVALID_PAYMENT_METHODTYPE));
 
-		Payment payment = Payment.builder()
-			.reservation(reservation)
-			.merchantUid(merchantUid)
-			.pgTid(requestDto.getPgTid())
-			.impUid(requestDto.getImpUid())
-			.paymentCost(requestDto.getPaymentCost())
-			.paymentCard(requestDto.getPaymentCard())
-			.paymentProvider(paymentProvider)
-			.paymentMethodType(paymentMethodType)
-			.paymentStatus(PaymentStatus.PAYMENT_PENDING)
-			.deletedStatus(DeletedStatus.DISPLAYED)
-			.build();
-
+		Payment payment = Payment.preparePayment(
+			reservation,
+			merchantUid,
+			requestDto.getPgTid(),
+			requestDto.getImpUid(),
+			requestDto.getPaymentCost(),
+			requestDto.getPaymentCard(),
+			paymentProvider,
+			paymentMethodType
+		);
 		paymentRepository.save(payment);
 
 		return PaymentResponseDto.from(payment);
@@ -104,7 +102,6 @@ public class PaymentService {
 	/**
 	 * 주문 고유 번호 생성 메서드
 	 * - 주문 번호 중복 체크를 위해 분리
-	 * - TODO : 데이터 무결성 문제 될 경우 고민
 	 */
 	private String generateUniqueMerchantUid(Long reservationId) {
 
@@ -122,16 +119,13 @@ public class PaymentService {
 	/**
 	 * 결제 검증 메서드
 	 * - 결제 검증 완료시 데이터 업데이트 & 결제 내역 생성
-	 * - TODO : throw 발생 시, 실패 로그 저장되는 로직 수정
-	 * - TODO : 검증 시, 특정 필드 null 허용 고민, 공백 방어 로직 추가
-	 * - TODO : 예외처리 & 검증 로직 추가 예정 - 결제 상태 검증 등
 	 */
 	@Transactional
-	public PaymentResponseDto verifyPayment(Long memberId, Long paymentId, @Valid PaymentCreateRequestDto requestDto) {
+	public PaymentResponseDto verifyPayment(Long memberId, Long paymentId, PaymentRequestDto requestDto) {
 
 		Member member = memberRepository.findByIdOrElseThrow(memberId);
 		if (member.getMemberRole().equals(MemberRole.LOCAL_CREATOR)) {
-			throw new CustomException(ErrorCode.RESERVATION_NOT_ALLOWED);
+			throw new CustomException(ErrorCode.PAYMENT_NOT_ALLOWED);
 		}
 
 		Payment payment = paymentRepository.findByIdOrElseThrow(paymentId);
@@ -139,50 +133,94 @@ public class PaymentService {
 			throw new CustomException(ErrorCode.PAYMENT_ALREADY_VERIFIED);
 		}
 
+		Reservation reservation = payment.getReservation();
+		if (reservation.getReservationStatus() != ReservationStatus.PAYMENT_PENDING) {
+			throw new CustomException(ErrorCode.INVALID_RESERVATION_STATUS);
+		}
+
 		if (requestDto.getImpUid() == null || requestDto.getImpUid().isEmpty()) {
-			throw new CustomException(ErrorCode.IMPUID_NOT_FOUND);
+			throw new CustomException(ErrorCode.IMP_UID_NOT_FOUND);
 		}
 		if (requestDto.getPgTid() == null || requestDto.getPgTid().isEmpty()) {
-			throw new CustomException(ErrorCode.PGTID_NOT_FOUND);
+			throw new CustomException(ErrorCode.PG_TID_NOT_FOUND);
 		}
 
 		IamportResponse<com.siot.IamportRestClient.response.Payment> iamportPaymentResponse;
 		try {
 			iamportPaymentResponse = iamportClient.paymentByImpUid(requestDto.getImpUid());
 		} catch (IamportResponseException | IOException exception) {
-			payment.failPayment("iamport 결제 조회 실패", null);
-			paymentRepository.save(payment);
-			throw new CustomException(ErrorCode.IMPUID_NOT_FOUND_BY_IAMPORT);
+			throw failPayment(
+				payment,
+				member,
+				"impUid 값으로 portOne 결제 조회 실패"
+					+ "[impUid 값 : " + requestDto.getImpUid() + " ]",
+				null,
+				ErrorCode.IMP_UID_NOT_FOUND_BY_IAMPORT);
 		}
 
 		com.siot.IamportRestClient.response.Payment iamportPayment = iamportPaymentResponse.getResponse();
 
 		if (iamportPayment == null || !"paid".equals(iamportPayment.getStatus())) {
 			String pgFailMessage = iamportPayment != null ? iamportPayment.getFailReason() : null;
-			failPaymentAndThrow(payment, "상태가 결제 완료가 아닙니다.", pgFailMessage,
+			throw failPayment(
+				payment,
+				member,
+				"portOne 응답 데이터 상태가 결제 완료가 아닙니다.",
+				pgFailMessage,
 				ErrorCode.PAYMENT_VERIFICATION_FAILED);
 		}
 
-		String iamportPgTidCheck = iamportPayment.getPgTid();
-		if(iamportPgTidCheck == null){
-			failPaymentAndThrow(payment, "iamport pgTid 값 없음", iamportPayment.getFailReason()
-				, ErrorCode.PGTID_NOT_FOUND);
+		String iamportImpUid = iamportPayment.getImpUid();
+		if (!requestDto.getImpUid().equals(iamportImpUid)) {
+			throw failPayment(
+				payment,
+				member,
+				"portOne 응답 데이터와 impUid가 일치하지 않습니다."
+					+ "[PortOne 응답 값 : " + iamportImpUid + "| Dto 값 : " + requestDto.getImpUid() + " ]",
+				iamportPayment.getFailReason(),
+				ErrorCode.IMP_UID_MISMATCH);
 		}
 
-		if (!requestDto.getPgTid().equals(iamportPayment.getPgTid())) {
-			failPaymentAndThrow(payment, "pgTid가 일치하지 않습니다.", iamportPayment.getFailReason(),
-				ErrorCode.PGTID_MISMATCH);
+		String iamportPgTid = iamportPayment.getPgTid();
+		if (iamportPgTid == null) {
+			throw failPayment(
+				payment,
+				member,
+				"portOne 응답 데이터에 pgTid 값 없음",
+				iamportPayment.getFailReason()
+				, ErrorCode.PG_TID_NOT_FOUND);
+		}
+
+		if (!requestDto.getPgTid().equals(iamportPgTid)) {
+			throw failPayment(
+				payment,
+				member,
+				"portOne 응답 데이터와 pgTid가 일치하지 않습니다."
+					+ "[PortOne 응답 값 : " + iamportPgTid + "| Dto 값 : " + requestDto.getPgTid() + " ]",
+				iamportPayment.getFailReason(),
+				ErrorCode.PG_TID_MISMATCH);
 		}
 
 		BigDecimal paymentCost = payment.getPaymentCost();
 		BigDecimal iamportAmount = iamportPayment.getAmount();
 		if (paymentCost.compareTo(iamportAmount) != 0) {
-			failPaymentAndThrow(payment, "결제 금액이 일치하지 않습니다.", iamportPayment.getFailReason(),
+			throw failPayment(
+				payment,
+				member,
+				"portOne 응답 데이터와 DB에 저장된 결제 금액이 일치하지 않습니다."
+					+ "[PortOne 응답 값 : " + iamportAmount + "| DB 값 : " + paymentCost + " ]",
+				iamportPayment.getFailReason(),
 				ErrorCode.PAYMENT_AMOUNT_MISMATCH);
 		}
 
-		if (!payment.getMerchantUid().equals(iamportPayment.getMerchantUid())) {
-			failPaymentAndThrow(payment, "merchantUid 일치하지 않습니다.", iamportPayment.getFailReason(),
+		String iamportMerchantUid = iamportPayment.getMerchantUid();
+		if (!payment.getMerchantUid().equals(iamportMerchantUid)) {
+			throw failPayment(
+				payment,
+				member,
+				"portOne 응답 데이터와 DB에 저장된 merchantUid가 일치하지 않습니다."
+					+ "[PortOne 응답 값 : " + iamportMerchantUid + "| DB 값 : " + payment.getMerchantUid() + " ]",
+				iamportPayment.getFailReason(),
 				ErrorCode.MERCHANT_UID_MISMATCH);
 		}
 
@@ -194,55 +232,85 @@ public class PaymentService {
 			);
 		}
 
-		//결제 수단 enum 매핑
-		PaymentMethodType paymentMethodType = PaymentMethodType.from(iamportPayment.getPayMethod())
-			.orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_METHOD_MISMATCH));
+		String iamportPaymentMethodTypeStr = iamportPayment.getPayMethod();
+		Optional<PaymentMethodType> paymentMethodType = PaymentMethodType.from(iamportPaymentMethodTypeStr);
+		if (paymentMethodType.isEmpty()) {
+			throw failPayment(
+				payment,
+				member,
+				"지원하지 않거나, 올바르지 않은 결제 수단입니다. "
+					+ "[PortOne 응답 값 : " + iamportPaymentMethodTypeStr + " ]",
+				iamportPayment.getFailReason(), ErrorCode.INVALID_PAYMENT_METHODTYPE);
+		}
+
+		PaymentMethodType iamportPaymentMethodType = paymentMethodType.get();
+		if (!payment.getPaymentMethodType().equals(iamportPaymentMethodType)) {
+			throw failPayment(
+				payment,
+				member,
+				"portOne 응답 데이터와 DB에 저장된 결제 수단이 일치하지 않습니다. "
+					+ "[PortOne 응답 값 : " + iamportPaymentMethodType + "| DB 값 : " + payment.getPaymentMethodType() + " ]",
+				iamportPayment.getFailReason(),
+				ErrorCode.PAYMENT_METHOD_MISMATCH
+			);
+		}
+
+		Optional<PaymentProvider> paymentProvider = PaymentProvider.from(iamportPayment.getPgProvider());
+		if (paymentProvider.isEmpty()) {
+			throw failPayment(
+				payment,
+				member,
+				"지원하지 않거나, 올바르지 않은 결제 대행사입니다. [PortOne 응답 값] : " + iamportPayment.getPgProvider(),
+				iamportPayment.getFailReason(),
+				ErrorCode.INVALID_PAYMENT_PROVIDER
+			);
+		}
+
+		PaymentProvider iamportPaymentProvider = paymentProvider.get();
+		if (!payment.getPaymentProvider().equals(iamportPaymentProvider)) {
+			throw failPayment(
+				payment,
+				member,
+				"portOne 응답 데이터와 DB에 저장된 결제 대행사가 일치하지 않습니다."
+					+ "[PortOne 응답 값 : " + iamportPaymentProvider + "| DB 값 : " + payment.getPaymentProvider() + " ]",
+				iamportPayment.getPgProvider(),
+				ErrorCode.PAYMENT_PROVIDER_MISMATCH
+			);
+		}
 
 		String cardSnapshot = cardSnapShotLabel(iamportPayment, requestDto.getPaymentCard());
-
 		payment.updateCardSnapshot(cardSnapshot);
 
 		payment.updatePayment(
-			iamportPayment.getPgTid(),
-			requestDto.getImpUid(),
+			iamportPgTid,
+			iamportImpUid,
 			requestDto.getPaymentCard(),
-			paymentMethodType
+			iamportPaymentMethodType
 		);
 
 		payment.verifySuccess(paidAt);
 
-		Reservation reservation = payment.getReservation();
-		if (reservation.getReservationStatus() != ReservationStatus.PAYMENT_PENDING) {
-			throw new CustomException(ErrorCode.INVALID_RESERVATION_STATUS);
-		}
-		reservation.updateReservationStatus(ReservationStatus.PENDING);
+		reservation.changeToAwaitingApproval();
 
-		PaymentHistory paymentHistory = PaymentHistory.builder()
-			.payment(payment)
-			.member(member)
-			.pgTid(iamportPayment.getPgTid())
-			.impUid(iamportPayment.getImpUid())
-			.paymentCost(iamportAmount)
-			.paymentMethodType(paymentMethodType)
-			.paymentProvider(payment.getPaymentProvider())
-			.paymentHistoryStatus(PaymentHistoryStatus.PAYMENT_SUCCESS)
-			.deletedStatus(DeletedStatus.DISPLAYED)
-			.reviewStatus(ReviewStatus.NOT_YET)
-			.paymentCardSnapshot(cardSnapshot)
-			.build();
+		PaymentHistory paymentHistory = PaymentHistory.createSuccessPaymentHistory(
+			payment,
+			member,
+			cardSnapshot
+		);
 		paymentHistoryRepository.save(paymentHistory);
 
 		return PaymentResponseDto.from(payment);
 	}
 
 	/**
-	 * TODO : 결제 실패 처리 메서드 분리
-	 * - 중복되는 로직 리팩토링
+	 * - 결제 실패 처리 메서드
+	 * - 결제 실패시 이력 저장 & 예외 생성
 	 */
-	private void failPaymentAndThrow(Payment payment, String paymentFailedReason, String pgFailMessage, ErrorCode errorCode) {
-		payment.failPayment(paymentFailedReason, pgFailMessage);
-		paymentRepository.save(payment);
-		throw new CustomException(errorCode);
+	private CustomException failPayment(Payment payment, Member member, String paymentFailedReason, String pgFailMessage,
+		ErrorCode errorCode) {
+
+		paymentHistoryService.savePaymentFailureHistory(payment, member, paymentFailedReason, pgFailMessage);
+		return new CustomException(errorCode);
 	}
 
 	/**
@@ -278,6 +346,5 @@ public class PaymentService {
 
 		return issuer + "_" + lastFourNumber;
 	}
-
 
 }
