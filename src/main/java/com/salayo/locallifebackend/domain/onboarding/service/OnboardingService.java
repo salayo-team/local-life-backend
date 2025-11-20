@@ -49,7 +49,7 @@ public class OnboardingService {
                 String sessionId = generateSessionId(memberId);
                 OnboardingProgress newProgress = OnboardingProgress.builder()
                     .member(member)
-                    .currentStep(OnboardingStep.MEMBER_INFO)
+                    .currentStep(OnboardingStep.REGION_SELECT)  // 처음부터 REGION_SELECT로 설정
                     .isCompleted(false)
                     .sessionId(sessionId)
                     .build();
@@ -65,7 +65,8 @@ public class OnboardingService {
             );
         }
         
-        log.info("온보딩 시작 - memberId: {}, sessionId: {}", memberId, progress.getSessionId());
+        log.info("온보딩 시작 - memberId: {}, sessionId: {}, currentStep: {}", 
+            memberId, progress.getSessionId(), progress.getCurrentStep());
         return OnboardingProgressResponseDto.createStartResponse(progress.getSessionId());
     }
     
@@ -78,9 +79,9 @@ public class OnboardingService {
         Member member = memberRepository.findByIdOrElseThrow(memberId);
         OnboardingProgress progress = getOnboardingProgress(member);
         
-        // 현재 단계 검증
-        if (progress.getCurrentStep() != OnboardingStep.MEMBER_INFO && 
-            progress.getCurrentStep() != OnboardingStep.REGION_SELECT) {
+        // 현재 단계 검증 (REGION_SELECT 단계에서만 실행 가능)
+        if (progress.getCurrentStep() != OnboardingStep.REGION_SELECT) {
+            log.error("잘못된 온보딩 단계 - 현재: {}, 예상: REGION_SELECT", progress.getCurrentStep());
             throw new CustomException(ErrorCode.INVALID_ONBOARDING_STEP);
         }
         
