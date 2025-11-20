@@ -324,7 +324,7 @@ Content-Type: {{contentType}}
 ### ========================================
 
 ### 6-1. 내 선호 지역 목록 조회
-GET {{host}}/user/preferred-regions
+GET {{host}}/preferred-regions/view
 Authorization: Bearer {{accessToken}}
 
 > {%
@@ -337,7 +337,7 @@ Authorization: Bearer {{accessToken}}
 %}
 
 ### 6-2. 선호 지역 변경 - URBAN으로 변경
-PUT {{host}}/user/preferred-regions
+PUT {{host}}/preferred-regions/reselect
 Authorization: Bearer {{accessToken}}
 Content-Type: {{contentType}}
 
