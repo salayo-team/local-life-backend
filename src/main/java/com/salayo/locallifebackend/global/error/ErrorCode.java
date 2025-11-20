@@ -89,6 +89,7 @@ public enum ErrorCode {
     EMAIL_CODE_EXPIRED(HttpStatus.NOT_FOUND, "인증 코드가 만료되었거나 존재하지 않습니다."),
     REGION_NOT_FOUND(HttpStatus.NOT_FOUND, "지역을 찾을 수 없습니다."),
     APTITUDE_NOT_FOUND(HttpStatus.NOT_FOUND, "적성을 찾을 수 없습니다." ),
+    CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "카테고리를 찾을 수 없습니다."),
     LOCAL_CREATOR_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 회원을 찾을 수 없습니다."),
     NOT_FOUND_TEST_PROGRESS(HttpStatus.NOT_FOUND,"진행 중인 테스트가 없습니다."),
     PROGRAM_SCHEDULE_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 프로그램 스케줄을 찾을 수 없습니다."),
