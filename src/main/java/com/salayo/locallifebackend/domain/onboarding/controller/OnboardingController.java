@@ -82,6 +82,7 @@ public class OnboardingController {
         OnboardingProgressResponseDto progressResponseDto = onboardingService.completeOnboarding(memberId);
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.ONBOARDING_COMPLETE_SUCCESS, progressResponseDto));
     }
+
     @GetMapping("/status")
     @Operation(summary = "온보딩 진행 상태 조회(이어하기용)", description = "완료되지 않은 온보딩이 있는지 확인하고, 있다면 현재 단계를 반환합니다")
     public ResponseEntity<CommonResponseDto<OnboardingStatusResponseDto>> getOnboardingStatus(

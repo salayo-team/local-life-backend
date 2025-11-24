@@ -357,7 +357,7 @@ Content-Type: {{contentType}}
 %}
 
 ### 6-3. 선호 지역 변경 - BALANCED로 변경
-PUT {{host}}/user/preferred-regions
+PUT {{host}}/preferred-regions/reselect
 Authorization: Bearer {{accessToken}}
 Content-Type: {{contentType}}
 
@@ -377,7 +377,7 @@ Content-Type: {{contentType}}
 %}
 
 ### 6-4. 선호 지역 변경 - NATURE로 변경
-PUT {{host}}/user/preferred-regions
+PUT {{host}}/preferred-regions/reselect
 Authorization: Bearer {{accessToken}}
 Content-Type: {{contentType}}
 
@@ -398,7 +398,81 @@ Content-Type: {{contentType}}
 %}
 
 ### ========================================
-### Step 7: 에러 케이스 테스트
+### Step 7: 체험 프로그램 추천 (온보딩 완료 후)
+### ========================================
+### 온보딩 완료 후 사용자 맞춤 프로그램 6개를 랜덤 추천합니다.
+### 사용자의 적성과 선호 지역을 기반으로 프로그램을 추천합니다.
+### ========================================
+
+### 7-1. 추천 프로그램 조회 (온보딩 완료 후)
+GET {{host}}/recommended-programs/random
+Authorization: Bearer {{accessToken}}
+
+> {%
+  const data = response.body.data;
+  if (data && Array.isArray(data)) {
+    console.log("\n🎯 === 맞춤 체험 프로그램 추천 결과 ===");
+    console.log("추천 프로그램 개수:", data.length);
+    
+    data.forEach((program, index) => {
+      console.log(`\n[프로그램 ${index + 1}]`);
+      console.log("- ID:", program.programId);
+      console.log("- 제목:", program.title);
+      console.log("- 업체명:", program.businessName);
+      console.log("- 위치:", program.location);
+      console.log("- 가격:", program.price + "원");
+      console.log("- 할인가:", program.finalPrice + "원");
+      console.log("- 할인율:", program.percent + "%");
+      console.log("- 적성:", program.aptitudeCategory);
+      console.log("- 지역:", program.regionCategory);
+      console.log("- 지역특화:", program.isLocalSpecialized ? "O" : "X");
+      console.log("- 시작일:", program.startDate);
+      console.log("- 종료일:", program.endDate);
+    });
+    
+    // 적성별 분포 확인
+    const aptitudes = {};
+    data.forEach(p => {
+      aptitudes[p.aptitudeCategory] = (aptitudes[p.aptitudeCategory] || 0) + 1;
+    });
+    console.log("\n📊 적성별 분포:", aptitudes);
+    
+    // 지역별 분포 확인
+    const regions = {};
+    data.forEach(p => {
+      regions[p.regionCategory] = (regions[p.regionCategory] || 0) + 1;
+    });
+    console.log("📍 지역별 분포:", regions);
+    
+    client.assert(data.length === 6, "추천 프로그램은 6개여야 함");
+    client.assert(data.every(p => p.programId), "모든 프로그램에 ID가 있어야 함");
+    client.assert(data.every(p => p.aptitudeCategory), "모든 프로그램에 적성 카테고리가 있어야 함");
+    client.assert(data.every(p => p.regionCategory), "모든 프로그램에 지역 카테고리가 있어야 함");
+  } else {
+    console.log("⚠️ 추천 프로그램이 없습니다.");
+    console.log("온보딩이 완료되었는지 확인하세요.");
+  }
+%}
+
+### 7-2. 추천 프로그램 재조회 (랜덤성 확인)
+### 같은 요청을 다시 보내도 랜덤하게 다른 6개가 추천되는지 확인
+GET {{host}}/recommended-programs/random
+Authorization: Bearer {{accessToken}}
+
+> {%
+  const data = response.body.data;
+  if (data && Array.isArray(data)) {
+    console.log("\n🔄 === 추천 프로그램 재조회 (랜덤성 테스트) ===");
+    console.log("추천 프로그램 개수:", data.length);
+    
+    const programIds = data.map(p => p.programId);
+    console.log("프로그램 ID 목록:", programIds);
+    console.log("\n💡 이전 요청과 다른 프로그램이 추천되었는지 확인하세요!");
+  }
+%}
+
+### ========================================
+### Step 8: 에러 케이스 테스트
 ### ========================================
 
 ### 7-1. 잘못된 RegionType 테스트
@@ -419,11 +493,11 @@ Content-Type: {{contentType}}
 }
 
 ### 7-3. 인증 없이 요청
-GET {{host}}/user/preferred-regions
+GET {{host}}/preferred-regions/view
 
 ### 7-4. 온보딩 미완료 상태에서 지역 조회
 # 온보딩 완료 전에 호출하면 ONBOARDING_NOT_COMPLETED 에러 발생
-GET {{host}}/user/preferred-regions
+GET {{host}}/preferred-regions/view
 Authorization: Bearer {{accessToken}}
 
 ### 7-5. 잘못된 단계에서 지역 선택 시도
@@ -453,15 +527,16 @@ Content-Type: {{contentType}}
 ### 시나리오별 전체 플로우 가이드
 ### ========================================
 
-### 시나리오 A: 적성을 아는 사용자
+### 시나리오 A: 적성을 아는 사용자 (전체 플로우)
 # 0-1. 로그인
 # 1-1. 온보딩 시작
 # 2-1. 지역 특징 선택 (URBAN)
 # 3-1. 적성 인지 여부 (true - 알고있음)
 # 4-A-1. 수동 적성 선택 (NATURE)
 # 5-1. 온보딩 완료
+# 7-1. 추천 프로그램 조회 (6개 랜덤)
 
-### 시나리오 B: 적성을 모르는 사용자
+### 시나리오 B: 적성을 모르는 사용자 (전체 플로우)
 # 0-1. 로그인
 # 1-1. 온보딩 시작
 # 2-2. 지역 특징 선택 (BALANCED)
@@ -469,24 +544,28 @@ Content-Type: {{contentType}}
 # 4-B-1. AI 적성 검사 시작
 # 4-B-2. AI 검사 답변 제출 (5회 반복)
 # 5-1. 온보딩 완료
+# 7-1. 추천 프로그램 조회 (6개 랜덤)
 
 ### ========================================
 ### 온보딩 플로우 다이어그램
 ### ========================================
 # 
-#     [시작]
-#       ↓
-#   [회원 정보]
-#       ↓
-#   [지역 선택]
-#       ↓
-#  [적성 인지?]
-#    ↙    ↘
-#  [예]    [아니오]
-#   ↓        ↓
-# [수동]   [AI검사]
-#   ↓        ↓
-#   ↘      ↙
-#    [완료]
+#       [시작]
+#         ↓
+#     [회원 정보]
+#         ↓
+#     [지역 선택]
+#         ↓
+#    [적성 인지?]
+#      ↙    ↘
+#    [예]    [아니오]
+#     ↓        ↓
+#   [수동]   [AI검사]
+#     ↓        ↓
+#     ↘      ↙
+#      [완료]
+#        ↓
+#   [프로그램 추천]
+#     (6개 랜덤)
 #
 ### ========================================
