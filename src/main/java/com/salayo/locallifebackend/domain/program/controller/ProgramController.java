@@ -13,8 +13,8 @@ import com.salayo.locallifebackend.global.error.exception.CustomException;
 import com.salayo.locallifebackend.global.security.MemberDetails;
 import com.salayo.locallifebackend.global.success.SuccessCode;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +25,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -85,9 +87,9 @@ public class ProgramController {
 		summary = "체험 프로그램 조회",
 		description = "유저가 정렬 조건을 설정하여 체험 프로그램을 조회 할 수 있습니다."
 	)
-	@GetMapping(value = "/program/search")
+	@GetMapping(value = "/programs/search")
 	public ResponseEntity<CommonResponseDto<PaginationResponseDto<ProgramCreateResponseDto>>> searchProgram(
-		@ModelAttribute ProgramSearchRequestDto requestDto,
+		@Valid @ModelAttribute ProgramSearchRequestDto requestDto,
 		@AuthenticationPrincipal MemberDetails memberDetails) {
 
 		Long memberId = memberDetails.getMember().getId();
@@ -95,6 +97,26 @@ public class ProgramController {
 		PaginationResponseDto<ProgramCreateResponseDto> responsePage = programService.searchProgram(requestDto, memberId);
 
 		return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, responsePage));
+	}
+
+	/**
+	 * 체험 프로그램 삭제 API
+	 */
+	@Operation(
+		summary = "체험 프로그램 삭제",
+		description = "로컬 크리에이터 유저가 체험 프로그램을 삭제 할 수 있습니다."
+	)
+	@PreAuthorize("hasRole('LOCAL_CREATOR')")
+	@PatchMapping("/programs/{programId}")
+	public ResponseEntity<CommonResponseDto<Long>> deleteProgram(
+		@PathVariable("programId") Long programId,
+		@AuthenticationPrincipal MemberDetails memberDetails) {
+
+		Long memberId = memberDetails.getMember().getId();
+
+		programService.deleteProgram(programId, memberId);
+
+		return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.DELETE_SUCCESS, programId));
 	}
 
 }

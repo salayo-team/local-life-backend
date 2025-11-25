@@ -44,20 +44,57 @@ public class UserAptitude extends BaseEntity {
 	@Column(name = "test_count", nullable = false)
 	private Integer testCount;
 
+	@Column(name = "mypage_test_count", nullable = false)
+	private Integer mypageTestCount;
+
+	@Column(name = "is_onboarding_completed", nullable = false)
+	private Boolean isOnboardingCompleted;
+	
+	@Column(name = "last_partial_step")
+	private Integer lastPartialStep; // 마지막 부분 저장 단계
+	
+	@Column(name = "partial_session_id", length = 100)
+	private String partialSessionId; // 부분 저장된 세션 ID
+
 	@Builder
-	public UserAptitude(Member member, AptitudeType aptitudeType, Integer testStep, Integer testCount) {
+	public UserAptitude(Member member, AptitudeType aptitudeType, Integer testStep, 
+			Integer testCount, Integer mypageTestCount, Boolean isOnboardingCompleted,
+			Integer lastPartialStep, String partialSessionId) {
 		this.member = member;
 		this.aptitudeType = aptitudeType;
 		this.testStep = testStep;
 		this.testCount = (testCount != null) ? testCount : 0;
+		this.mypageTestCount = (mypageTestCount != null) ? mypageTestCount : 0;
+		this.isOnboardingCompleted = (isOnboardingCompleted != null) ? isOnboardingCompleted : false;
+		this.lastPartialStep = lastPartialStep;
+		this.partialSessionId = partialSessionId;
 	}
 
-	public void updateAptitude(AptitudeType aptitudeType) {
+	public void updateAptitudeFromOnboarding(AptitudeType aptitudeType) {
 		this.aptitudeType = aptitudeType;
+		this.isOnboardingCompleted = true;
+		this.testCount++;
+	}
+
+	public void updateAptitudeFromMypage(AptitudeType aptitudeType) {
+		this.aptitudeType = aptitudeType;
+		this.mypageTestCount++;
 		this.testCount++;
 	}
 
 	public void updateTestStep(Integer testStep) {
 		this.testStep = testStep;
+	}
+	
+	// 부분 저장 업데이트
+	public void updatePartialProgress(Integer step, String sessionId) {
+		this.lastPartialStep = step;
+		this.partialSessionId = sessionId;
+	}
+	
+	// 부분 저장 초기화
+	public void clearPartialProgress() {
+		this.lastPartialStep = null;
+		this.partialSessionId = null;
 	}
 }

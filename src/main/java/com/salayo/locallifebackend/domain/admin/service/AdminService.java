@@ -4,6 +4,7 @@ import static com.salayo.locallifebackend.global.util.CacheKeyPrefix.CREATOR_REA
 
 import com.salayo.locallifebackend.domain.admin.dto.CreatorPendingResponseDto;
 import com.salayo.locallifebackend.domain.email.service.EmailService;
+import com.salayo.locallifebackend.domain.localcreator.dto.LocalCreatorEmailSearchResponseDto;
 import com.salayo.locallifebackend.domain.localcreator.entity.LocalCreator;
 import com.salayo.locallifebackend.domain.localcreator.enums.CreatorStatus;
 import com.salayo.locallifebackend.domain.localcreator.repository.LocalCreatorRepository;
@@ -76,5 +77,13 @@ public class AdminService {
     // TODO : 프론트에서 재제출 버튼을 누르면 재제출 API 호출
     //  1. 토큰 검증 후 거절 -> 대기상태로 바꿔줌
     //  2. 다시 파일 첨부할 수 있도록 함 -> 파일 목적 맞춰서 저장
+
+
+    public LocalCreatorEmailSearchResponseDto findLocalCreatorByEmail(String email) {
+        LocalCreator localCreator = localCreatorRepository.findByMemberEmail(email)
+            .orElseThrow(() -> new CustomException(ErrorCode.LOCAL_CREATOR_NOT_FOUND));
+
+        return new LocalCreatorEmailSearchResponseDto(localCreator);
+    }
 
 }

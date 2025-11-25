@@ -1,10 +1,10 @@
 package com.salayo.locallifebackend.domain.payment.entity;
 
+import com.salayo.locallifebackend.domain.payment.enums.PaymentMethodType;
+import com.salayo.locallifebackend.domain.payment.enums.PaymentProvider;
 import com.salayo.locallifebackend.domain.payment.enums.PaymentStatus;
 import com.salayo.locallifebackend.domain.reservation.entity.Reservation;
-import com.salayo.locallifebackend.domain.reservation.enums.ReservationStatus;
-import com.salayo.locallifebackend.global.entity.BaseEntity;
-import com.salayo.locallifebackend.global.enums.DeletedStatus;
+import com.salayo.locallifebackend.global.entity.SoftDeletableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -27,7 +27,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @Entity
 @Table(name = "payment")
-public class Payment extends BaseEntity {
+public class Payment extends SoftDeletableEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,7 +40,7 @@ public class Payment extends BaseEntity {
 	@Column(nullable = false, length = 100, unique = true)
 	private String merchantUid; //주문 고유 번호
 
-	@Column(nullable = false, length = 100)
+	@Column(nullable = true, length = 100)
 	private String pgTid; //PG사 거래 고유 ID
 
 	@Column(nullable = true, length = 100)
@@ -49,11 +49,16 @@ public class Payment extends BaseEntity {
 	@Column(nullable = false, precision = 12, scale = 2)
 	private BigDecimal paymentCost; //결제 금액
 
-	@Column(nullable = false, length = 50)
-	private String paymentCard; //결제 카드 정보
+	@Column(nullable = true, length = 50)
+	private String paymentCard; //결제 카드명
 
-	@Column(nullable = true)
-	private String paymentMethodType; //결제 수단 타입
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false, length = 100)
+	private PaymentMethodType paymentMethodType; //결제 수단 타입
+
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false, length = 100)
+	private PaymentProvider paymentProvider; //결제 대행사
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 50)
@@ -61,9 +66,6 @@ public class Payment extends BaseEntity {
 
 	@Column(nullable = true)
 	private LocalDateTime refundAttemptedAt; //환불 요청 발생 일시
-
-	@Column(nullable = true, columnDefinition = "TEXT")
-	private String paymentFailedReason; //PG사 API 응답 메시지
 
 	@Column(nullable = true)
 	private LocalDateTime paidAt; //결제 승인일
@@ -74,14 +76,13 @@ public class Payment extends BaseEntity {
 	@Column(nullable = true)
 	private LocalDateTime expiredAt; //결제 만료일
 
-	@Enumerated(EnumType.STRING)
-	@Column(nullable = false, length = 50)
-	private DeletedStatus deletedStatus; //결제 삭제 상태
+	@Column(nullable = true, length = 100)
+	private String paymentCardSnapshot; //카드 스냅샷
 
 	@Builder
 	public Payment(Reservation reservation, String merchantUid, String pgTid, String impUid, BigDecimal paymentCost, String paymentCard,
-		String paymentMethodType, PaymentStatus paymentStatus, LocalDateTime refundAttemptedAt, String paymentFailedReason,
-		LocalDateTime paidAt, LocalDateTime canceledAt, LocalDateTime expiredAt, DeletedStatus deletedStatus) {
+		PaymentMethodType paymentMethodType, PaymentProvider paymentProvider, PaymentStatus paymentStatus, LocalDateTime refundAttemptedAt,
+		LocalDateTime paidAt, LocalDateTime canceledAt, LocalDateTime expiredAt, String paymentCardSnapshot) {
 		this.reservation = reservation;
 		this.merchantUid = merchantUid;
 		this.pgTid = pgTid;
@@ -89,20 +90,64 @@ public class Payment extends BaseEntity {
 		this.paymentCost = paymentCost;
 		this.paymentCard = paymentCard;
 		this.paymentMethodType = paymentMethodType;
+		this.paymentProvider = paymentProvider;
 		this.paymentStatus = paymentStatus;
 		this.refundAttemptedAt = refundAttemptedAt;
-		this.paymentFailedReason = paymentFailedReason;
 		this.paidAt = paidAt;
 		this.canceledAt = canceledAt;
 		this.expiredAt = expiredAt;
-		this.deletedStatus = deletedStatus;
+		this.paymentCardSnapshot = paymentCardSnapshot;
 	}
 
 	/**
 	 * 결제 만료 상태 변경 & 시점 기록
 	 */
-	public void expirePayment(){
+	public void expirePayment() {
 		this.paymentStatus = PaymentStatus.PAYMENT_EXPIRED;
 		this.expiredAt = LocalDateTime.now();
+	}
+
+	/**
+	 * 결제 검증 성공시, 상태 변경 및 결제 승인일 저장
+	 */
+	public void verifySuccess(LocalDateTime paidAt) {
+		this.paymentStatus = PaymentStatus.PAYMENT_SUCCESS;
+		this.paidAt = paidAt;
+	}
+
+	/**
+	 * 결제 데이터 업데이트
+	 */
+	public void updatePayment(String pgTid, String impUid, String paymentCard, PaymentMethodType paymentMethodType) {
+		this.pgTid = pgTid;
+		this.impUid = impUid;
+		this.paymentCard = paymentCard;
+		this.paymentMethodType = paymentMethodType;
+	}
+
+	/**
+	 * 결제 카드 스냅샷 저장
+	 */
+	public void updateCardSnapshot(String paymentCardSnapshot) {
+		this.paymentCardSnapshot = paymentCardSnapshot;
+	}
+
+	/**
+	 * 결제 사전 생성
+	 */
+	public static Payment preparePayment(Reservation reservation, String merchantUid, String pgTid, String impUid, BigDecimal paymentCost,
+		String paymentCard, PaymentProvider paymentProvider, PaymentMethodType paymentMethodType){
+
+		return Payment.builder()
+			.reservation(reservation)
+			.merchantUid(merchantUid)
+			.pgTid(pgTid)
+			.impUid(impUid)
+			.paymentCost(paymentCost)
+			.paymentCard(paymentCard)
+			.paymentProvider(paymentProvider)
+			.paymentMethodType(paymentMethodType)
+			.paymentStatus(PaymentStatus.PAYMENT_PENDING)
+			.build();
 	}
 }
