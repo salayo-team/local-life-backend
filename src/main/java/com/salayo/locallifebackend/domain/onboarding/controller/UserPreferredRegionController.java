@@ -52,6 +52,7 @@ public class UserPreferredRegionController {
         log.info("선호 지역 목록 조회 요청 - memberId: {}", memberId);
 
         List<String> regions = userPreferredRegionService.getUserPreferredRegions(memberId);
+
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, regions));
     }
 
@@ -71,6 +72,7 @@ public class UserPreferredRegionController {
 
         List<String> updatedRegions = userPreferredRegionService.updateUserPreferredRegions(
             memberId, regionRequestDto.regionType());
+
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.UPDATE_SUCCESS, updatedRegions));
     }
 }

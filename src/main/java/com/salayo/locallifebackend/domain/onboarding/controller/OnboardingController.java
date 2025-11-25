@@ -43,7 +43,9 @@ public class OnboardingController {
 
         Long memberId = memberDetails.getMember().getId();
         log.info("온보딩 시작 요청 - memberId: {}", memberId);
+
         OnboardingProgressResponseDto progressResponseDto = onboardingService.startOnboarding(memberId);
+
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.ONBOARDING_START_SUCCESS, progressResponseDto));
     }
 
@@ -55,7 +57,9 @@ public class OnboardingController {
 
         Long memberId = memberDetails.getMember().getId();
         log.info("선호 지역 특징 선택 요청 - memberId: {}, regionType: {}", memberId, regionRequestDto.regionType());
+
         OnboardingProgressResponseDto progressResponseDto = onboardingService.selectRegion(memberId, regionRequestDto);
+
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.SELECT_SUCCESS, progressResponseDto));
     }
 
@@ -68,7 +72,9 @@ public class OnboardingController {
 
         Long memberId = memberDetails.getMember().getId();
         log.info("적성 인지 여부 확인 - memberId: {}, knows: {}", memberId, aptitudeCheckRequestDto.knowsAptitude());
+
         OnboardingProgressResponseDto onboardingProgressResponseDto = onboardingService.checkAptitudeKnowledge(memberId, aptitudeCheckRequestDto);
+
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.SELECT_SUCCESS, onboardingProgressResponseDto));
     }
 
@@ -79,7 +85,9 @@ public class OnboardingController {
 
         Long memberId = memberDetails.getMember().getId();
         log.info("온보딩 완료 요청 - memberId: {}", memberId);
+
         OnboardingProgressResponseDto progressResponseDto = onboardingService.completeOnboarding(memberId);
+
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.ONBOARDING_COMPLETE_SUCCESS, progressResponseDto));
     }
 
@@ -89,7 +97,9 @@ public class OnboardingController {
         @Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails) {
 
         Long memberId = memberDetails.getMember().getId();
+
         OnboardingStatusResponseDto statusResponseDto = onboardingService.getOnboardingStatus(memberId);
+
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, statusResponseDto));
     }
 
@@ -100,7 +110,9 @@ public class OnboardingController {
 
         Long memberId = memberDetails.getMember().getId();
         log.info("온보딩 진행 상태 조회 - memberId: {}", memberId);
+
         OnboardingProgressResponseDto progressResponseDto = onboardingService.getCurrentProgress(memberId);
+
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, progressResponseDto));
     }
 }

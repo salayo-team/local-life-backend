@@ -42,7 +42,8 @@ public class ProgramRecommendationController {
 		Long memberId = memberDetails.getMember().getId();
 		log.info("체험 프로그램 랜덤 추천 요청 - memberId: {}", memberId);
 
-		List<RecommendedProgramResponseDto> RecommendedPrograms = programRecommendationService.getRecommendedPrograms(memberId);
-		return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, RecommendedPrograms));
+		List<RecommendedProgramResponseDto> recommendedPrograms = programRecommendationService.getRecommendedPrograms(memberId);
+
+		return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, recommendedPrograms));
 	}
 }
