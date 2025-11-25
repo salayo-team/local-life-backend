@@ -18,7 +18,6 @@ import com.salayo.locallifebackend.global.enums.DeletedStatus;
 import com.salayo.locallifebackend.global.error.ErrorCode;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -102,8 +101,7 @@ public class ProgramRecommendationService {
             regionCategories,
             ProgramStatus.REGISTERED,  // REGISTERED로 변경 (등록된 프로그램)
             DeletedStatus.DISPLAYED,    // DISPLAYED로 변경 (삭제되지 않은 프로그램)
-            LocalDate.now(),
-            PageRequest.of(0, 6)  // 6개만 조회하도록 수정
+            LocalDate.now()
         );
         
         if (programs.isEmpty()) {

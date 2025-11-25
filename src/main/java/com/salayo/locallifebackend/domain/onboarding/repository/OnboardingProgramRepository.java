@@ -5,7 +5,6 @@ import com.salayo.locallifebackend.domain.category.entity.RegionCategory;
 import com.salayo.locallifebackend.domain.program.entity.Program;
 import com.salayo.locallifebackend.domain.program.enums.ProgramStatus;
 import com.salayo.locallifebackend.global.enums.DeletedStatus;
-import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -25,7 +24,6 @@ public interface OnboardingProgramRepository {
      * @param status 프로그램 상태
      * @param deletedStatus 삭제 상태
      * @param currentDate 현재 날짜
-     * @param pageable 페이징 정보
      * @return 추천 프로그램 목록
      */
     List<Program> findRecommendedPrograms(
@@ -33,7 +31,6 @@ public interface OnboardingProgramRepository {
         List<RegionCategory> regionCategories,
         ProgramStatus status,
         DeletedStatus deletedStatus,
-        LocalDate currentDate,
-        Pageable pageable
+        LocalDate currentDate
     );
 }

@@ -11,7 +11,6 @@ import com.salayo.locallifebackend.domain.program.entity.QProgram;
 import com.salayo.locallifebackend.domain.program.enums.ProgramStatus;
 import com.salayo.locallifebackend.global.enums.DeletedStatus;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -37,8 +36,7 @@ public class OnboardingProgramRepositoryImpl implements OnboardingProgramReposit
         List<RegionCategory> regionCategories,
         ProgramStatus status,
         DeletedStatus deletedStatus,
-        LocalDate currentDate,
-        Pageable pageable
+        LocalDate currentDate
     ) {
         QProgram program = QProgram.program;
         
