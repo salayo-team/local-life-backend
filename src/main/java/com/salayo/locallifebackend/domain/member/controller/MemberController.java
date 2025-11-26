@@ -1,5 +1,6 @@
 package com.salayo.locallifebackend.domain.member.controller;
 
+import com.salayo.locallifebackend.domain.member.dto.MemberWithdrawalRequestDto;
 import com.salayo.locallifebackend.domain.member.dto.PasswordUpdateRequestDto;
 import com.salayo.locallifebackend.domain.member.service.MemberService;
 import com.salayo.locallifebackend.global.dto.CommonResponseDto;
@@ -10,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,6 +39,20 @@ public class MemberController {
         memberService.updatePassword(email, updateRequestDto.getCurrentPassword(), updateRequestDto.getNewPassword());
 
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.UPDATE_SUCCESS, null));
+    }
+
+    @Operation(summary = "회원 탈퇴", description = "회원을 탈퇴 처리합니다.")
+    @DeleteMapping
+    public ResponseEntity<CommonResponseDto<Void>> withdraw(
+        @AuthenticationPrincipal MemberDetails memberDetails,
+        @Valid @RequestBody MemberWithdrawalRequestDto withdrawalRequestDto
+    ) {
+        memberService.withdraw(
+            memberDetails.getMember().getId(),
+            withdrawalRequestDto.getCurrentPassword(),
+            withdrawalRequestDto.getReason());
+
+        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.DELETE_SUCCESS, null));
     }
 
 }
