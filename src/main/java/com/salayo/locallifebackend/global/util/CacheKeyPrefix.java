@@ -22,16 +22,6 @@ public final class CacheKeyPrefix {
 
 	public static final String CREATOR_REAPPLY_TOKEN = "creator:reapply:token:";
 
-	public static final String EMAIL_CODE = "auth:email:code:";
-	public static final String EMAIL_VERIFIED = "auth:email:verified:";
-	public static final String PASSWORD_RESET_CODE = "auth:password:code:";
-
-	public static final String TOKEN_BLACKLIST = "auth:token:blacklist:";
-	public static final String ACCESS_TOKEN = "auth:token:access:";
-	public static final String REFRESH_TOKEN = "auth:token:refresh:";
-
-	public static final String CREATOR_REAPPLY_TOKEN = "creator:reapply:token:";
-
 	private CacheKeyPrefix() {
 		// 인스턴스화를 방지하기 위한 private 생성자
 	}

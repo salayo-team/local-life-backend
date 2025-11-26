@@ -2,7 +2,8 @@ package com.salayo.locallifebackend.domain.member.entity;
 
 import com.salayo.locallifebackend.domain.member.enums.Gender;
 import com.salayo.locallifebackend.domain.member.enums.MemberRole;
-import com.salayo.locallifebackend.global.entity.BaseEntity;
+import com.salayo.locallifebackend.global.entity.SoftDeletableEntity;
+import com.salayo.locallifebackend.global.enums.DeletedStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -11,6 +12,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -20,7 +22,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @Table(name = "member")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Member extends BaseEntity {
+public class Member extends SoftDeletableEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -49,6 +51,9 @@ public class Member extends BaseEntity {
 	@Column(nullable = false, length = 50)
 	private MemberRole memberRole;
 
+    @Column(length = 300)
+    private String withdrawalReason;
+
 	@Builder
 	public Member(String email, String encodedPassword, String phoneNumber, String birth,
 		String nickname, Gender gender, MemberRole memberRole) {
@@ -64,4 +69,14 @@ public class Member extends BaseEntity {
 	public void updatePassword(String newEncodedPassword) {
 		this.password = newEncodedPassword;
 	}
+
+    public void withdraw(String reason) {
+        super.softDelete();
+        this.withdrawalReason = reason;
+    }
+
+    public boolean isDeleted() {
+        return this.getDeletedStatus() == DeletedStatus.DELETED;
+    }
+
 }
