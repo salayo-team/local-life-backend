@@ -8,7 +8,6 @@ import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeTestResultResp
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeTestStartResponseDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeTextProgressResponseDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.CanRetakeTestResponseDto;
-import com.salayo.locallifebackend.domain.ai.aptitude.enums.AptitudeType;
 import com.salayo.locallifebackend.domain.ai.aptitude.service.AptitudeService;
 import com.salayo.locallifebackend.domain.ai.aptitude.service.AptitudeTestHistoryService;
 import com.salayo.locallifebackend.global.dto.CommonResponseDto;

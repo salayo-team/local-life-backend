@@ -36,6 +36,7 @@ public class AptitudeAiService extends BaseAiService {
 	 * @return AI가 생성한 질문과 5가지 예시 답변
 	 */
 	public AptitudeQuestionResponseDto getNextQuestion(Long memberId, int step) {
+
 		// 대화 히스토리 구성
 		String conversationHistory = buildConversationHistory(memberId, step);
 		
@@ -195,7 +196,6 @@ public class AptitudeAiService extends BaseAiService {
 		try {
 			String aiResponse = callAi(systemPrompt, userPrompt);
 			
-			// JSON 파싱
 			AiAnswerValidationDto validation = objectMapper.readValue(
 				extractJsonFromResponse(aiResponse), 
 				AiAnswerValidationDto.class
