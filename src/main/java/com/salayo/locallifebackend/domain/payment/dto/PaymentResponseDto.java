@@ -70,7 +70,6 @@ public class PaymentResponseDto {
 			.refundedAt(payment.getRefundedAt())
 			.paidAt(payment.getPaidAt())
 			.expiredAt(payment.getExpiredAt())
-			.paymentCardSnapshot(payment.getPaymentCardSnapshot())
 			.paymentFailCount(payment.getPaymentFailCount())
 			.lastRefundFailedAt(payment.getLastRefundFailedAt())
 			.refundFailCount(payment.getRefundFailCount())
