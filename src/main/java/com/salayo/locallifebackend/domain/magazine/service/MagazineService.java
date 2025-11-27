@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -42,6 +43,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Slf4j
 public class MagazineService {
 
     private final MagazineRepository magazineRepository;
@@ -124,8 +126,12 @@ public class MagazineService {
     public PaginationResponseDto<MagazineDraftListResponseDto> getDraftMagazines(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
-        Page<Magazine> magazinePage = magazineRepository.findByMagazineStatusAndDeletedStatus(
-            MagazineStatus.DRAFT,
+        Page<Magazine> magazinePage = magazineRepository.findByMagazineStatusInAndDeletedStatus(
+            List.of(
+                MagazineStatus.DRAFT,
+                MagazineStatus.REQUEST_REVISION,
+                MagazineStatus.PENDING_CONFIRMATION
+            ),
             DeletedStatus.DISPLAYED,
             pageable
         );
@@ -192,13 +198,11 @@ public class MagazineService {
         }
 
         MagazineFeedback lastFeedback = magazineFeedbackRepository.findTopByMagazineIdOrderByCreatedAtDesc(magazineId)
-                .orElseThrow(() -> new CustomException(ErrorCode.FEEDBACK_NOT_FOUND));
+            .orElseThrow(() -> new CustomException(ErrorCode.FEEDBACK_NOT_FOUND));
 
         if (lastFeedback.isReflected()) {
             throw new CustomException(ErrorCode.FEEDBACK_ALREADY_REFLECTED);
         }
-
-        magazine.updateContent(magazineUpdateRequestDto.getContent());
 
         int revisionCount = magazineRevisionRepository.countByMagazineId(magazineId);
 
@@ -206,8 +210,16 @@ public class MagazineService {
             throw new CustomException(ErrorCode.MAGAZINE_REVISION_LIMIT_EXCEEDED);
         }
 
-        MagazineRevision magazineRevision = new MagazineRevision(magazine, magazineUpdateRequestDto.getContent(), revisionCount + 1);
+        MagazineRevision magazineRevision = MagazineRevision.builder()
+            .magazine(magazine)
+            .admin(member)
+            .content(magazineUpdateRequestDto.getContent())
+            .revisionNumber(revisionCount + 1)
+            .build();
+
         magazineRevisionRepository.save(magazineRevision);
+
+        magazine.updateContent(magazineUpdateRequestDto.getContent());
 
         lastFeedback.markAsReflected();
     }
@@ -223,7 +235,7 @@ public class MagazineService {
         }
 
         MagazinePreviewToken previewToken = magazinePreviewTokenRepository.findByMagazineId(magazineId)
-                .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_PREVIEW_NOT_SENT));
+            .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_PREVIEW_NOT_SENT));
 
         if (previewToken.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new CustomException(ErrorCode.MAGAZINE_PREVIEW_EXPIRED);
@@ -241,7 +253,7 @@ public class MagazineService {
         String messageHeader;
 
         if (revisionCount <= 3) {
-            subject ="[LocalLife] 로컬매거진 수정안 (" + revisionCount + " / 3) 확인 요청";
+            subject = "[LocalLife] 로컬매거진 수정안 (" + revisionCount + " / 3) 확인 요청";
             messageHeader = "매거진" + revisionCount + "차 수정안이 작성되어 확인 요청드립니다.";
         } else {
             subject = "[LocalLife] 로컬매거진 추가 수정안(" + revisionCount + "회차) 확인 요청";
@@ -276,6 +288,67 @@ public class MagazineService {
         MagazinePreviewToken newToken = new MagazinePreviewToken(magazine, email, token, expiresAt);
 
         return magazinePreviewTokenRepository.save(newToken);
+    }
+
+    @Transactional
+    public void updateMagazine(Long magazineId, MagazineUpdateRequestDto magazineUpdateRequestDto, Member admin) {
+        Magazine magazine = magazineRepository.findById(magazineId)
+            .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_NOT_FOUND));
+
+        magazine.updateContent(magazineUpdateRequestDto.getContent());
+
+        MagazineRevision magazineRevision = MagazineRevision.builder()
+            .magazine(magazine)
+            .content(magazineUpdateRequestDto.getContent())
+            .admin(admin)
+            .build();
+    }
+
+    @Transactional
+    public void deleteDraftMagazine(Long magazineId, Long adminId) {
+        Magazine magazine = magazineRepository.findById(magazineId)
+            .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_NOT_FOUND));
+
+        if (magazine.getDeletedStatus() == DeletedStatus.DELETED) {
+            throw new CustomException(ErrorCode.MAGAZINE_ALREADY_DELETED);
+        }
+
+        if (magazine.getMagazineStatus() != MagazineStatus.DRAFT) {
+            throw new CustomException(ErrorCode.MAGAZINE_DELETE_NOT_ALLOWED);
+        }
+
+        try {
+            magazinePreviewTokenRepository.deleteByMagazineId(magazineId);
+            magazinePreviewTokenRepository.flush();
+        } catch (Exception e) {
+            log.warn("매거진(ID: {}) 관련 토큰이 이미 존재하지 않습니다.", magazineId);
+        }
+
+        magazine.softDelete();
+
+        log.info("관리자(ID: {})가 매거진(ID: {})을 Soft Delete 처리했습니다.", adminId, magazineId);
+    }
+
+    @Transactional
+    public void finalizeCollaboation(Long magazineId) {
+        Magazine magazine = magazineRepository.findById(magazineId)
+            .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_NOT_FOUND));
+
+        if (!List.of(MagazineStatus.REQUEST_REVISION, MagazineStatus.PENDING_CONFIRMATION).contains(magazine.getMagazineStatus())) {
+            throw new CustomException(ErrorCode.COLLABORATION_NOT_IN_PROGRESS);
+        }
+
+        int revisionCount = magazineRevisionRepository.countByMagazineId(magazineId);
+        if (revisionCount >= 3) {
+            throw new CustomException(ErrorCode.MAGAZINE_REVISION_LIMIT_EXCEEDED);
+        }
+
+        magazine.updateStatus(MagazineStatus.DRAFT);
+
+        magazinePreviewTokenRepository.deleteByMagazineId(magazineId);
+        magazinePreviewTokenRepository.flush();
+
+        log.info("매거진(ID: {}) 협업 마무리 → DRAFT 상태로 복귀", magazineId);
     }
 
 }

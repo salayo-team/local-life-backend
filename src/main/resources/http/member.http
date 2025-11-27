@@ -1,3 +1,18 @@
+### 일반 사용자 로그인 2
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "email": "testuser4@example.com",
+  "password": "Test1234!"
+}
+
+> {%
+  const json = response.body;
+  const accessToken = json.data.accessToken;
+  client.global.set("accessToken", accessToken);
+%}
+
 ### 자신의 비밀번호 변경
 PATCH http://localhost:8080/user/me/password
 Content-Type: application/json
@@ -6,4 +21,14 @@ Authorization: Bearer {{accessToken}}
 {
   "currentPassword": "newpass1@",
   "newPassword": "pass123!"
+}
+
+### 회원 탈퇴 요청
+DELETE http://localhost:8080/user/me
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "currentPassword": "Test1234!",
+  "reason": "서비스가 마음에 들지 않음, 환불이 너무 까다로워요"
 }
