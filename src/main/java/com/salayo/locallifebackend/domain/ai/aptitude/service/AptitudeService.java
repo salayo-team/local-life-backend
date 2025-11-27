@@ -50,22 +50,28 @@ public class AptitudeService {
 		Member member = memberRepository.findByIdOrElseThrow(memberId);
 
 		// 테스트 가능 여부 확인
-		UserAptitude userAptitude = userAptitudeRepository.findByMember(member).orElse(null);
-		
-		// 마이페이지에서 호출된 경우 (이미 온보딩을 완료한 경우)
-		if (userAptitude != null && userAptitude.getIsOnboardingCompleted()) {
-			// 마이페이지 테스트 횟수 확인 (최대 5회)
+		UserAptitude userAptitude = userAptitudeRepository.findByMember(member)
+			.orElseGet(() -> {
+				log.info("새로운 사용자의 UserAptitudes를 생성합니다. memberId: {}", memberId);
+
+				return UserAptitude.createNew(member);
+			});
+
+		if (userAptitude.getIsOnboardingCompleted()) {
+			log.info("온보딩 완료 사용자입니다. 마이페이지에서 테스트 횟수를 검사합니다. count: {}", userAptitude.getMypageTestCount());
+
 			if (userAptitude.getMypageTestCount() >= CacheKeyPrefix.APTITUDE_MAX_TEST_COUNT) {
 				throw new CustomException(ErrorCode.APTITUDE_TEST_LIMIT_EXCEEDED);
 			}
+			userAptitude.incrementMypageTestCount();
+		} else {
+			log.info("온보딩 진행 중인 사용자입니다. 횟수 제한 검사를 건너뜁니다.");
 		}
-		// 온보딩에서 처음 호출된 경우는 제한 없음
 
 		// 세션 ID 생성
 		String sessionId = generateSessionId(memberId);
 
 		// 미완료된 테스트 이력만 삭제 (완료된 이력은 보존)
-		// TODO: 테스트 완료 시점에만 testCount 증가하도록 수정 필요
 		testHistoryService.deleteIncompleteTests(member);
 
 		// Redis 기존 데이터 정리 (중복 방지)
