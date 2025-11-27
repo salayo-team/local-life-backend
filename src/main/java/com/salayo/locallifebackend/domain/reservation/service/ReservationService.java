@@ -40,7 +40,7 @@ public class ReservationService {
 	@Transactional
 	public ReservationResponseDto createReservation(Long memberId, ReservationCreateRequestDto requestDto) {
 
-		Member member = memberRepository.findByIdOrElseThrow(memberId);
+		Member member = memberRepository.findActiveByIdOrThrow(memberId);
 		if (member.getMemberRole().equals(MemberRole.LOCAL_CREATOR)) {
 			throw new CustomException(ErrorCode.RESERVATION_NOT_ALLOWED);
 		}

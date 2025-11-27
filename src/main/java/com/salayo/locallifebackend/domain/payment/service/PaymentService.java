@@ -70,7 +70,7 @@ public class PaymentService {
 	@Transactional
 	public PaymentResponseDto createPayment(Long memberId, Long reservationId, PaymentRequestDto requestDto) {
 
-		Member member = memberRepository.findByIdOrElseThrow(memberId);
+		Member member = memberRepository.findActiveByIdOrThrow(memberId);
 		if (member.getMemberRole() == MemberRole.LOCAL_CREATOR) {
 			throw new CustomException(ErrorCode.PAYMENT_NOT_ALLOWED);
 		}
@@ -129,7 +129,7 @@ public class PaymentService {
 	@Transactional
 	public PaymentResponseDto verifyPayment(Long memberId, Long paymentId, PaymentRequestDto requestDto) {
 
-		Member member = memberRepository.findByIdOrElseThrow(memberId);
+		Member member = memberRepository.findActiveByIdOrThrow(memberId);
 		if (member.getMemberRole() == MemberRole.LOCAL_CREATOR) {
 			throw new CustomException(ErrorCode.PAYMENT_NOT_ALLOWED);
 		}
@@ -860,7 +860,7 @@ public class PaymentService {
 	@Transactional
 	public PaymentResponseDto refundPaymentForAdmin(Long memberId, Long paymentId, PaymentRefundRequestDto requestDto) {
 
-		Member member = memberRepository.findByIdOrElseThrow(memberId);
+		Member member = memberRepository.findActiveByIdOrThrow(memberId);
 
 		if (member.getMemberRole() != MemberRole.ADMIN) {
 			throw new CustomException(ErrorCode.PAYMENT_REFUND_NOT_ALLOWED);

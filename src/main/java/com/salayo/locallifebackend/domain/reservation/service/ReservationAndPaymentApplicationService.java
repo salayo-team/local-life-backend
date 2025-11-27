@@ -44,7 +44,7 @@ public class ReservationAndPaymentApplicationService {
 	@Transactional
 	public ReservationResponseDto cancelReservationWithRefund(Long memberId, Long reservationId, ReservationCancelRequestDto requestDto) {
 
-		Member member = memberRepository.findByIdOrElseThrow(memberId);
+		Member member = memberRepository.findActiveByIdOrThrow(memberId);
 		if (member.getMemberRole() != MemberRole.USER) {
 			throw new CustomException(ErrorCode.RESERVATION_CANCEL_NOT_ALLOWED);
 		}
@@ -81,7 +81,7 @@ public class ReservationAndPaymentApplicationService {
 	@Transactional
 	public ReservationResponseDto rejectReservationWithRefund(Long memberId, Long reservationId, ReservationRejectRequestDto requestDto) {
 
-		Member member = memberRepository.findByIdOrElseThrow(memberId);
+		Member member = memberRepository.findActiveByIdOrThrow(memberId);
 		if (member.getMemberRole() != MemberRole.LOCAL_CREATOR) {
 			throw new CustomException(ErrorCode.RESERVATION_REJECT_NOT_ALLOWED);
 		}
