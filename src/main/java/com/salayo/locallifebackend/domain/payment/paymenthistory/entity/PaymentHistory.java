@@ -70,28 +70,35 @@ public class PaymentHistory extends SoftDeletableEntity {
 	private String refundReason; //환불 사유
 
 	@Column(nullable = true)
-	private LocalDateTime refundAttemptedAt; //환불 요청 발생 일시
+	private LocalDateTime refundedAt; //결제 환불(취소)일
 
 	@Column(nullable = true)
-	private LocalDateTime canceledAt; //결제 취소일
+	private LocalDateTime refundFailedAt; //환불 실패일
+
+	@Column(nullable = true, columnDefinition = "TEXT")
+	private String refundFailedReason; //환불 실패 사유 - 내부 기록
 
 	@Column(nullable = true)
 	private LocalDateTime paymentFailedAt; //결제 실패일
 
 	@Column(nullable = true, columnDefinition = "TEXT")
-	private String paymentFailedReason; //실패 사유 - 내부 기록
+	private String paymentFailedReason; //결제 실패 사유 - 내부 기록
 
 	@Column(nullable = true, columnDefinition = "TEXT")
-	private String pgFailMessage; //PG사 측 실패 메세지
+	private String pgFailMessage; //PG사 실패(에러) 메세지
 
 	@Column(nullable = true, length = 100)
 	private String paymentCardSnapshot; //카드 스냅샷
 
+	@Column(nullable = true)
+	private BigDecimal totalRefundAmount; //최종 환불 금액
+
 	@Builder
 	public PaymentHistory(Payment payment, Member member, String merchantUid, String pgTid, String impUid, BigDecimal paymentCost,
 		PaymentMethodType paymentMethodType, PaymentProvider paymentProvider, PaymentStatus paymentStatus, String refundReason,
-		LocalDateTime refundAttemptedAt, LocalDateTime canceledAt, LocalDateTime paymentFailedAt, String paymentFailedReason,
-		String pgFailMessage, String paymentCardSnapshot) {
+		LocalDateTime refundedAt, LocalDateTime refundFailedAt, String refundFailedReason,
+		LocalDateTime paymentFailedAt, String paymentFailedReason, String pgFailMessage, String paymentCardSnapshot,
+		BigDecimal totalRefundAmount) {
 		this.payment = payment;
 		this.member = member;
 		this.merchantUid = merchantUid;
@@ -102,12 +109,14 @@ public class PaymentHistory extends SoftDeletableEntity {
 		this.paymentProvider = paymentProvider;
 		this.paymentStatus = paymentStatus;
 		this.refundReason = refundReason;
-		this.refundAttemptedAt = refundAttemptedAt;
-		this.canceledAt = canceledAt;
+		this.refundedAt = refundedAt;
+		this.refundFailedAt = refundFailedAt;
+		this.refundFailedReason = refundFailedReason;
 		this.paymentFailedAt = paymentFailedAt;
 		this.paymentFailedReason = paymentFailedReason;
 		this.pgFailMessage = pgFailMessage;
 		this.paymentCardSnapshot = paymentCardSnapshot;
+		this.totalRefundAmount = totalRefundAmount;
 	}
 
 	private static String normalizePgFailMessage(String message) {
@@ -117,7 +126,7 @@ public class PaymentHistory extends SoftDeletableEntity {
 	/**
 	 * 결제 실패시 결제 실패 내역 생성
 	 */
-	public static PaymentHistory createFailurePaymentHistory(Payment payment, Member member, String paymentFailedReason,
+	public static PaymentHistory createPaymentFailurePaymentHistory(Payment payment, Member member, String paymentFailedReason,
 		String pgFailMessage) {
 
 		return PaymentHistory.builder()
@@ -137,9 +146,9 @@ public class PaymentHistory extends SoftDeletableEntity {
 	}
 
 	/**
-	 * 결제 성공시 결제 내역 생성
+	 * 결제 검증 성공시 결제 내역 생성
 	 */
-	public static PaymentHistory createSuccessPaymentHistory(Payment payment, Member member, String paymentCardSnapshot) {
+	public static PaymentHistory createPaymentSuccessPaymentHistory(Payment payment, Member member, String paymentCardSnapshot) {
 
 		return PaymentHistory.builder()
 			.payment(payment)
@@ -154,5 +163,51 @@ public class PaymentHistory extends SoftDeletableEntity {
 			.paymentCardSnapshot(paymentCardSnapshot)
 			.build();
 	}
+
+	/**
+	 * 환불 실패시 환불 실패 내역 생성
+	 */
+	public static PaymentHistory createRefundFailurePaymentHistory(Payment payment, Member member,
+		String refundFailedReason, String pgFailMessage) {
+
+		return PaymentHistory.builder()
+			.payment(payment)
+			.member(member)
+			.merchantUid(payment.getMerchantUid())
+			.pgTid(payment.getPgTid())
+			.impUid(payment.getImpUid())
+			.paymentCost(payment.getPaymentCost())
+			.paymentMethodType(payment.getPaymentMethodType())
+			.paymentProvider(payment.getPaymentProvider())
+			.paymentStatus(PaymentStatus.REFUND_FAILED)
+			.refundFailedAt(LocalDateTime.now())
+			.refundFailedReason(refundFailedReason)
+			.pgFailMessage(normalizePgFailMessage(pgFailMessage))
+			.paymentCardSnapshot(payment.getPaymentCardSnapshot())
+			.build();
+	}
+
+	/**
+	 * 환불 성공시 결제 내역 생성
+	 */
+	public static PaymentHistory createPaymentRefundSuccessPaymentHistory(Payment payment, Member member) {
+
+		return PaymentHistory.builder()
+			.payment(payment)
+			.member(member)
+			.merchantUid(payment.getMerchantUid())
+			.pgTid(payment.getPgTid())
+			.impUid(payment.getImpUid())
+			.paymentCost(payment.getPaymentCost())
+			.paymentMethodType(payment.getPaymentMethodType())
+			.paymentProvider(payment.getPaymentProvider())
+			.paymentStatus(PaymentStatus.REFUND_COMPLETED)
+			.refundReason(payment.getRefundReason())
+			.refundedAt(payment.getRefundedAt())
+			.paymentCardSnapshot(payment.getPaymentCardSnapshot())
+			.totalRefundAmount(payment.getTotalRefundAmount())
+			.build();
+	}
+
 
 }

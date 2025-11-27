@@ -11,29 +11,29 @@ import lombok.Getter;
 @Getter
 public class ReservationResponseDto {
 
-	private Long id; //예약 고유 식별자
+	private final Long id; //예약 고유 식별자
 
-	private Long userId; //사용자 고유 식별자
+	private final Long userId; //사용자 고유 식별자
 
-	private Long programScheduleId; //체험 프로그램 스케줄 고유 식별자
+	private final Long programScheduleId; //체험 프로그램 스케줄 고유 식별자
 
-	private ReservationStatus reservationStatus; //예약 상태
+	private final ReservationStatus reservationStatus; //예약 상태
 
-	private LocalDateTime canceledAt; //예약 취소 일시
+	private final LocalDateTime canceledAt; //예약 취소 일시
 
-	private String cancelReason; //예약 취소 사유
+	private final String cancelReason; //예약 취소 사유
 
-	private String rejectedReason; //예약(신청) 거절 사유
+	private final String rejectedReason; //예약(신청) 거절 사유
 
-	private LocalDateTime rejectedAt; //예약 거절 일시
+	private final LocalDateTime rejectedAt; //예약 거절 일시
 
-	private LocalDateTime expiredAt; //예약 만료 일시
+	private final LocalDateTime expiredAt; //예약 만료 일시
 
-	private LocalDateTime createdAt; //예약 생성일
+	private final LocalDateTime createdAt; //예약 생성일
 
-	private LocalDateTime modifiedAt; //예약 수정일
+	private final LocalDateTime modifiedAt; //예약 수정일
 
-	private DeletedStatus deletedStatus; //예약 삭제 상태
+	private final DeletedStatus deletedStatus; //예약 삭제 상태
 
 	public static ReservationResponseDto from(Reservation reservation) {
 

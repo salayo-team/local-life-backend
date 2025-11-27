@@ -6,6 +6,7 @@ import com.salayo.locallifebackend.domain.reservation.enums.ReservationStatus;
 import com.salayo.locallifebackend.global.error.ErrorCode;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -23,7 +24,14 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
 	boolean existsByProgramScheduleIdAndReservationStatusNotIn(
 		Long scheduleId,
-		Set<ReservationStatus> inactiveStatuses
+		Set<ReservationStatus> inactiveReservationStatuses
 	);
+
+	boolean existsByIdAndReservationStatusIn(
+		Long reservationId,
+		Set<ReservationStatus> refundableReservationStatuses
+	);
+
+	Optional<Reservation> findByMemberId(Long memberId);
 
 }

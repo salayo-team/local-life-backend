@@ -6,7 +6,9 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// AI 질문 생성 응답 DTO
+/**
+ * AI 질문 생성 응답 DTO
+ */
 @Getter
 @NoArgsConstructor
 public class AiQuestionGenerationResponseDto {
