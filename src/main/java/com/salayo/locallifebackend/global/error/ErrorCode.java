@@ -64,6 +64,8 @@ public enum ErrorCode {
 	MAGAZINE_ALREADY_DELETED(HttpStatus.BAD_REQUEST, "이미 삭제된 매거진입니다."),
 	MAGAZINE_DELETE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "매거진을 삭제할 수 있는 상태가 아닙니다."),
 	COLLABORATION_NOT_IN_PROGRESS(HttpStatus.BAD_REQUEST, "현재 협업 진행 중인 매거진이 아닙니다."),
+	INVALID_ONBOARDING_STEP(HttpStatus.BAD_REQUEST, "올바르지 않은 온보딩 단계입니다."),
+	ONBOARDING_NOT_COMPLETED(HttpStatus.BAD_REQUEST, "온보딩이 완료되지 않았습니다."),
 
 	// 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
@@ -87,6 +89,7 @@ public enum ErrorCode {
     EMAIL_CODE_EXPIRED(HttpStatus.NOT_FOUND, "인증 코드가 만료되었거나 존재하지 않습니다."),
     REGION_NOT_FOUND(HttpStatus.NOT_FOUND, "지역을 찾을 수 없습니다."),
     APTITUDE_NOT_FOUND(HttpStatus.NOT_FOUND, "적성을 찾을 수 없습니다." ),
+    CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "카테고리를 찾을 수 없습니다."),
     LOCAL_CREATOR_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 회원을 찾을 수 없습니다."),
     NOT_FOUND_TEST_PROGRESS(HttpStatus.NOT_FOUND,"진행 중인 테스트가 없습니다."),
     PROGRAM_SCHEDULE_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 프로그램 스케줄을 찾을 수 없습니다."),
@@ -103,7 +106,6 @@ public enum ErrorCode {
     PAYMENT_HISTORY_NOT_FOUND_FOR_USER(HttpStatus.NOT_FOUND, "해당 유저의 결제 내역이 아닙니다."),
 	FEEDBACK_NOT_FOUND(HttpStatus.NOT_FOUND, "피드백을 찾을 수 없습니다."),
 	ONBOARDING_NOT_STARTED(HttpStatus.NOT_FOUND, "온보딩이 시작되지 않았습니다."),
-	INVALID_ONBOARDING_STEP(HttpStatus.BAD_REQUEST, "올바르지 않은 온보딩 단계입니다."),
 	NO_INCOMPLETE_TEST(HttpStatus.NOT_FOUND, "이어할 수 있는 테스트가 없습니다."),
 	MAGAZINE_PREVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 매거진의 토큰이 존재하지 않습니다."),
 
