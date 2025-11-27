@@ -322,13 +322,17 @@ public class AptitudeService {
 				memberId, aptitudeType, score, aiAnalysis.getConfidenceScore());
 		} catch (IllegalArgumentException e) {
 			log.warn("AI 응답에서 유효하지 않은 적성 타입: {}", aiAnalysis.getAptitudeType());
+
 			// Fallback: reason에서 키워드 매칭
 			for (AptitudeType type : AptitudeType.values()) {
+
 				if (aiAnalysis.getReason() != null && 
 					(aiAnalysis.getReason().contains(type.name()) || 
 					 aiAnalysis.getReason().contains(type.getTitle()))) {
+
 					aptitudeCacheService.updateAptitudeScore(memberId, type, 1);
 					log.debug("Fallback 적성 점수 업데이트 - memberId: {}, type: {}", memberId, type);
+
 					break;
 				}
 			}
