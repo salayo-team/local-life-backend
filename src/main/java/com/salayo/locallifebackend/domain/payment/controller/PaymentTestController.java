@@ -1,5 +1,6 @@
 package com.salayo.locallifebackend.domain.payment.controller;
 
+import com.salayo.locallifebackend.domain.payment.dto.PaymentRefundRequestDto;
 import com.salayo.locallifebackend.domain.payment.dto.PaymentRequestDto;
 import com.salayo.locallifebackend.domain.payment.dto.PaymentResponseDto;
 import com.salayo.locallifebackend.domain.payment.service.PaymentService;
@@ -49,6 +50,20 @@ public class PaymentTestController {
 		PaymentResponseDto paymentResponseDto = paymentService.verifyPayment(memberId, paymentId, requestDto);
 
 		return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.VERIFICATION_SUCCESS, paymentResponseDto));
+	}
+
+	/**
+	 * 관리자 결제 환불 테스트 API
+	 * - 전액 환불 & 부분 환불
+	 */
+	@PostMapping("/payments/{paymentId}/refund-admin/test")
+	public ResponseEntity<CommonResponseDto<PaymentResponseDto>> refundPaymentForAdmin(@PathVariable("paymentId") Long paymentId,
+		@Valid @RequestBody PaymentRefundRequestDto requestDto) {
+
+		Long memberId = 3L;
+		PaymentResponseDto paymentResponseDto = paymentService.refundPaymentForAdmin(memberId, paymentId, requestDto);
+
+		return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.REFUND_SUCCESS, paymentResponseDto));
 	}
 
 }

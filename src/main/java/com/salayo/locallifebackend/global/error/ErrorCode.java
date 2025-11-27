@@ -52,7 +52,7 @@ public enum ErrorCode {
 	INVALID_RESERVATION_STATUS(HttpStatus.BAD_REQUEST, "예약 상태가 올바르지 않습니다."),
 	INVALID_PAYMENT_METHODTYPE(HttpStatus.BAD_REQUEST, "결제 수단 값이 올바르지 않습니다."),
 	INVALID_PAYMENT_PROVIDER(HttpStatus.BAD_REQUEST, "결제 대행사 값이 올바르지 않습니다."),
-	SCHEDULE_NOT_REFUNDABLE(HttpStatus.BAD_REQUEST, "환불 불가능한 결제입니다."),
+	RESERVATION_NOT_REFUNDABLE(HttpStatus.BAD_REQUEST, "환불 불가능한 예약입니다."),
 	PAYMENT_REFUND_FAILED(HttpStatus.BAD_REQUEST, "결제 환불이 실패했습니다."),
 	PAYMENT_PROVIDER_MISMATCH(HttpStatus.BAD_REQUEST, "결제 대행사 정보가 일치하지 않습니다."),
 	IMP_UID_MISMATCH(HttpStatus.BAD_REQUEST, "imp_uid 정보가 일치하지 않습니다."),
@@ -66,6 +66,11 @@ public enum ErrorCode {
 	COLLABORATION_NOT_IN_PROGRESS(HttpStatus.BAD_REQUEST, "현재 협업 진행 중인 매거진이 아닙니다."),
 	INVALID_ONBOARDING_STEP(HttpStatus.BAD_REQUEST, "올바르지 않은 온보딩 단계입니다."),
 	ONBOARDING_NOT_COMPLETED(HttpStatus.BAD_REQUEST, "온보딩이 완료되지 않았습니다."),
+	PAYMENT_NOT_REFUNDABLE(HttpStatus.BAD_REQUEST, "환불 불가능한 결제입니다."),
+	PAYMENT_ALREADY_REFUND(HttpStatus.BAD_REQUEST, "이미 환불된 결제입니다."),
+	PAYMENT_REFUND_REASON_REQUIRED(HttpStatus.BAD_REQUEST, "환불 사유는 필수입니다."),
+	RESERVATION_NOT_CANCELABLE(HttpStatus.BAD_REQUEST, "예약 취소가 불가능합니다."),
+	RESERVATION_NOT_REJECTABLE(HttpStatus.BAD_REQUEST, "예약 거절이 불가능합니다."),
 
 	// 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
@@ -74,6 +79,8 @@ public enum ErrorCode {
     TOKEN_UNSUPPORTED(HttpStatus.UNAUTHORIZED, "지원하지 않는 토큰입니다."),
     TOKEN_ILLEGAL(HttpStatus.UNAUTHORIZED, "토큰이 비어있거나 잘못되었습니다."),
     TOKEN_SIGNATURE_INVALID(HttpStatus.UNAUTHORIZED, "토큰 서명이 유효하지 않습니다."),
+    TOKEN_BLACKLISTED(HttpStatus.UNAUTHORIZED,"유효하지 않은 인증입니다. 다시 로그인해주세요."),
+
 
     // 403 Forbidden
     FORBIDDEN_ACCESS(HttpStatus.FORBIDDEN, "접근이 거부됐습니다."),
@@ -83,6 +90,8 @@ public enum ErrorCode {
     PAYMENT_REFUND_NOT_ALLOWED(HttpStatus.FORBIDDEN, "환불을 할 수 있는 권한이 없습니다."),
     REVIEW_PERIOD_EXPIRED(HttpStatus.FORBIDDEN, "리뷰 작성 기한이 만료되었습니다."),
     MAGAZINE_FORBIDDEN(HttpStatus.FORBIDDEN, "이 매거진에 대한 권한이 없습니다."),
+	RESERVATION_REJECT_NOT_ALLOWED(HttpStatus.FORBIDDEN, "예약 거절을 할 수 있는 권한이 없습니다."),
+	RESERVATION_CANCEL_NOT_ALLOWED(HttpStatus.FORBIDDEN, "예약 취소를 할 수 있는 권한이 없습니다."),
 
     // 404 NOT_FOUND
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 회원을 찾을 수 없습니다."),
@@ -108,6 +117,11 @@ public enum ErrorCode {
 	ONBOARDING_NOT_STARTED(HttpStatus.NOT_FOUND, "온보딩이 시작되지 않았습니다."),
 	NO_INCOMPLETE_TEST(HttpStatus.NOT_FOUND, "이어할 수 있는 테스트가 없습니다."),
 	MAGAZINE_PREVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 매거진의 토큰이 존재하지 않습니다."),
+	PAYMENT_NOT_FOUND_FOR_USER(HttpStatus.NOT_FOUND, "해당 유저의 결제가 아닙니다."),
+	MERCHANT_UID_NOT_FOUND(HttpStatus.NOT_FOUND, "merchant_uid 값을 찾을 수 없습니다."),
+	MERCHANT_UID_NOT_FOUND_BY_IAMPORT(HttpStatus.NOT_FOUND, "해당 merchant_uid 결제건이 PortOne 서버에 존재하지 않습니다."),
+	RESERVATION_NOT_FOUND_FOR_USER(HttpStatus.NOT_FOUND, "해당 유저의 예약이 아닙니다."),
+	PROGRAM_NOT_FOUND_FOR_USER(HttpStatus.NOT_FOUND, "해당 유저의 체험 프로그램이 아닙니다."),
 
     // 408 REQUEST_TIMEOUT
     AI_TIMEOUT(HttpStatus.REQUEST_TIMEOUT, "AI 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요."),
