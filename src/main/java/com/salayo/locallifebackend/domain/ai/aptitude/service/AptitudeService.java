@@ -271,8 +271,6 @@ public class AptitudeService {
 				.isOnboardingCompleted(false)
 				.build());
 
-		// 수동 선택은 현재 온보딩에서만 가능하므로 온보딩 완료 처리 됨
-		// TODO : 수동 선택은 MyPage에서도 추후에 수동 선택해서 수정이 가능함.
 		userAptitude.updateAptitudeFromOnboarding(aptitudeType);
 		userAptitudeRepository.save(userAptitude);
 
