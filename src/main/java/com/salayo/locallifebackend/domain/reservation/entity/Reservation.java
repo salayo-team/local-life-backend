@@ -44,13 +44,13 @@ public class Reservation extends SoftDeletableEntity {
 	private ReservationStatus reservationStatus; //예약 상태
 
 	@Column(nullable = true, columnDefinition = "TEXT")
-	private String rejectedReason; //예약(신청) 거절 사유
+	private String rejectedReason; //예약 거절 사유
 
 	@Column(nullable = true, columnDefinition = "TEXT")
-	private String cancelReason; //예약 취소 사유
+	private String cancelReason; //예약 취소(환불) 사유
 
 	@Column(nullable = true)
-	private LocalDateTime canceledAt; //예약 취소 일시
+	private LocalDateTime canceledAt; //예약 취소(환불) 일시
 
 	@Column(nullable = true)
 	private LocalDateTime rejectedAt; //예약 거절 일시
@@ -88,17 +88,46 @@ public class Reservation extends SoftDeletableEntity {
 	}
 
 	/**
-	 * 예약 만료 상태 변경 & 시점 기록
+	 * 예약 만료
 	 */
-	public void expireReservation(){
+	public void expireReservation() {
 		this.reservationStatus = ReservationStatus.EXPIRED;
 		this.expiredAt = LocalDateTime.now();
 	}
 
 	/**
+	 * 예약 취소(환불)
+	 */
+	public void cancelReservation(String cancelReason) {
+		this.reservationStatus = ReservationStatus.CANCELED;
+		this.cancelReason = cancelReason;
+		this.canceledAt = LocalDateTime.now();
+	}
+
+	/**
+	 * 예약 상태 변경
+	 * - 로컬 크리에이터 승인 완료
+	 * - 로컬 크리에이터 승인 대기(AWAITING_APPROVAL) -> 로컬 크리에이터 승인 수락(APPROVED)
+	 */
+	public void changeToApproved() {
+		this.reservationStatus = ReservationStatus.APPROVED;
+	}
+
+	/**
+	 * 예약 거절
+	 * - 로컬 크리에이터 승인 거절
+	 * - 로컬 크리에이터 승인 대기(AWAITING_APPROVAL) -> 로컬 크리에이터 승인 거절(REJECTED)
+	 */
+	public void rejectReservation(String rejectedReason) {
+		this.reservationStatus = ReservationStatus.REJECTED;
+		this.rejectedReason = rejectedReason;
+		this.rejectedAt = LocalDateTime.now();
+	}
+
+	/**
 	 * 예약 생성
 	 */
-	public static Reservation createReservation(Member member, ProgramSchedule programSchedule){
+	public static Reservation createReservation(Member member, ProgramSchedule programSchedule) {
 
 		return Reservation.builder()
 			.member(member)
