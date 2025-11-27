@@ -24,7 +24,7 @@ public class SwaggerConfig {
                 .version("v1.0.0")
                 .contact(new Contact()
                     .name("Team Salayo")
-                    .email("추후 추가 예정"))
+                    .email("noreply.salayo.locallife@gmail.com"))
                 .license(new License()
                     .name("Salayo License")
                     .url("배포 후 도메인 주소")))

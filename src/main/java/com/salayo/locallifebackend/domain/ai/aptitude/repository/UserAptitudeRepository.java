@@ -12,5 +12,10 @@ public interface UserAptitudeRepository extends JpaRepository<UserAptitude, Long
 	Optional<UserAptitude> findByMember(Member member);
 
 	boolean existsByMember(Member member);
+	
+	/**
+	 * 사용자의 가장 최신 적성 정보 조회
+	 */
+	Optional<UserAptitude> findTopByMemberOrderByCreatedAtDesc(Member member);
 
 }

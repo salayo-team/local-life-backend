@@ -2,6 +2,7 @@ package com.salayo.locallifebackend.domain.magazine.entity;
 
 import com.salayo.locallifebackend.domain.category.entity.AptitudeCategory;
 import com.salayo.locallifebackend.domain.category.entity.RegionCategory;
+import com.salayo.locallifebackend.domain.localcreator.entity.LocalCreator;
 import com.salayo.locallifebackend.domain.magazine.enums.MagazineStatus;
 import com.salayo.locallifebackend.domain.member.entity.Member;
 import com.salayo.locallifebackend.global.entity.BaseEntity;
@@ -48,10 +49,6 @@ public class Magazine extends BaseEntity {
     @Column(nullable = false, length = 50)
     private MagazineStatus magazineStatus;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private DeletedStatus deletedStatus;
-
     @Column(nullable = false)
     private Long views;
 
@@ -67,12 +64,24 @@ public class Magazine extends BaseEntity {
     @JoinColumn(name = "admin_id")
     private Member admin;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "localcreator_id")
+    private LocalCreator localCreator;
+
     @Column(name = "registered_at")
     private LocalDateTime registeredAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private DeletedStatus deletedStatus = DeletedStatus.DISPLAYED;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     @Builder
     public Magazine(String title, String content, String thumbnailUrl, MagazineStatus magazineStatus, DeletedStatus deletedStatus,
-        Long views, RegionCategory regionCategory, AptitudeCategory aptitudeCategory, Member admin, LocalDateTime registeredAt) {
+        Long views, RegionCategory regionCategory, AptitudeCategory aptitudeCategory, Member admin, LocalCreator localCreator,
+        LocalDateTime registeredAt) {
         this.title = title;
         this.content = content;
         this.thumbnailUrl = thumbnailUrl;
@@ -82,6 +91,7 @@ public class Magazine extends BaseEntity {
         this.regionCategory = regionCategory;
         this.aptitudeCategory = aptitudeCategory;
         this.admin = admin;
+        this.localCreator = localCreator;
         this.registeredAt = registeredAt;
     }
 
@@ -93,9 +103,13 @@ public class Magazine extends BaseEntity {
         this.views++;
     }
 
-    public void updateTitleAndContent(String title, String content) {
-        this.title = title;
-        this.content = content;
+    public void updateContent(String newContent) {
+        this.content = newContent;
+    }
+
+    public void softDelete() {
+        this.deletedStatus = DeletedStatus.DELETED;
+        this.deletedAt = LocalDateTime.now();
     }
 
 }

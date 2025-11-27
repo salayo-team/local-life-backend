@@ -4,33 +4,77 @@ import com.salayo.locallifebackend.domain.category.entity.AptitudeCategory;
 import com.salayo.locallifebackend.domain.category.entity.RegionCategory;
 import com.salayo.locallifebackend.domain.category.repository.AptitudeCategoryRepository;
 import com.salayo.locallifebackend.domain.category.repository.RegionCategoryRepository;
+import com.salayo.locallifebackend.domain.email.service.EmailService;
+import com.salayo.locallifebackend.domain.localcreator.entity.LocalCreator;
+import com.salayo.locallifebackend.domain.localcreator.enums.CreatorStatus;
+import com.salayo.locallifebackend.domain.localcreator.repository.LocalCreatorRepository;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineCreateRequestDto;
+import com.salayo.locallifebackend.domain.magazine.dto.MagazineDraftDetailResponseDto;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineDraftListResponseDto;
+import com.salayo.locallifebackend.domain.magazine.dto.MagazineUpdateRequestDto;
 import com.salayo.locallifebackend.domain.magazine.entity.Magazine;
+import com.salayo.locallifebackend.domain.magazine.entity.MagazinePreviewToken;
+import com.salayo.locallifebackend.domain.magazine.entity.MagazineRevision;
 import com.salayo.locallifebackend.domain.magazine.enums.MagazineStatus;
+import com.salayo.locallifebackend.domain.magazine.feedback.entity.MagazineFeedback;
+import com.salayo.locallifebackend.domain.magazine.feedback.repository.MagazineFeedbackRepository;
+import com.salayo.locallifebackend.domain.magazine.repository.MagazinePreviewTokenRepository;
 import com.salayo.locallifebackend.domain.magazine.repository.MagazineRepository;
+import com.salayo.locallifebackend.domain.magazine.repository.MagazineRevisionRepository;
 import com.salayo.locallifebackend.domain.member.entity.Member;
 import com.salayo.locallifebackend.domain.member.repository.MemberRepository;
+import com.salayo.locallifebackend.global.dto.PaginationResponseDto;
 import com.salayo.locallifebackend.global.enums.DeletedStatus;
+import com.salayo.locallifebackend.global.error.ErrorCode;
+import com.salayo.locallifebackend.global.error.exception.CustomException;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Slf4j
 public class MagazineService {
 
     private final MagazineRepository magazineRepository;
     private final RegionCategoryRepository regionCategoryRepository;
     private final AptitudeCategoryRepository aptitudeCategoryRepository;
     private final MemberRepository memberRepository;
+    private final MagazineFileService magazineFileService;
+    private final MagazinePreviewTokenRepository magazinePreviewTokenRepository;
+    private final EmailService emailService;
+    private final LocalCreatorRepository localCreatorRepository;
+    private final MagazineRevisionRepository magazineRevisionRepository;
+    private final MagazineFeedbackRepository magazineFeedbackRepository;
+
+    @Value("${frontend.preview-url}")
+    private String previewBaseUrl;
 
     public MagazineService(MagazineRepository magazineRepository, RegionCategoryRepository regionCategoryRepository,
-        AptitudeCategoryRepository aptitudeCategoryRepository, MemberRepository memberRepository) {
+        AptitudeCategoryRepository aptitudeCategoryRepository, MemberRepository memberRepository, MagazineFileService magazineFileService,
+        MagazinePreviewTokenRepository magazinePreviewTokenRepository, EmailService emailService,
+        LocalCreatorRepository localCreatorRepository, MagazineRevisionRepository magazineRevisionRepository,
+        MagazineFeedbackRepository magazineFeedbackRepository) {
         this.magazineRepository = magazineRepository;
         this.regionCategoryRepository = regionCategoryRepository;
         this.aptitudeCategoryRepository = aptitudeCategoryRepository;
         this.memberRepository = memberRepository;
+        this.magazineFileService = magazineFileService;
+        this.magazinePreviewTokenRepository = magazinePreviewTokenRepository;
+        this.emailService = emailService;
+        this.localCreatorRepository = localCreatorRepository;
+        this.magazineRevisionRepository = magazineRevisionRepository;
+        this.magazineFeedbackRepository = magazineFeedbackRepository;
     }
 
     @Transactional
@@ -38,6 +82,12 @@ public class MagazineService {
         RegionCategory region = regionCategoryRepository.findByIdOrElseThrow(createRequestDto.getRegionCategoryId());
         AptitudeCategory aptitude = aptitudeCategoryRepository.findByIdOrElseThrow(createRequestDto.getAptitudeCategoryId());
         Member admin = memberRepository.findByIdOrElseThrow(adminId);
+
+        LocalCreator localCreator = localCreatorRepository.findByIdOrThrow(createRequestDto.getLocalCreatorId());
+
+        if (localCreator.getCreatorStatus() != CreatorStatus.APPROVED) {
+            throw new CustomException(ErrorCode.LOCAL_CREATOR_NOT_APPROVED);
+        }
 
         Magazine magazine = Magazine.builder()
             .title(createRequestDto.getTitle())
@@ -49,24 +99,256 @@ public class MagazineService {
             .regionCategory(region)
             .aptitudeCategory(aptitude)
             .admin(admin)
+            .localCreator(localCreator)
             .build();
 
         magazineRepository.save(magazine);
+
+        List<String> imageUrls = extractImageUrls(createRequestDto.getContent());
+        for (String url : imageUrls) {
+            magazineFileService.updateFileReferenceIdByUrl(url, magazine.getId());
+        }
     }
 
-    public List<MagazineDraftListResponseDto> getDraftMagazines() {
-        List<Magazine> magazines = magazineRepository.findByMagazineStatusAndDeletedStatus(MagazineStatus.DRAFT, DeletedStatus.DISPLAYED);
+    private List<String> extractImageUrls(String html) {
+        Pattern pattern = Pattern.compile("<img\\s+[^>]*src=[\"']([^\"']+)[\"']");
+        Matcher matcher = pattern.matcher(html);
 
-        return magazines.stream()
-            .map(m -> MagazineDraftListResponseDto.builder()
-                .id(m.getId())
-                .title(m.getTitle())
-                .thumbnailUrl(m.getThumbnailUrl())
-                .regionName(m.getRegionCategory().getRegionName())
-                .aptitudeName(m.getAptitudeCategory().getAptitudeName())
-                .createdAt(m.getCreatedAt())
-                .build())
-            .collect(Collectors.toList());
+        List<String> urls = new ArrayList<>();
+
+        while (matcher.find()) {
+            urls.add(matcher.group(1));
+        }
+
+        return urls;
+    }
+
+    public PaginationResponseDto<MagazineDraftListResponseDto> getDraftMagazines(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+        Page<Magazine> magazinePage = magazineRepository.findByMagazineStatusInAndDeletedStatus(
+            List.of(
+                MagazineStatus.DRAFT,
+                MagazineStatus.REQUEST_REVISION,
+                MagazineStatus.PENDING_CONFIRMATION
+            ),
+            DeletedStatus.DISPLAYED,
+            pageable
+        );
+
+        Page<MagazineDraftListResponseDto> dtoPage = magazinePage.map(m -> MagazineDraftListResponseDto.builder()
+            .id(m.getId())
+            .title(m.getTitle())
+            .thumbnailUrl(m.getThumbnailUrl())
+            .regionName(m.getRegionCategory().getRegionName())
+            .aptitudeName(m.getAptitudeCategory().getAptitudeName())
+            .createdAt(m.getCreatedAt())
+            .build());
+
+        return PaginationResponseDto.of(dtoPage);
+    }
+
+    @Transactional(readOnly = true)
+    public MagazineDraftDetailResponseDto getDraftMagazineDetail(Long magazineId) {
+        Magazine magazine = magazineRepository.findById(magazineId)
+            .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_NOT_FOUND));
+
+        if (magazine.getMagazineStatus() != MagazineStatus.DRAFT || magazine.getDeletedStatus() != DeletedStatus.DISPLAYED) {
+            throw new CustomException(ErrorCode.MAGAZINE_NOT_FOUND);
+        }
+
+        List<String> detailImageUrls = magazineFileService.getDetailImageUrls(magazineId);
+
+        return MagazineDraftDetailResponseDto.builder()
+            .id(magazine.getId())
+            .title(magazine.getTitle())
+            .content(magazine.getContent())
+            .thumnailUrl(magazine.getThumbnailUrl())
+            .detailImageUrls(detailImageUrls)
+            .regionName(magazine.getRegionCategory().getRegionName())
+            .aptitudeName(magazine.getAptitudeCategory().getAptitudeName())
+            .adminEmail(magazine.getAdmin().getEmail())
+            .createdAt(magazine.getCreatedAt())
+            .build();
+    }
+
+    @Transactional
+    public void sendPreviewLink(Long magazineId) {
+        Magazine magazine = magazineRepository.findById(magazineId)
+            .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_NOT_FOUND));
+
+        magazine.updateStatus(MagazineStatus.PENDING_CONFIRMATION);
+
+        MagazinePreviewToken previewToken = reissuePreviewToken(magazine, 14);
+
+        String email = magazine.getLocalCreator().getMember().getEmail();
+        String businessName = magazine.getLocalCreator().getBusinessName();
+        String previewUrl = previewBaseUrl + previewToken.getToken();
+
+        emailService.sendPreviewLinkEmail(email, businessName, previewUrl);
+    }
+
+    @Transactional
+    public void updateMagazineFromFeedback(Long magazineId, MagazineUpdateRequestDto magazineUpdateRequestDto, Member member) {
+        Magazine magazine = magazineRepository.findById(magazineId)
+            .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_NOT_FOUND));
+
+        if (!magazine.getAdmin().getId().equals(member.getId())) {
+            throw new CustomException(ErrorCode.MAGAZINE_FORBIDDEN);
+        }
+
+        MagazineFeedback lastFeedback = magazineFeedbackRepository.findTopByMagazineIdOrderByCreatedAtDesc(magazineId)
+            .orElseThrow(() -> new CustomException(ErrorCode.FEEDBACK_NOT_FOUND));
+
+        if (lastFeedback.isReflected()) {
+            throw new CustomException(ErrorCode.FEEDBACK_ALREADY_REFLECTED);
+        }
+
+        int revisionCount = magazineRevisionRepository.countByMagazineId(magazineId);
+
+        if (revisionCount >= 3) {
+            throw new CustomException(ErrorCode.MAGAZINE_REVISION_LIMIT_EXCEEDED);
+        }
+
+        MagazineRevision magazineRevision = MagazineRevision.builder()
+            .magazine(magazine)
+            .admin(member)
+            .content(magazineUpdateRequestDto.getContent())
+            .revisionNumber(revisionCount + 1)
+            .build();
+
+        magazineRevisionRepository.save(magazineRevision);
+
+        magazine.updateContent(magazineUpdateRequestDto.getContent());
+
+        lastFeedback.markAsReflected();
+    }
+
+    @Transactional
+    public void sendRevisionLink(Long magazineId) {
+        Magazine magazine = magazineRepository.findById(magazineId)
+            .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_NOT_FOUND));
+
+        int revisionCount = magazineRevisionRepository.countByMagazineId(magazineId);
+        if (revisionCount == 0) {
+            throw new CustomException(ErrorCode.REVISION_NOT_AVAILABLE);
+        }
+
+        MagazinePreviewToken previewToken = magazinePreviewTokenRepository.findByMagazineId(magazineId)
+            .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_PREVIEW_NOT_SENT));
+
+        if (previewToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new CustomException(ErrorCode.MAGAZINE_PREVIEW_EXPIRED);
+        }
+
+        magazine.updateStatus(MagazineStatus.REQUEST_REVISION);
+
+        MagazinePreviewToken revisionToken = reissuePreviewToken(magazine, 3);
+
+        String email = magazine.getLocalCreator().getMember().getEmail();
+        String businessName = magazine.getLocalCreator().getBusinessName();
+        String previewUrl = previewBaseUrl + revisionToken.getToken();
+
+        String subject;
+        String messageHeader;
+
+        if (revisionCount <= 3) {
+            subject = "[LocalLife] 로컬매거진 수정안 (" + revisionCount + " / 3) 확인 요청";
+            messageHeader = "매거진" + revisionCount + "차 수정안이 작성되어 확인 요청드립니다.";
+        } else {
+            subject = "[LocalLife] 로컬매거진 추가 수정안(" + revisionCount + "회차) 확인 요청";
+            messageHeader = revisionCount + "번째 추가 수정안이 작성되어 확인 요청드립니다.";
+        }
+
+        emailService.sendRevisionLinkEmail(email, businessName, previewUrl, subject, messageHeader, revisionCount);
+    }
+
+    @Transactional(readOnly = true)
+    public void validatePreviewToken(String token, String currentUserEmail) {
+        MagazinePreviewToken previewToken = magazinePreviewTokenRepository.findByToken(token)
+            .orElseThrow(() -> new CustomException(ErrorCode.INVALID_TOKEN));
+
+        if (previewToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new CustomException(ErrorCode.MAGAZINE_PREVIEW_EXPIRED);
+        }
+
+        if (!previewToken.getEmail().equals(currentUserEmail)) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
+        }
+    }
+
+    private MagazinePreviewToken reissuePreviewToken(Magazine magazine, int daysToExpire) {
+        magazinePreviewTokenRepository.deleteByMagazineId(magazine.getId());
+        magazinePreviewTokenRepository.flush();
+
+        String token = UUID.randomUUID().toString();
+        LocalDateTime expiresAt = LocalDateTime.now().plusDays(daysToExpire);
+        String email = magazine.getLocalCreator().getMember().getEmail();
+
+        MagazinePreviewToken newToken = new MagazinePreviewToken(magazine, email, token, expiresAt);
+
+        return magazinePreviewTokenRepository.save(newToken);
+    }
+
+    @Transactional
+    public void updateMagazine(Long magazineId, MagazineUpdateRequestDto magazineUpdateRequestDto, Member admin) {
+        Magazine magazine = magazineRepository.findById(magazineId)
+            .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_NOT_FOUND));
+
+        magazine.updateContent(magazineUpdateRequestDto.getContent());
+
+        MagazineRevision magazineRevision = MagazineRevision.builder()
+            .magazine(magazine)
+            .content(magazineUpdateRequestDto.getContent())
+            .admin(admin)
+            .build();
+    }
+
+    @Transactional
+    public void deleteDraftMagazine(Long magazineId, Long adminId) {
+        Magazine magazine = magazineRepository.findById(magazineId)
+            .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_NOT_FOUND));
+
+        if (magazine.getDeletedStatus() == DeletedStatus.DELETED) {
+            throw new CustomException(ErrorCode.MAGAZINE_ALREADY_DELETED);
+        }
+
+        if (magazine.getMagazineStatus() != MagazineStatus.DRAFT) {
+            throw new CustomException(ErrorCode.MAGAZINE_DELETE_NOT_ALLOWED);
+        }
+
+        try {
+            magazinePreviewTokenRepository.deleteByMagazineId(magazineId);
+            magazinePreviewTokenRepository.flush();
+        } catch (Exception e) {
+            log.warn("매거진(ID: {}) 관련 토큰이 이미 존재하지 않습니다.", magazineId);
+        }
+
+        magazine.softDelete();
+
+        log.info("관리자(ID: {})가 매거진(ID: {})을 Soft Delete 처리했습니다.", adminId, magazineId);
+    }
+
+    @Transactional
+    public void finalizeCollaboation(Long magazineId) {
+        Magazine magazine = magazineRepository.findById(magazineId)
+            .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_NOT_FOUND));
+
+        if (!List.of(MagazineStatus.REQUEST_REVISION, MagazineStatus.PENDING_CONFIRMATION).contains(magazine.getMagazineStatus())) {
+            throw new CustomException(ErrorCode.COLLABORATION_NOT_IN_PROGRESS);
+        }
+
+        int revisionCount = magazineRevisionRepository.countByMagazineId(magazineId);
+        if (revisionCount >= 3) {
+            throw new CustomException(ErrorCode.MAGAZINE_REVISION_LIMIT_EXCEEDED);
+        }
+
+        magazine.updateStatus(MagazineStatus.DRAFT);
+
+        magazinePreviewTokenRepository.deleteByMagazineId(magazineId);
+        magazinePreviewTokenRepository.flush();
+
+        log.info("매거진(ID: {}) 협업 마무리 → DRAFT 상태로 복귀", magazineId);
     }
 
 }

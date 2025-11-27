@@ -1,0 +1,156 @@
+package com.salayo.locallifebackend.domain.ai.aptitude.service;
+
+import com.salayo.locallifebackend.domain.ai.aptitude.enums.AptitudeType;
+import com.salayo.locallifebackend.global.util.CacheKeyPrefix;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+
+@Slf4j
+@Service
+public class AptitudeCacheService {
+
+	private final RedisTemplate<String, String> redisTemplate;
+
+	public AptitudeCacheService(@Qualifier("aiAptitudeRedisTemplate") RedisTemplate<String, String> redisTemplate) {
+		this.redisTemplate = redisTemplate;
+	}
+
+	// 적성 테스트 진행 상태 저장
+	public void saveTestProgress(Long memberId, String step) {
+		String key = CacheKeyPrefix.APTITUDE_TEST + memberId;
+		redisTemplate.opsForValue().set(key, step, CacheKeyPrefix.APTITUDE_TEST_TTL_HOURS, TimeUnit.HOURS);
+		log.debug("적성 테스트 진행 상태 저장 - memberId: {}, step: {}", memberId, step);
+	}
+
+	// 적성 테스트 진행 상태 조회
+	public String getTestProgress(Long memberId) {
+		String key = CacheKeyPrefix.APTITUDE_TEST + memberId;
+		return redisTemplate.opsForValue().get(key);
+	}
+
+	// 적성 테스트 진행 상태 삭제
+	public void deleteTestProgress(Long memberId) {
+		String key = CacheKeyPrefix.APTITUDE_TEST + memberId;
+		redisTemplate.delete(key);
+		log.debug("적성 테스트 진행 상태 삭제 - memberId: {}", memberId);
+	}
+
+	// 적성 테스트 진행 상태 업데이트
+	public void updateTestProgress(Long memberId, int nextStep) {
+		saveTestProgress(memberId, String.valueOf(nextStep));
+	}
+	
+	// 답변 저장
+	public void saveAnswer(Long memberId, int step, String answer) {
+		String key = CacheKeyPrefix.APTITUDE_TEST + memberId + ":answer:" + step;
+		redisTemplate.opsForValue().set(key, answer, CacheKeyPrefix.APTITUDE_TEST_TTL_HOURS, TimeUnit.HOURS);
+		log.debug("적성 테스트 답변 저장 - memberId: {}, step: {}, answer: {}", memberId, step, answer);
+	}
+	
+	// 답변 조회
+	public String getAnswer(Long memberId, int step) {
+		String key = CacheKeyPrefix.APTITUDE_TEST + memberId + ":answer:" + step;
+		return redisTemplate.opsForValue().get(key);
+	}
+	
+	// 질문 저장
+	public void saveQuestion(Long memberId, int step, String question) {
+		String key = CacheKeyPrefix.APTITUDE_TEST + memberId + ":question:" + step;
+		redisTemplate.opsForValue().set(key, question, CacheKeyPrefix.APTITUDE_TEST_TTL_HOURS, TimeUnit.HOURS);
+		log.debug("적성 테스트 질문 저장 - memberId: {}, step: {}, question: {}", memberId, step, question);
+	}
+	
+	// 질문 조회
+	public String getQuestion(Long memberId, int step) {
+		String key = CacheKeyPrefix.APTITUDE_TEST + memberId + ":question:" + step;
+		return redisTemplate.opsForValue().get(key);
+	}
+	
+	// 재질문 저장 (무효 답변 시)
+	public void saveFollowUpQuestion(Long memberId, int step, String followUpQuestion) {
+		String key = CacheKeyPrefix.APTITUDE_TEST + memberId + ":followup:" + step;
+		redisTemplate.opsForValue().set(key, followUpQuestion, CacheKeyPrefix.APTITUDE_TEST_TTL_HOURS, TimeUnit.HOURS);
+		log.debug("재질문 저장 - memberId: {}, step: {}, followup: {}", memberId, step, followUpQuestion);
+	}
+	
+	// 적성 점수 저장/업데이트
+	public void updateAptitudeScore(Long memberId, AptitudeType aptitudeType, int score) {
+		String key = CacheKeyPrefix.APTITUDE_TEST + memberId + ":score:" + aptitudeType.name();
+		// 기존 점수가 있으면 누적
+		String currentScore = redisTemplate.opsForValue().get(key);
+		int newScore = (currentScore != null ? Integer.parseInt(currentScore) : 0) + score;
+		
+		redisTemplate.opsForValue().set(key, String.valueOf(newScore), CacheKeyPrefix.APTITUDE_TEST_TTL_HOURS, TimeUnit.HOURS);
+		log.debug("적성 점수 업데이트 - memberId: {}, aptitudeType: {}, score: {} -> {}", 
+			memberId, aptitudeType, currentScore, newScore);
+	}
+	
+	// 모든 적성 점수 조회
+	public Map<AptitudeType, Integer> getAllAptitudeScores(Long memberId) {
+		Map<AptitudeType, Integer> scores = new HashMap<>();
+		
+		for (AptitudeType type : AptitudeType.values()) {
+			String key = CacheKeyPrefix.APTITUDE_TEST + memberId + ":score:" + type.name();
+			String score = redisTemplate.opsForValue().get(key);
+			scores.put(type, score != null ? Integer.parseInt(score) : 0);
+		}
+		
+		return scores;
+	}
+	
+	// 모든 테스트 관련 데이터 삭제
+	public void deleteAllTestData(Long memberId) {
+		log.debug("테스트 데이터 삭제 시작 - memberId: {}", memberId);
+		
+		// 진행 상태 삭제
+		String progressKey = CacheKeyPrefix.APTITUDE_TEST + memberId;
+		Boolean progressDeleted = redisTemplate.delete(progressKey);
+		log.debug("진행 상태 삭제 - key: {}, 결과: {}", progressKey, progressDeleted);
+		
+		// 세션 ID 삭제
+		String sessionKey = CacheKeyPrefix.APTITUDE_TEST + memberId + ":session";
+		Boolean sessionDeleted = redisTemplate.delete(sessionKey);
+		log.debug("세션 ID 삭제 - key: {}, 결과: {}", sessionKey, sessionDeleted);
+		
+		// 답변 삭제
+		for (int i = 1; i <= CacheKeyPrefix.APTITUDE_TOTAL_QUESTIONS; i++) {
+			String answerKey = CacheKeyPrefix.APTITUDE_TEST + memberId + ":answer:" + i;
+			Boolean answerDeleted = redisTemplate.delete(answerKey);
+			log.debug("답변 삭제 - key: {}, 결과: {}", answerKey, answerDeleted);
+		}
+		
+		// 점수 삭제
+		for (AptitudeType type : AptitudeType.values()) {
+			String scoreKey = CacheKeyPrefix.APTITUDE_TEST + memberId + ":score:" + type.name();
+			Boolean scoreDeleted = redisTemplate.delete(scoreKey);
+			log.debug("점수 삭제 - key: {}, 결과: {}", scoreKey, scoreDeleted);
+		}
+		
+		log.info("모든 테스트 데이터 삭제 완료 - memberId: {}", memberId);
+	}
+	
+	// 세션 ID 저장 (30분 타임아웃)
+	public void saveSessionId(Long memberId, String sessionId) {
+		String key = CacheKeyPrefix.APTITUDE_TEST + memberId + ":session";
+		redisTemplate.opsForValue().set(key, sessionId, CacheKeyPrefix.SESSION_TIMEOUT_MINUTES, TimeUnit.MINUTES);
+		log.debug("세션 ID 저장 - memberId: {}, sessionId: {}, TTL: {}분", memberId, sessionId, CacheKeyPrefix.SESSION_TIMEOUT_MINUTES);
+	}
+	
+	// 세션 ID 조회
+	public String getSessionId(Long memberId) {
+		String key = CacheKeyPrefix.APTITUDE_TEST + memberId + ":session";
+		return redisTemplate.opsForValue().get(key);
+	}
+	
+	// 세션 TTL 갱신 (답변 제출 시 호출)
+	public void refreshSession(Long memberId) {
+		String sessionKey = CacheKeyPrefix.APTITUDE_TEST + memberId + ":session";
+		Boolean refreshed = redisTemplate.expire(sessionKey, CacheKeyPrefix.SESSION_TIMEOUT_MINUTES, TimeUnit.MINUTES);
+		log.debug("세션 TTL 갱신 - memberId: {}, 결과: {}", memberId, refreshed);
+	}
+}
