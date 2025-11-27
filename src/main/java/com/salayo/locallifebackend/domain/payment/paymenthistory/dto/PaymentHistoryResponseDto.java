@@ -1,7 +1,7 @@
-package com.salayo.locallifebackend.domain.paymenthistory.dto;
+package com.salayo.locallifebackend.domain.payment.paymenthistory.dto;
 
 
-import com.salayo.locallifebackend.domain.paymenthistory.enums.PaymentHistoryStatus;
+import com.salayo.locallifebackend.domain.payment.enums.PaymentStatus;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.Builder;
@@ -25,7 +25,7 @@ public class PaymentHistoryResponseDto {
 
 	private String paymentCard; //결제 카드 정보
 
-	private PaymentHistoryStatus paymentHistoryStatus; //결제 내역 상태
+	private PaymentStatus paymentStatus; //결제 상태
 
 	private String refundReason; //환불 사유
 
@@ -34,7 +34,5 @@ public class PaymentHistoryResponseDto {
 	private LocalDateTime createdAt; //결제 내역 생성일
 
 	private LocalDateTime modifiedAt; //결제 내역 수정일
-
-	//TODO : 리뷰 작성 상태 필드 추가
 
 }

@@ -36,8 +36,6 @@ public class PaymentResponseDto {
 
 	private LocalDateTime refundAttemptedAt; //환불 요청 발생 일시
 
-	private String paymentFailedReason; //PG사 API 응답 메시지
-
 	private LocalDateTime paidAt; //결제 승인일
 
 	private LocalDateTime canceledAt; //결제 취소일
@@ -64,7 +62,6 @@ public class PaymentResponseDto {
 			.paymentCardSnapshot(payment.getPaymentCardSnapshot())
 			.paymentStatus(payment.getPaymentStatus())
 			.refundAttemptedAt(payment.getRefundAttemptedAt())
-			.paymentFailedReason(payment.getPaymentFailedReason())
 			.paidAt(payment.getPaidAt())
 			.canceledAt(payment.getCanceledAt())
 			.expiredAt(payment.getExpiredAt())
