@@ -14,13 +14,16 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "user_aptitudes")
+@Table(name = "user_aptitudes", uniqueConstraints = {
+	@UniqueConstraint(name = "UK_user_aptitude_member_id", columnNames = "member_id")
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserAptitude extends BaseEntity {
@@ -70,6 +73,19 @@ public class UserAptitude extends BaseEntity {
 		this.partialSessionId = partialSessionId;
 	}
 
+	public static UserAptitude createNew(Member member) {
+		return UserAptitude.builder()
+			.member(member)
+			.aptitudeType(AptitudeType.PENDING)
+			.testStep(0)
+			.testCount(0)
+			.mypageTestCount(0)
+			.isOnboardingCompleted(false)
+			.lastPartialStep(null)
+			.partialSessionId(null)
+			.build();
+	}
+
 	public void updateAptitudeFromOnboarding(AptitudeType aptitudeType) {
 		this.aptitudeType = aptitudeType;
 		this.isOnboardingCompleted = true;
@@ -78,12 +94,11 @@ public class UserAptitude extends BaseEntity {
 
 	public void updateAptitudeFromMypage(AptitudeType aptitudeType) {
 		this.aptitudeType = aptitudeType;
-		this.mypageTestCount++;
 		this.testCount++;
 	}
 
-	public void updateTestStep(Integer testStep) {
-		this.testStep = testStep;
+	public void incrementMypageTestCount() {
+		this.mypageTestCount++;
 	}
 	
 	// 부분 저장 업데이트

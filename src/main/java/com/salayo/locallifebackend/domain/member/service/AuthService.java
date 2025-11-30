@@ -36,6 +36,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.core.parameters.P;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -181,6 +182,10 @@ public class AuthService {
 	public LoginResponseDto login(LoginRequestDto requestDto) {
 		Member member = memberRepository.findByEmail(requestDto.getEmail())
 			.orElseThrow(() -> new CustomException(ErrorCode.INVALID_LOGIN));
+
+        if (member.isDeleted()) {
+            throw new CustomException(ErrorCode.ALREADY_DELETED_MEMBER);
+        }
 
 		if (!passwordEncoder.matches(requestDto.getPassword(), member.getPassword())) {
 			throw new CustomException(ErrorCode.INVALID_LOGIN);

@@ -49,6 +49,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         try {
             if (token != null) {
+
+                String isBlacklisted = redisUtil.getBlacklistedToken(token);
+                if (isBlacklisted != null) {
+                    log.warn("Blacklisted token detected.");
+                    setErrorResponse(httpServletResponse, ErrorCode.TOKEN_BLACKLISTED, httpServletRequest);
+                    return;
+                }
+
                 jwtProvider.validateTokenOrThrow(token);
                 String email = jwtProvider.getUsernameFromToken(token);
 

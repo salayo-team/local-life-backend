@@ -24,10 +24,14 @@ public class OnboardingService {
     
     private final OnboardingProgressRepository onboardingProgressRepository;
     private final MemberRepository memberRepository;
+    private final UserPreferredRegionService userPreferredRegionService;
 
-	public OnboardingService(OnboardingProgressRepository onboardingProgressRepository, MemberRepository memberRepository) {
+	public OnboardingService(OnboardingProgressRepository onboardingProgressRepository, 
+                            MemberRepository memberRepository,
+                            UserPreferredRegionService userPreferredRegionService) {
 		this.onboardingProgressRepository = onboardingProgressRepository;
 		this.memberRepository = memberRepository;
+		this.userPreferredRegionService = userPreferredRegionService;
 	}
 
 	/**
@@ -45,7 +49,7 @@ public class OnboardingService {
                 String sessionId = generateSessionId(memberId);
                 OnboardingProgress newProgress = OnboardingProgress.builder()
                     .member(member)
-                    .currentStep(OnboardingStep.MEMBER_INFO)
+                    .currentStep(OnboardingStep.REGION_SELECT)  // 처음부터 REGION_SELECT로 설정
                     .isCompleted(false)
                     .sessionId(sessionId)
                     .build();
@@ -61,22 +65,23 @@ public class OnboardingService {
             );
         }
         
-        log.info("온보딩 시작 - memberId: {}, sessionId: {}", memberId, progress.getSessionId());
+        log.info("온보딩 시작 - memberId: {}, sessionId: {}, currentStep: {}", 
+            memberId, progress.getSessionId(), progress.getCurrentStep());
         return OnboardingProgressResponseDto.createStartResponse(progress.getSessionId());
     }
     
     /**
-     * 선호 지역 특징 선택
-     * TODO: Issue #156 - 지역 특징별 자동 매핑 구현 예정
+     * 선호 지역 특징 선택 및 자동 지역 매핑
+     * Issue #156 - 지역 특징별 자동 매핑 구현
      */
     @Transactional
     public OnboardingProgressResponseDto selectRegion(Long memberId, OnboardingRegionRequestDto regionRequestDto) {
         Member member = memberRepository.findByIdOrElseThrow(memberId);
         OnboardingProgress progress = getOnboardingProgress(member);
         
-        // 현재 단계 검증
-        if (progress.getCurrentStep() != OnboardingStep.MEMBER_INFO && 
-            progress.getCurrentStep() != OnboardingStep.REGION_SELECT) {
+        // 현재 단계 검증 (REGION_SELECT 단계에서만 실행 가능)
+        if (progress.getCurrentStep() != OnboardingStep.REGION_SELECT) {
+            log.error("잘못된 온보딩 단계 - 현재: {}, 예상: REGION_SELECT", progress.getCurrentStep());
             throw new CustomException(ErrorCode.INVALID_ONBOARDING_STEP);
         }
         
@@ -84,11 +89,16 @@ public class OnboardingService {
         RegionType regionType = regionRequestDto.regionType();
         progress.updateRegion(regionType);
         
+        // UserPreferredRegionService를 통한 지역 설정
+        userPreferredRegionService.setPreferredRegionsForOnboarding(member, regionType);
+        
         // 다음 단계로 이동
         progress.moveToNextStep(false);
         onboardingProgressRepository.save(progress);
         
-        log.info("선호 지역 특징 선택 완료 - memberId: {}, regionType: {}", memberId, regionType);
+        log.info("선호 지역 특징 선택 완료 - memberId: {}, regionType: {}", 
+            memberId, regionType);
+        
         return OnboardingProgressResponseDto.createRegionCompleteResponse(
             progress.getSessionId(), 
             regionType

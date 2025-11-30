@@ -81,6 +81,7 @@ public class AptitudeCacheService {
 	// 적성 점수 저장/업데이트
 	public void updateAptitudeScore(Long memberId, AptitudeType aptitudeType, int score) {
 		String key = CacheKeyPrefix.APTITUDE_TEST + memberId + ":score:" + aptitudeType.name();
+
 		// 기존 점수가 있으면 누적
 		String currentScore = redisTemplate.opsForValue().get(key);
 		int newScore = (currentScore != null ? Integer.parseInt(currentScore) : 0) + score;

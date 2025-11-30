@@ -7,7 +7,9 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// AI 적성 분석 응답 DTO
+/**
+ * AI 적성 분석 응답 DTO
+ */
 @Getter
 @NoArgsConstructor
 public class AiAptitudeAnalysisResponseDto {
