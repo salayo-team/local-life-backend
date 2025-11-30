@@ -8,6 +8,10 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Schema(description = "적성 타입 - 5가지 로컬라이프 적성 유형", enumAsRef = true)
 public enum AptitudeType {
+
+	@Schema(description = "결과없음 - 온보딩을 진행하지 않아, 현재 적성 타입이 존재하지 않음")
+	PENDING("결과없음", "온보딩을 진행하지 않아, 현재 적성 타입이 존재하지 않음"),
+
 	@Schema(description = "자연친화 - 자연 속에서의 삶, 생태적 가치와 조화롭게 살아가는 것을 추구")
 	NATURE("자연친화", "자연 속에서의 삶, 생태적 가치와 조화롭게 살아가는 것을 추구"),
 	
