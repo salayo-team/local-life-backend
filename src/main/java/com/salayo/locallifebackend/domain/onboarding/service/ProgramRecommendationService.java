@@ -62,7 +62,7 @@ public class ProgramRecommendationService {
      */
     @Transactional(readOnly = true)
     public List<RecommendedProgramResponseDto> getRecommendedPrograms(Long memberId) {
-        Member member = memberRepository.findByIdOrElseThrow(memberId);
+        Member member = memberRepository.findActiveByIdOrThrow(memberId);
         
         // 1. 사용자의 최신 적성 조회
         UserAptitude userAptitude = userAptitudeRepository.findTopByMemberOrderByCreatedAtDesc(member)

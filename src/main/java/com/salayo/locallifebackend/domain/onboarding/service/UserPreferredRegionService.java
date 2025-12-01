@@ -43,7 +43,7 @@ public class UserPreferredRegionService {
      */
     @Transactional(readOnly = true)
     public List<String> getUserPreferredRegions(Long memberId) {
-        Member member = memberRepository.findByIdOrElseThrow(memberId);
+        Member member = memberRepository.findActiveByIdOrThrow(memberId);
 
         // 온보딩 완료 여부 확인
         OnboardingProgress progress = onboardingProgressRepository.findByMember(member)
@@ -73,7 +73,7 @@ public class UserPreferredRegionService {
      */
     @Transactional
     public List<String> updateUserPreferredRegions(Long memberId, RegionType newRegionType) {
-        Member member = memberRepository.findByIdOrElseThrow(memberId);
+        Member member = memberRepository.findActiveByIdOrThrow(memberId);
 
         // 온보딩 상태 확인
         OnboardingProgress progress = onboardingProgressRepository.findByMember(member)

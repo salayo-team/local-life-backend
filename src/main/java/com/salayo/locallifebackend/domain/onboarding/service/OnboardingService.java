@@ -76,7 +76,7 @@ public class OnboardingService {
      */
     @Transactional
     public OnboardingProgressResponseDto selectRegion(Long memberId, OnboardingRegionRequestDto regionRequestDto) {
-        Member member = memberRepository.findByIdOrElseThrow(memberId);
+        Member member = memberRepository.findActiveByIdOrThrow(memberId);
         OnboardingProgress progress = getOnboardingProgress(member);
         
         // 현재 단계 검증 (REGION_SELECT 단계에서만 실행 가능)
@@ -111,7 +111,7 @@ public class OnboardingService {
     @Transactional
     public OnboardingProgressResponseDto checkAptitudeKnowledge(Long memberId, 
                                                                OnboardingAptitudeCheckRequestDto aptitudeCheckRequestDto) {
-        Member member = memberRepository.findByIdOrElseThrow(memberId);
+        Member member = memberRepository.findActiveByIdOrThrow(memberId);
         OnboardingProgress progress = getOnboardingProgress(member);
         
         // 현재 단계 검증
@@ -151,7 +151,7 @@ public class OnboardingService {
      */
     @Transactional
     public OnboardingProgressResponseDto completeOnboarding(Long memberId) {
-        Member member = memberRepository.findByIdOrElseThrow(memberId);
+        Member member = memberRepository.findActiveByIdOrThrow(memberId);
         OnboardingProgress progress = getOnboardingProgress(member);
         
         // 적성 단계가 아닌 경우 에러
@@ -176,7 +176,7 @@ public class OnboardingService {
      */
     @Transactional(readOnly = true)
     public OnboardingStatusResponseDto getOnboardingStatus(Long memberId) {
-        Member member = memberRepository.findByIdOrElseThrow(memberId);
+        Member member = memberRepository.findActiveByIdOrThrow(memberId);
 
         return onboardingProgressRepository.findByMember(member)
             .filter(progress -> !progress.isCompleted())  // 완료되지 않은 경우만
@@ -189,7 +189,7 @@ public class OnboardingService {
      */
     @Transactional(readOnly = true)
     public OnboardingProgressResponseDto getCurrentProgress(Long memberId) {
-        Member member = memberRepository.findByIdOrElseThrow(memberId);
+        Member member = memberRepository.findActiveByIdOrThrow(memberId);
         OnboardingProgress progress = getOnboardingProgress(member);
         
         return OnboardingProgressResponseDto.builder()
