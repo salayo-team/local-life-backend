@@ -18,6 +18,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -90,6 +91,32 @@ public class MemberController {
         MemberInfoResponseDto memberInfoResponseDto = memberService.updateMyInfo(memberId, memberUpdateRequestDto);
 
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.UPDATE_SUCCESS, memberInfoResponseDto));
+    }
+
+    @GetMapping
+    @Operation(
+        summary = "내 정보 조회",
+        description = """
+            로그인한 사용자의 기본 정보를 조회합니다.
+            이메일, 닉네임, 전화번호, 생년월일, 성별, 회원 유형(ROLE)을 반환합니다.
+            """
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "내 정보 조회 성공",
+            content = @Content(
+            mediaType = "application/json",
+            schema = @Schema(implementation = CommonResponseDto.class)
+        )),
+        @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
+        @ApiResponse(responseCode = "404", description = "회원 조회 실패 (DELETED 포함)")
+    })
+    public ResponseEntity<CommonResponseDto<MemberInfoResponseDto>> getMyInfo(
+        @AuthenticationPrincipal MemberDetails memberDetails
+    ) {
+        Long memberId = memberDetails.getMember().getId();
+        MemberInfoResponseDto memberInfoResponseDto = memberService.getMyInfo(memberId);
+
+        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, memberInfoResponseDto));
     }
 
 }

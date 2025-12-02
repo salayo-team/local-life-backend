@@ -3,7 +3,7 @@ POST http://localhost:8080/auth/login
 Content-Type: application/json
 
 {
-  "email": "testuser3@example.com",
+  "email": "testuser5@example.com",
   "password": "Test1234!"
 }
 
@@ -42,3 +42,7 @@ Authorization: Bearer {{accessToken}}
   "nickname": "힘들어용",
   "phoneNumber": "01012347778"
 }
+
+### 내 정보 조회
+GET http://localhost:8080/user/me
+Authorization: Bearer {{accessToken}}

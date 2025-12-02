@@ -89,4 +89,11 @@ public class MemberService {
 
         return new MemberInfoResponseDto(member);
     }
+
+    @Transactional(readOnly = true)
+    public MemberInfoResponseDto getMyInfo(Long memberId) {
+        Member member = memberRepository.findActiveByIdOrThrow(memberId);
+
+        return new MemberInfoResponseDto(member);
+    }
 }
