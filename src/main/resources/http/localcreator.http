@@ -1,0 +1,18 @@
+### 로컬 크리에이터 로그인 (승인 여부 확인 포함)
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "email": "creator2@example.com",
+  "password": "Password123!"
+}
+
+> {%
+  const json = response.body;
+  const accessToken = json.data.accessToken;
+  client.global.set("accessToken", accessToken);
+%}
+
+### 로컬 크리에이터 정보 조회
+GET http://localhost:8080/localcreator/me
+Authorization: Bearer {{accessToken}}

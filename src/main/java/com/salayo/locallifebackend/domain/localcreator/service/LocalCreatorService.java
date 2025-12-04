@@ -33,6 +33,16 @@ public class LocalCreatorService {
     public LocalCreatorDetailResponseDto getLocalCreatorDetail(Long localcreatorId) {
         LocalCreator localCreator = localCreatorRepository.findByIdOrThrow(localcreatorId);
 
+        return buildDetailResponse(localCreator);
+    }
+
+    public LocalCreatorDetailResponseDto getMyCreatorInfo(Long memberId){
+        LocalCreator localCreator = localCreatorRepository.findByMemberIdOrThrow(memberId);
+
+        return buildDetailResponse(localCreator);
+    }
+
+    private LocalCreatorDetailResponseDto buildDetailResponse(LocalCreator localCreator) {
         Member member = localCreator.getMember();
 
         List<FileMapping> fileMappings = fileMappingRepository

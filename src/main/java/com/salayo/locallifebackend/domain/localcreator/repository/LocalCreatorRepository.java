@@ -24,6 +24,11 @@ public interface LocalCreatorRepository extends JpaRepository<LocalCreator, Long
             .orElseThrow(() -> new CustomException(ErrorCode.LOCAL_CREATOR_NOT_FOUND));
     }
 
+    default LocalCreator findByMemberIdOrThrow(Long memberId) {
+        return findByMemberId(memberId)
+            .orElseThrow(() -> new CustomException(ErrorCode.LOCAL_CREATOR_NOT_FOUND));
+    }
+
     @Query("SELECT lc FROM LocalCreator lc JOIN FETCH lc.member m WHERE m.email = :email")
     Optional<LocalCreator> findByMemberEmail(@Param("email") String email);
 
