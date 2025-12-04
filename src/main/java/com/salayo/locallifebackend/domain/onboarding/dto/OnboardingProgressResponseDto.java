@@ -1,5 +1,6 @@
 package com.salayo.locallifebackend.domain.onboarding.dto;
 
+import com.salayo.locallifebackend.domain.ai.aptitude.enums.AptitudeType;
 import com.salayo.locallifebackend.domain.onboarding.enums.OnboardingStep;
 import com.salayo.locallifebackend.domain.onboarding.enums.RegionType;
 import lombok.Builder;
@@ -21,6 +22,7 @@ public class OnboardingProgressResponseDto {
 	private final OnboardingStep nextStep;
 	private final Boolean isCompleted;
 	private final RegionType regionType;
+	private final AptitudeType aptitudeType;
 	private final Boolean knowsAptitude;
 	private final String guideMessage;
 
@@ -31,12 +33,13 @@ public class OnboardingProgressResponseDto {
 
 	@Builder
 	public OnboardingProgressResponseDto(String sessionId, OnboardingStep currentStep, OnboardingStep nextStep, Boolean isCompleted,
-		RegionType regionType, Boolean knowsAptitude, String guideMessage, NextAction nextAction) {
+		RegionType regionType, AptitudeType aptitudeType, Boolean knowsAptitude, String guideMessage, NextAction nextAction) {
 		this.sessionId = sessionId;
 		this.currentStep = currentStep;
 		this.nextStep = nextStep;
 		this.isCompleted = isCompleted;
 		this.regionType = regionType;
+		this.aptitudeType = aptitudeType;
 		this.knowsAptitude = knowsAptitude;
 		this.guideMessage = guideMessage;
 		this.nextAction = nextAction;

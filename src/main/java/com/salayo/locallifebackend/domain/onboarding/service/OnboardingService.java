@@ -1,10 +1,13 @@
 package com.salayo.locallifebackend.domain.onboarding.service;
 
+import com.salayo.locallifebackend.domain.ai.aptitude.entity.UserAptitude;
+import com.salayo.locallifebackend.domain.ai.aptitude.enums.AptitudeType;
+import com.salayo.locallifebackend.domain.ai.aptitude.repository.UserAptitudeRepository;
 import com.salayo.locallifebackend.domain.member.entity.Member;
 import com.salayo.locallifebackend.domain.member.repository.MemberRepository;
+import com.salayo.locallifebackend.domain.onboarding.dto.OnboardingAptitudeCheckRequestDto;
 import com.salayo.locallifebackend.domain.onboarding.dto.OnboardingProgressResponseDto;
 import com.salayo.locallifebackend.domain.onboarding.dto.OnboardingRegionRequestDto;
-import com.salayo.locallifebackend.domain.onboarding.dto.OnboardingAptitudeCheckRequestDto;
 import com.salayo.locallifebackend.domain.onboarding.dto.OnboardingStatusResponseDto;
 import com.salayo.locallifebackend.domain.onboarding.entity.OnboardingProgress;
 import com.salayo.locallifebackend.domain.onboarding.enums.OnboardingStep;
@@ -25,13 +28,16 @@ public class OnboardingService {
     private final OnboardingProgressRepository onboardingProgressRepository;
     private final MemberRepository memberRepository;
     private final UserPreferredRegionService userPreferredRegionService;
+    private final UserAptitudeRepository userAptitudeRepository;
 
 	public OnboardingService(OnboardingProgressRepository onboardingProgressRepository, 
                             MemberRepository memberRepository,
-                            UserPreferredRegionService userPreferredRegionService) {
+                            UserPreferredRegionService userPreferredRegionService,
+                            UserAptitudeRepository userAptitudeRepository) {
 		this.onboardingProgressRepository = onboardingProgressRepository;
 		this.memberRepository = memberRepository;
 		this.userPreferredRegionService = userPreferredRegionService;
+		this.userAptitudeRepository = userAptitudeRepository;
 	}
 
 	/**
@@ -49,7 +55,7 @@ public class OnboardingService {
                 String sessionId = generateSessionId(memberId);
                 OnboardingProgress newProgress = OnboardingProgress.builder()
                     .member(member)
-                    .currentStep(OnboardingStep.REGION_SELECT)  // 처음부터 REGION_SELECT로 설정
+                    .currentStep(OnboardingStep.REGION_SELECT) // 처음부터 REGION_SELECT로 설정
                     .isCompleted(false)
                     .sessionId(sessionId)
                     .build();
@@ -69,10 +75,69 @@ public class OnboardingService {
             memberId, progress.getSessionId(), progress.getCurrentStep());
         return OnboardingProgressResponseDto.createStartResponse(progress.getSessionId());
     }
+
+
+    /**
+     * 현재 온보딩 단계의 상세 정보 조회
+     */
+    @Transactional(readOnly = true)
+    public OnboardingProgressResponseDto getCurrentProgress(Long memberId) {
+        Member member = memberRepository.findActiveByIdOrThrow(memberId);
+        OnboardingProgress progress = getOnboardingProgress(member);
+
+        AptitudeType aptitudeType = userAptitudeRepository.findByMember(member)
+            .map(UserAptitude::getAptitudeType)
+            .orElse(AptitudeType.PENDING);
+
+        return OnboardingProgressResponseDto.builder()
+            .sessionId(progress.getSessionId())
+            .currentStep(progress.getCurrentStep())
+            .isCompleted(progress.isCompleted())
+            .regionType(progress.getRegionType())
+            .aptitudeType(aptitudeType)
+            .knowsAptitude(progress.getKnowsAptitude())
+            .build();
+    }
+
+    /**
+     * 온보딩 진행 상태 조회 (내부 사용)
+     */
+    private OnboardingProgress getOnboardingProgress(Member member) {
+        return onboardingProgressRepository.findByMember(member)
+            .orElseThrow(() -> {
+                log.error("온보딩 진행 정보 없음 - memberId: {}", member.getId());
+                return new CustomException(ErrorCode.ONBOARDING_NOT_STARTED);
+            });
+    }
+
+    /**
+     * 온보딩 이어하기(Resume) 여부 판단을 위한 진행 상태 조회
+     */
+    @Transactional(readOnly = true)
+    public OnboardingStatusResponseDto getOnboardingStatus(Long memberId) {
+        Member member = memberRepository.findActiveByIdOrThrow(memberId);
+
+        // 적성 타입 조회
+        AptitudeType aptitudeType = userAptitudeRepository.findByMember(member)
+            .map(UserAptitude::getAptitudeType)
+            .orElse(null);
+
+        return onboardingProgressRepository.findByMember(member)
+            .filter(progress -> !progress.isCompleted())
+            .map(progress -> OnboardingStatusResponseDto.builder()
+                .isCompleted(false)
+                .currentStep(progress.getCurrentStep())
+                .sessionId(progress.getSessionId())
+                .aptitudeType(aptitudeType)
+                .build())
+            .orElseGet(() -> OnboardingStatusResponseDto.builder()
+                .isCompleted(true)
+                .aptitudeType(aptitudeType)
+                .build());
+    }
     
     /**
      * 선호 지역 특징 선택 및 자동 지역 매핑
-     * Issue #156 - 지역 특징별 자동 매핑 구현
      */
     @Transactional
     public OnboardingProgressResponseDto selectRegion(Long memberId, OnboardingRegionRequestDto regionRequestDto) {
@@ -169,47 +234,6 @@ public class OnboardingService {
             progress.getSessionId(), 
             progress.getRegionType()
         );
-    }
-
-    /**
-     * 온보딩 이어하기(Resume) 여부 판단을 위한 진행 상태 조회
-     */
-    @Transactional(readOnly = true)
-    public OnboardingStatusResponseDto getOnboardingStatus(Long memberId) {
-        Member member = memberRepository.findActiveByIdOrThrow(memberId);
-
-        return onboardingProgressRepository.findByMember(member)
-            .filter(progress -> !progress.isCompleted())  // 완료되지 않은 경우만
-            .map(progress -> OnboardingStatusResponseDto.inProgress(progress.getCurrentStep(), progress.getSessionId()))
-            .orElseGet(OnboardingStatusResponseDto::complete);  // 없거나 완료된 경우
-    }
-
-    /**
-     * 현재 온보딩 단계의 상세 정보 조회
-     */
-    @Transactional(readOnly = true)
-    public OnboardingProgressResponseDto getCurrentProgress(Long memberId) {
-        Member member = memberRepository.findActiveByIdOrThrow(memberId);
-        OnboardingProgress progress = getOnboardingProgress(member);
-        
-        return OnboardingProgressResponseDto.builder()
-            .sessionId(progress.getSessionId())
-            .currentStep(progress.getCurrentStep())
-            .isCompleted(progress.isCompleted())
-            .regionType(progress.getRegionType())
-            .knowsAptitude(progress.getKnowsAptitude())
-            .build();
-    }
-    
-    /**
-     * 온보딩 진행 상태 조회 (내부 사용)
-     */
-    private OnboardingProgress getOnboardingProgress(Member member) {
-        return onboardingProgressRepository.findByMember(member)
-            .orElseThrow(() -> {
-                log.error("온보딩 진행 정보 없음 - memberId: {}", member.getId());
-                return new CustomException(ErrorCode.ONBOARDING_NOT_STARTED);
-            });
     }
     
     /**
