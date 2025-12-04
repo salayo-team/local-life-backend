@@ -4,13 +4,19 @@ import com.salayo.locallifebackend.domain.onboarding.enums.OnboardingStep;
 import com.salayo.locallifebackend.domain.onboarding.enums.RegionType;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.ToString;
+import org.apache.commons.lang3.builder.ToStringExclude;
 
 /**
  * 온보딩 진행 상태 응답 DTO
  */
 @Getter
+@ToString
 public class OnboardingProgressResponseDto {
+
+	@ToStringExclude
 	private final String sessionId;
+
 	private final OnboardingStep currentStep;
 	private final OnboardingStep nextStep;
 	private final Boolean isCompleted;
@@ -73,7 +79,6 @@ public class OnboardingProgressResponseDto {
 
 	/**
 	 * 지역 선택 완료 응답 생성
-	 * TODO: Issue #156 - 지역 특징별 실제 지역 매핑 구현 예정
 	 */
 	public static OnboardingProgressResponseDto createRegionCompleteResponse(String sessionId, RegionType regionType) {
 		return OnboardingProgressResponseDto.builder()

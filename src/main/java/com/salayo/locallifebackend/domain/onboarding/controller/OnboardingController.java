@@ -49,6 +49,32 @@ public class OnboardingController {
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.ONBOARDING_START_SUCCESS, progressResponseDto));
     }
 
+    @GetMapping("/progress")
+    @Operation(summary = "온보딩 진행 상태 조회", description = "현재 온보딩 진행 상태를 조회합니다")
+    public ResponseEntity<CommonResponseDto<OnboardingProgressResponseDto>> getCurrentProgress(
+        @Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails) {
+
+        Long memberId = memberDetails.getMember().getId();
+        log.info("온보딩 진행 상태 조회 시작 - memberId: {}, ", memberId);
+
+        OnboardingProgressResponseDto progressResponseDto = onboardingService.getCurrentProgress(memberId);
+        log.info("온보딩 진행 상태 조회 결과: {}", progressResponseDto);
+
+        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, progressResponseDto));
+    }
+
+    @GetMapping("/status")
+    @Operation(summary = "온보딩 진행 상태 조회(이어하기용)", description = "완료되지 않은 온보딩이 있는지 확인하고, 있다면 현재 단계를 반환합니다")
+    public ResponseEntity<CommonResponseDto<OnboardingStatusResponseDto>> getOnboardingStatus(
+        @Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails) {
+
+        Long memberId = memberDetails.getMember().getId();
+
+        OnboardingStatusResponseDto statusResponseDto = onboardingService.getOnboardingStatus(memberId);
+
+        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, statusResponseDto));
+    }
+
     @PostMapping("/region")
     @Operation(summary = "선호 지역 특징 선택", description = "온보딩 시 선호 지역 특징(도시형/균형형/자연형)을 선택합니다")
     public ResponseEntity<CommonResponseDto<OnboardingProgressResponseDto>> selectRegion(
@@ -89,30 +115,5 @@ public class OnboardingController {
         OnboardingProgressResponseDto progressResponseDto = onboardingService.completeOnboarding(memberId);
 
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.ONBOARDING_COMPLETE_SUCCESS, progressResponseDto));
-    }
-
-    @GetMapping("/status")
-    @Operation(summary = "온보딩 진행 상태 조회(이어하기용)", description = "완료되지 않은 온보딩이 있는지 확인하고, 있다면 현재 단계를 반환합니다")
-    public ResponseEntity<CommonResponseDto<OnboardingStatusResponseDto>> getOnboardingStatus(
-        @Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails) {
-
-        Long memberId = memberDetails.getMember().getId();
-
-        OnboardingStatusResponseDto statusResponseDto = onboardingService.getOnboardingStatus(memberId);
-
-        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, statusResponseDto));
-    }
-
-    @GetMapping("/progress")
-    @Operation(summary = "온보딩 진행 상태 조회", description = "현재 온보딩 진행 상태를 조회합니다")
-    public ResponseEntity<CommonResponseDto<OnboardingProgressResponseDto>> getCurrentProgress(
-            @Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails) {
-
-        Long memberId = memberDetails.getMember().getId();
-        log.info("온보딩 진행 상태 조회 - memberId: {}", memberId);
-
-        OnboardingProgressResponseDto progressResponseDto = onboardingService.getCurrentProgress(memberId);
-
-        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, progressResponseDto));
     }
 }
