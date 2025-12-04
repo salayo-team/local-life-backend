@@ -224,16 +224,21 @@ public class OnboardingService {
             progress.getCurrentStep() != OnboardingStep.APTITUDE_AI_TEST) {
             throw new CustomException(ErrorCode.INVALID_ONBOARDING_STEP);
         }
+
+        UserAptitude userAptitude = userAptitudeRepository.findByMember(member)
+            .orElseThrow(() -> new CustomException(ErrorCode.APTITUDE_NOT_FOUND));
         
         // 온보딩 완료 처리
         progress.complete();
         onboardingProgressRepository.save(progress);
-        
-        log.info("온보딩 완료 - memberId: {}, regionType: {}", memberId, progress.getRegionType());
-        return OnboardingProgressResponseDto.createCompleteResponse(
-            progress.getSessionId(), 
-            progress.getRegionType()
-        );
+        log.info("온보딩 완료 - memberId: {}, regionType: {}, aptitudeType: {}", memberId, progress.getRegionType(), userAptitude.getAptitudeType());
+
+        return OnboardingProgressResponseDto.builder()
+            .isCompleted(true)
+            .sessionId(progress.getSessionId())
+            .regionType(progress.getRegionType())
+            .aptitudeType(userAptitude.getAptitudeType())
+            .build();
     }
     
     /**
