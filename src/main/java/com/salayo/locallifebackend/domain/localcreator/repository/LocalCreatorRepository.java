@@ -26,4 +26,7 @@ public interface LocalCreatorRepository extends JpaRepository<LocalCreator, Long
 
     @Query("SELECT lc FROM LocalCreator lc JOIN FETCH lc.member m WHERE m.email = :email")
     Optional<LocalCreator> findByMemberEmail(@Param("email") String email);
+
+    boolean existsByMember_PhoneNumberAndMember_IdNot(String phoneNumber, Long id);
+
 }
