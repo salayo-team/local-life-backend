@@ -16,3 +16,28 @@ Content-Type: application/json
 ### 로컬 크리에이터 정보 조회
 GET http://localhost:8080/localcreator/me
 Authorization: Bearer {{accessToken}}
+
+### 로컬 크리에이터 정보 수정 (+ 재승인 요청)
+# 실제 테스트는 Postman or Swagger
+PATCH http://localhost:8080/localcreator/me
+Authorization: Bearer {{accessToken}}
+Content-Type: multipart/form-data; boundary=----Boundary
+
+------Boundary
+Content-Disposition: form-data; name="data"
+Content-Type: application/json
+
+{
+  "businessName": "새로운 상호명",
+  "businessAddress": "서울시 어딘가 123-45"
+}
+------Boundary
+Content-Disposition: form-data; name="file"; filename="business_reg.png"
+Content-Type: image/png
+
+< ./files/business_reg.png
+------Boundary
+Content-Disposition: form-data; name="filePurposes"
+
+BUSINESS_REGISTRATION
+------Boundary--
