@@ -333,7 +333,7 @@ public class MagazineService {
     }
 
     @Transactional
-    public void finalizeCollaboation(Long magazineId) {
+    public void finalizeCollaboration(Long magazineId) {
         Magazine magazine = magazineRepository.findById(magazineId)
             .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_NOT_FOUND));
 
@@ -352,6 +352,40 @@ public class MagazineService {
         magazinePreviewTokenRepository.flush();
 
         log.info("매거진(ID: {}) 협업 마무리 → DRAFT 상태로 복귀", magazineId);
+    }
+
+    @Transactional
+    public void registerMagazine(Long magazineId, Long adminId) {
+        Magazine magazine = magazineRepository.findById(magazineId)
+            .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_NOT_FOUND));
+
+        if (!magazine.getAdmin().getId().equals(adminId)) {
+            throw new CustomException(ErrorCode.MAGAZINE_FORBIDDEN);
+        }
+
+        if (magazine.getDeletedStatus() == DeletedStatus.DELETED) {
+            throw new CustomException(ErrorCode.MAGAZINE_ALREADY_DELETED);
+        }
+
+        if (magazine.getMagazineStatus() == MagazineStatus.REGISTERED) {
+            throw new CustomException(ErrorCode.MAGAZINE_ALREADY_REGISTERED);
+        }
+
+        if (!List.of(
+            MagazineStatus.DRAFT,
+            MagazineStatus.REQUEST_REVISION,
+            MagazineStatus.PENDING_CONFIRMATION
+        ).contains(magazine.getMagazineStatus())) {
+            throw new CustomException(ErrorCode.MAGAZINE_INVALID_STATUS_FOR_REGISTER);
+        }
+
+        magazine.updateStatus(MagazineStatus.REGISTERED);
+        magazine.markAsRegistered();
+
+        magazinePreviewTokenRepository.deleteByMagazineId(magazineId);
+        magazinePreviewTokenRepository.flush();
+
+        log.info("매거진(ID: {})이 최종 등록(REGISTERED)되었습니다.", magazineId);
     }
 
 }
