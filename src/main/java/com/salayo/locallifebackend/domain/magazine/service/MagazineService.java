@@ -163,7 +163,7 @@ public class MagazineService {
             .id(magazine.getId())
             .title(magazine.getTitle())
             .content(magazine.getContent())
-            .thumnailUrl(magazine.getThumbnailUrl())
+            .thumbnailUrl(magazine.getThumbnailUrl())
             .detailImageUrls(detailImageUrls)
             .regionName(magazine.getRegionCategory().getRegionName())
             .aptitudeName(magazine.getAptitudeCategory().getAptitudeName())
@@ -301,7 +301,10 @@ public class MagazineService {
             .magazine(magazine)
             .content(magazineUpdateRequestDto.getContent())
             .admin(admin)
+            .revisionNumber(0)
             .build();
+
+        magazineRevisionRepository.save(magazineRevision);
     }
 
     @Transactional
