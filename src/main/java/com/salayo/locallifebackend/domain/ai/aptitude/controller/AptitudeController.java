@@ -79,7 +79,7 @@ public class AptitudeController {
 		Long memberId = memberDetails.getMember().getId();
 		log.info("적성 검사 시작 - memberId : {}", memberId);
 		AptitudeTestStartResponseDto response = aptitudeService.startTest(memberId);
-		return CommonResponseDto.success(SuccessCode.CREATE_SUCCESS, response);
+		return CommonResponseDto.success(SuccessCode.AI_APTITUDE_TEST_START_SUCCESS, response);
 	}
 
 	@PostMapping("/test/answer")
@@ -115,7 +115,7 @@ public class AptitudeController {
 		Long memberId = memberDetails.getMember().getId();
 		log.info("답변 제출 - memberId: {}, step: {}", memberId, aptitudeAnswerRequestDto.getStep());
 		AptitudeTextProgressResponseDto response = aptitudeService.submitAnswer(memberId, aptitudeAnswerRequestDto);
-		return CommonResponseDto.success(SuccessCode.UPDATE_SUCCESS, response);
+		return CommonResponseDto.success(SuccessCode.SUBMIT_ANSWER_SUCCESS, response);
 	}
 
 	@PostMapping("/select")
@@ -151,7 +151,7 @@ public class AptitudeController {
 		Long memberId = memberDetails.getMember().getId();
 		log.info("수동 선택 - memberId: {}, aptitude: {}", memberId, aptitudeSelectRequestDto.aptitudeType());
 		AptitudeTestResultResponseDto response = aptitudeService.selectAptitudeManually(memberId, aptitudeSelectRequestDto.aptitudeType());
-		return CommonResponseDto.success(SuccessCode.CREATE_SUCCESS, response);
+		return CommonResponseDto.success(SuccessCode.SELECT_SUCCESS, response);
 	}
 
 	@GetMapping("/can-retake")
@@ -277,6 +277,6 @@ public class AptitudeController {
 		@Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails) {
 		Long memberId = memberDetails.getMember().getId();
 		AptitudeResumeResponseDto response = aptitudeService.resumeTest(memberId);
-		return CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, response);
+		return CommonResponseDto.success(SuccessCode.RESUME_SUCCESS, response);
 	}
 }

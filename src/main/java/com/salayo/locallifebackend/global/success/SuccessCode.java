@@ -25,7 +25,13 @@ public enum SuccessCode {
 
     ONBOARDING_START_SUCCESS(HttpStatus.OK, "온보딩이 시작되었습니다."),
     SELECT_SUCCESS(HttpStatus.OK, "선택이 완료되었습니다."),
-    ONBOARDING_COMPLETE_SUCCESS(HttpStatus.OK, "온보딩이 완료되었습니다.")
+    ONBOARDING_COMPLETE_SUCCESS(HttpStatus.OK, "온보딩이 완료되었습니다."),
+
+    RECOMMENDATION_SUCCESS(HttpStatus.OK,"추천이 완료되었습니다."),
+
+    AI_APTITUDE_TEST_START_SUCCESS(HttpStatus.OK, "AI 적성 검사가 시작되었습니다."),
+    SUBMIT_ANSWER_SUCCESS(HttpStatus.OK, "성공적으로 답변을 제출했습니다."),
+    RESUME_SUCCESS(HttpStatus.OK, "이어하기가 성공적으로 처리되었습니다.")
 
     ;
 
