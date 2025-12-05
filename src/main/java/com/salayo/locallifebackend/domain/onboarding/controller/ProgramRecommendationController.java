@@ -44,6 +44,6 @@ public class ProgramRecommendationController {
 
 		List<RecommendedProgramResponseDto> recommendedPrograms = programRecommendationService.getRecommendedPrograms(memberId);
 
-		return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, recommendedPrograms));
+		return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.RECOMMENDATION_SUCCESS, recommendedPrograms));
 	}
 }
