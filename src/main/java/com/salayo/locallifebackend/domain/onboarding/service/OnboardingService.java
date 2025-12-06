@@ -218,4 +218,23 @@ public class OnboardingService {
     private String generateSessionId(Long memberId) {
         return String.format("ONB-%d-%s", memberId, UUID.randomUUID().toString().substring(0, 8));
     }
+
+    /**
+     * [내부용] 적성 검사 완료 후 온보딩 상태를 완료로 변경
+     * AptitudeService에서 호출
+     */
+    @Transactional
+    public void completeOnboardingAfterAptitudeTest(Long memberId) {
+        Member member = memberRepository.findActiveByIdOrThrow(memberId);
+        OnboardingProgress progress = getOnboardingProgress(member);
+
+        // 이미 완료된 경우는 건너뜀
+        if (progress.isCompleted()) {
+            return;
+        }
+
+        // 온보딩 완료 처리
+        progress.complete();
+        log.info("적성 검사 완료에 따른 온보딩 상태 업데이트 - memberId: {}", memberId);
+    }
 }

@@ -10,6 +10,7 @@ import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeTextProgressRe
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.CanRetakeTestResponseDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.service.AptitudeService;
 import com.salayo.locallifebackend.domain.ai.aptitude.service.AptitudeTestHistoryService;
+import com.salayo.locallifebackend.domain.ai.aptitude.service.AptitudeTestProgressService;
 import com.salayo.locallifebackend.global.dto.CommonResponseDto;
 import com.salayo.locallifebackend.global.security.MemberDetails;
 import com.salayo.locallifebackend.global.success.SuccessCode;
@@ -40,10 +41,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class AptitudeController {
 
 	private final AptitudeService aptitudeService;
+	private final AptitudeTestProgressService aptitudeTestProgressService;
 	private final AptitudeTestHistoryService testHistoryService;
 
-	public AptitudeController(AptitudeService aptitudeService, AptitudeTestHistoryService testHistoryService) {
+	public AptitudeController(AptitudeService aptitudeService, AptitudeTestProgressService aptitudeTestProgressService,
+		AptitudeTestHistoryService testHistoryService) {
 		this.aptitudeService = aptitudeService;
+		this.aptitudeTestProgressService = aptitudeTestProgressService;
 		this.testHistoryService = testHistoryService;
 	}
 
@@ -78,7 +82,7 @@ public class AptitudeController {
 		@Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails) {
 		Long memberId = memberDetails.getMember().getId();
 		log.info("적성 검사 시작 - memberId : {}", memberId);
-		AptitudeTestStartResponseDto response = aptitudeService.startTest(memberId);
+		AptitudeTestStartResponseDto response = aptitudeTestProgressService.startTest(memberId);
 		return CommonResponseDto.success(SuccessCode.AI_APTITUDE_TEST_START_SUCCESS, response);
 	}
 
@@ -180,7 +184,7 @@ public class AptitudeController {
 	public CommonResponseDto<CanRetakeTestResponseDto> canRetakeTest(
 		@Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails) {
 		Long memberId = memberDetails.getMember().getId();
-		CanRetakeTestResponseDto response = aptitudeService.canRetakeTest(memberId);
+		CanRetakeTestResponseDto response = aptitudeTestProgressService.canRetakeTest(memberId);
 		return CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, response);
 	}
 	
@@ -276,7 +280,7 @@ public class AptitudeController {
 	public CommonResponseDto<AptitudeResumeResponseDto> resumeTest(
 		@Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails) {
 		Long memberId = memberDetails.getMember().getId();
-		AptitudeResumeResponseDto response = aptitudeService.resumeTest(memberId);
+		AptitudeResumeResponseDto response = aptitudeTestProgressService.resumeTest(memberId);
 		return CommonResponseDto.success(SuccessCode.RESUME_SUCCESS, response);
 	}
 }
