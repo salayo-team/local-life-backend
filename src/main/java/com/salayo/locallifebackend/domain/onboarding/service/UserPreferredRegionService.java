@@ -26,14 +26,13 @@ public class UserPreferredRegionService {
 
     private final UserPreferredRegionsRepository userPreferredRegionsRepository;
     private final MemberRepository memberRepository;
-    private final OnboardingService onboardingService;
+
 
     public UserPreferredRegionService(
             UserPreferredRegionsRepository userPreferredRegionsRepository,
-            MemberRepository memberRepository, OnboardingService onboardingService) {
+            MemberRepository memberRepository) {
             this.userPreferredRegionsRepository = userPreferredRegionsRepository;
             this.memberRepository = memberRepository;
-            this.onboardingService = onboardingService;
 	}
 
     /**
@@ -42,8 +41,6 @@ public class UserPreferredRegionService {
      */
     @Transactional(readOnly = true)
     public List<String> getUserPreferredRegions(Long memberId) {
-
-        onboardingService.getCompletedOnboardingProgress(memberId);
 
         Member member = memberRepository.findActiveByIdOrThrow(memberId);
 
@@ -66,12 +63,14 @@ public class UserPreferredRegionService {
      * 마이페이지에서 선호 지역 변경 시 사용
      */
     @Transactional
-    public List<String> updateUserPreferredRegions(Long memberId, RegionType newRegionType) {
+    public List<String> updateUserPreferredRegions(Long memberId,
+        RegionType newRegionType, boolean isSameType) {
+
         Member member = memberRepository.findActiveByIdOrThrow(memberId);
 
-        boolean isSameType = onboardingService.checkAndUpdateRegionTypeForMypage(memberId, newRegionType);
-
         if (isSameType) {
+            log.info("동일한 지역 특징 선택 - memberId: {}, regionType: {}", member.getId(), newRegionType);
+
             return newRegionType.getRegions();
         }
 

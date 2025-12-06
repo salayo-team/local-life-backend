@@ -1,7 +1,9 @@
 package com.salayo.locallifebackend.domain.onboarding.controller;
 
 import com.salayo.locallifebackend.domain.onboarding.dto.OnboardingRegionRequestDto;
+import com.salayo.locallifebackend.domain.onboarding.service.OnboardingService;
 import com.salayo.locallifebackend.domain.onboarding.service.UserPreferredRegionService;
+import com.salayo.locallifebackend.domain.onboarding.service.UserRegionFacadeService;
 import com.salayo.locallifebackend.global.dto.CommonResponseDto;
 import com.salayo.locallifebackend.global.security.MemberDetails;
 import com.salayo.locallifebackend.global.success.SuccessCode;
@@ -32,11 +34,13 @@ import java.util.List;
 @Tag(name = "UserPreferredRegion", description = "사용자 선호 지역 관리 API")
 public class UserPreferredRegionController {
 
-    private final UserPreferredRegionService userPreferredRegionService;
+    private final UserRegionFacadeService userRegionFacadeService;
+    private final OnboardingService onboardingService;
 
-    public UserPreferredRegionController(UserPreferredRegionService userPreferredRegionService) {
-        this.userPreferredRegionService = userPreferredRegionService;
-    }
+    public UserPreferredRegionController(UserRegionFacadeService userRegionFacadeService, OnboardingService onboardingService) {
+        this.userRegionFacadeService = userRegionFacadeService;
+		this.onboardingService = onboardingService;
+	}
 
     /**
      * 사용자의 선호 지역 목록 조회
@@ -51,7 +55,9 @@ public class UserPreferredRegionController {
         Long memberId = memberDetails.getMember().getId();
         log.info("선호 지역 목록 조회 요청 - memberId: {}", memberId);
 
-        List<String> regions = userPreferredRegionService.getUserPreferredRegions(memberId);
+        onboardingService.getCompletedOnboardingProgress(memberId);
+
+        List<String> regions = userRegionFacadeService.getUserPreferredRegions(memberId);
 
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, regions));
     }
@@ -70,7 +76,7 @@ public class UserPreferredRegionController {
         Long memberId = memberDetails.getMember().getId();
         log.info("선호 지역 변경 요청 - memberId: {}, newRegionType: {}", memberId, regionRequestDto.regionType());
 
-        List<String> updatedRegions = userPreferredRegionService.updateUserPreferredRegions(
+        List<String> updatedRegions = userRegionFacadeService.updateUserPreferredRegions(
             memberId, regionRequestDto.regionType());
 
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.UPDATE_SUCCESS, updatedRegions));

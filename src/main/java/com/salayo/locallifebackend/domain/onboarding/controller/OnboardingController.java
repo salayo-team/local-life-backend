@@ -4,6 +4,7 @@ import com.salayo.locallifebackend.domain.onboarding.dto.OnboardingAptitudeCheck
 import com.salayo.locallifebackend.domain.onboarding.dto.OnboardingProgressResponseDto;
 import com.salayo.locallifebackend.domain.onboarding.dto.OnboardingRegionRequestDto;
 import com.salayo.locallifebackend.domain.onboarding.dto.OnboardingStatusResponseDto;
+import com.salayo.locallifebackend.domain.onboarding.service.UserRegionFacadeService;
 import com.salayo.locallifebackend.domain.onboarding.service.OnboardingService;
 import com.salayo.locallifebackend.global.dto.CommonResponseDto;
 import com.salayo.locallifebackend.global.security.MemberDetails;
@@ -31,12 +32,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class OnboardingController {
 
     private final OnboardingService onboardingService;
+    private final UserRegionFacadeService userRegionFacadeService;
 
-	public OnboardingController(OnboardingService onboardingService) {
+	public OnboardingController(OnboardingService onboardingService, UserRegionFacadeService userRegionFacadeService) {
 		this.onboardingService = onboardingService;
+		this.userRegionFacadeService = userRegionFacadeService;
 	}
 
-    @PostMapping("/start")
+	@PostMapping("/start")
     @Operation(summary = "온보딩 시작", description = "회원 온보딩 프로세스를 시작합니다")
     public ResponseEntity<CommonResponseDto<OnboardingProgressResponseDto>> startOnboarding(
             @Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails) {
@@ -84,7 +87,7 @@ public class OnboardingController {
         Long memberId = memberDetails.getMember().getId();
         log.info("선호 지역 특징 선택 요청 - memberId: {}, regionType: {}", memberId, regionRequestDto.regionType());
 
-        OnboardingProgressResponseDto progressResponseDto = onboardingService.selectRegion(memberId, regionRequestDto);
+        OnboardingProgressResponseDto progressResponseDto = userRegionFacadeService.coordinateSelectRegion(memberId, regionRequestDto);
 
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.SELECT_SUCCESS, progressResponseDto));
     }

@@ -27,16 +27,12 @@ public class OnboardingService {
     
     private final OnboardingProgressRepository onboardingProgressRepository;
     private final MemberRepository memberRepository;
-    private final UserPreferredRegionService userPreferredRegionService;
     private final UserAptitudeRepository userAptitudeRepository;
 
 	public OnboardingService(OnboardingProgressRepository onboardingProgressRepository, 
-                            MemberRepository memberRepository,
-                            UserPreferredRegionService userPreferredRegionService,
-                            UserAptitudeRepository userAptitudeRepository) {
+                            MemberRepository memberRepository, UserAptitudeRepository userAptitudeRepository) {
 		this.onboardingProgressRepository = onboardingProgressRepository;
 		this.memberRepository = memberRepository;
-		this.userPreferredRegionService = userPreferredRegionService;
 		this.userAptitudeRepository = userAptitudeRepository;
 	}
 
@@ -167,14 +163,10 @@ public class OnboardingService {
         // 지역 특징 타입 저장
         RegionType regionType = regionRequestDto.regionType();
         progress.updateRegion(regionType);
-        
-        // UserPreferredRegionService를 통한 지역 설정
-        userPreferredRegionService.setPreferredRegionsForOnboarding(member, regionType);
-        
+
         // 다음 단계로 이동
         progress.moveToNextStep(false);
-        onboardingProgressRepository.save(progress);
-        
+
         log.info("선호 지역 특징 선택 완료 - memberId: {}, regionType: {}", 
             memberId, regionType);
         
