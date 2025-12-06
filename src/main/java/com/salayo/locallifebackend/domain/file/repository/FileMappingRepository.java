@@ -26,4 +26,6 @@ public interface FileMappingRepository extends JpaRepository<FileMapping, Long> 
             "WHERE f.file.storedFileName = :url AND f.referenceId = 0")
     int updateReferenceIdByStoredFileNameAndZeroReference(@Param("url") String url, @Param("magazineId") Long magazineId);
 
+    void deleteAllByReferenceIdAndFileCategory(Long referenceId, FileCategory fileCategory);
+
 }
