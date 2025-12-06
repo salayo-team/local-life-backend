@@ -55,7 +55,6 @@ public class OnboardingService {
                 String sessionId = generateSessionId(memberId);
                 OnboardingProgress newProgress = OnboardingProgress.builder()
                     .member(member)
-                    .currentStep(OnboardingStep.REGION_SELECT) // 처음부터 REGION_SELECT로 설정
                     .isCompleted(false)
                     .sessionId(sessionId)
                     .build();
@@ -65,17 +64,31 @@ public class OnboardingService {
         // 이미 완료된 경우
         if (progress.isCompleted()) {
             log.info("온보딩이 이미 완료됨 - memberId: {}", memberId);
+
+            AptitudeType finalAptitude = userAptitudeRepository.findByMember(member)
+                .map(UserAptitude::getAptitudeType)
+                .orElse(AptitudeType.PENDING);
+
             return OnboardingProgressResponseDto.createCompleteResponse(
                 progress.getSessionId(), 
-                progress.getRegionType()
+                progress.getRegionType(),
+                finalAptitude
             );
         }
         
         log.info("온보딩 시작 - memberId: {}, sessionId: {}, currentStep: {}", 
             memberId, progress.getSessionId(), progress.getCurrentStep());
+
         return OnboardingProgressResponseDto.createStartResponse(progress.getSessionId());
     }
 
+    /**
+     * 세션 ID 생성
+     */
+    private String generateSessionId(Long memberId) {
+
+        return String.format("ONB-%d-%s", memberId, UUID.randomUUID().toString().substring(0, 8));
+    }
 
     /**
      * 현재 온보딩 단계의 상세 정보 조회
@@ -103,6 +116,7 @@ public class OnboardingService {
      * 온보딩 진행 상태 조회 (내부 사용)
      */
     private OnboardingProgress getOnboardingProgress(Member member) {
+
         return onboardingProgressRepository.findByMember(member)
             .orElseThrow(() -> {
                 log.error("온보딩 진행 정보 없음 - memberId: {}", member.getId());
@@ -230,21 +244,50 @@ public class OnboardingService {
         
         // 온보딩 완료 처리
         progress.complete();
-        onboardingProgressRepository.save(progress);
-        log.info("온보딩 완료 - memberId: {}, regionType: {}, aptitudeType: {}", memberId, progress.getRegionType(), userAptitude.getAptitudeType());
+        log.info("온보딩 완료 - memberId: {}, regionType: {}, aptitudeType: {}",
+            memberId, progress.getRegionType(), userAptitude.getAptitudeType());
 
-        return OnboardingProgressResponseDto.builder()
-            .isCompleted(true)
-            .sessionId(progress.getSessionId())
-            .regionType(progress.getRegionType())
-            .aptitudeType(userAptitude.getAptitudeType())
-            .build();
+        return OnboardingProgressResponseDto.createCompleteResponse(
+            progress.getSessionId(),
+            progress.getRegionType(),
+            userAptitude.getAptitudeType()
+        );
     }
-    
+
     /**
-     * 세션 ID 생성
+     * [내부용] 온보딩 완료 여부 검증
+     * 완료되지 않았을 경우 예외를 발생 시킴
      */
-    private String generateSessionId(Long memberId) {
-        return String.format("ONB-%d-%s", memberId, UUID.randomUUID().toString().substring(0, 8));
+    @Transactional(readOnly = true)
+    public OnboardingProgress getCompletedOnboardingProgress(Long memberId) {
+        Member member = memberRepository.findActiveByIdOrThrow(memberId);
+        OnboardingProgress progress = onboardingProgressRepository.findByMember(member)
+            .orElseThrow(() -> new CustomException(ErrorCode.ONBOARDING_NOT_STARTED));
+
+        if (!progress.isCompleted()) {
+            throw new CustomException(ErrorCode.ONBOARDING_NOT_COMPLETED);
+        }
+        return progress;
+    }
+
+    /**
+     * [내부용] 마이페이지에서 선호 지역 변경 시, 온보딩 상태를 확인하고 RegionType을 변경
+     * @return 동일한 RegionType을 선택했는지 여부
+     */
+    @Transactional
+    public boolean checkAndUpdateRegionTypeForMypage(Long memberId, RegionType newRegionType) {
+        // 검증 및 객체 조회를 getCompletedOnboardingProgress 메서드에 위임 (DB 조회 1회)
+        OnboardingProgress progress = getCompletedOnboardingProgress(memberId);
+
+        // 동일한 지역 특징 선택 여부 확인
+        if (progress.getRegionType() == newRegionType) {
+            log.info("동일한 지역 특징 선택 - memberId: {}, regionType: {}", memberId, newRegionType);
+            return true; // 동일하므로 true 반환
+        }
+
+        // OnboardingProgress의 RegionType 업데이트
+        progress.updateRegion(newRegionType);
+
+        return false; // 동일하지 않으므로 false 반환
     }
 }

@@ -26,16 +26,15 @@ public class UserPreferredRegionService {
 
     private final UserPreferredRegionsRepository userPreferredRegionsRepository;
     private final MemberRepository memberRepository;
-    private final OnboardingProgressRepository onboardingProgressRepository;
+    private final OnboardingService onboardingService;
 
     public UserPreferredRegionService(
             UserPreferredRegionsRepository userPreferredRegionsRepository,
-            MemberRepository memberRepository,
-            OnboardingProgressRepository onboardingProgressRepository) {
-        this.userPreferredRegionsRepository = userPreferredRegionsRepository;
-        this.memberRepository = memberRepository;
-        this.onboardingProgressRepository = onboardingProgressRepository;
-    }
+            MemberRepository memberRepository, OnboardingService onboardingService) {
+            this.userPreferredRegionsRepository = userPreferredRegionsRepository;
+            this.memberRepository = memberRepository;
+            this.onboardingService = onboardingService;
+	}
 
     /**
      * 사용자의 선호 지역 목록 조회
@@ -43,15 +42,10 @@ public class UserPreferredRegionService {
      */
     @Transactional(readOnly = true)
     public List<String> getUserPreferredRegions(Long memberId) {
+
+        onboardingService.getCompletedOnboardingProgress(memberId);
+
         Member member = memberRepository.findActiveByIdOrThrow(memberId);
-
-        // 온보딩 완료 여부 확인
-        OnboardingProgress progress = onboardingProgressRepository.findByMember(member)
-            .orElseThrow(() -> new CustomException(ErrorCode.ONBOARDING_NOT_STARTED));
-
-        if (!progress.isCompleted()) {
-            throw new CustomException(ErrorCode.ONBOARDING_NOT_COMPLETED);
-        }
 
         List<UserPreferredRegions> preferredRegions = 
             userPreferredRegionsRepository.findByMemberAndIsActiveTrue(member);
@@ -75,18 +69,9 @@ public class UserPreferredRegionService {
     public List<String> updateUserPreferredRegions(Long memberId, RegionType newRegionType) {
         Member member = memberRepository.findActiveByIdOrThrow(memberId);
 
-        // 온보딩 상태 확인
-        OnboardingProgress progress = onboardingProgressRepository.findByMember(member)
-            .orElseThrow(() -> new CustomException(ErrorCode.ONBOARDING_NOT_STARTED));
+        boolean isSameType = onboardingService.checkAndUpdateRegionTypeForMypage(memberId, newRegionType);
 
-        if (!progress.isCompleted()) {
-            throw new CustomException(ErrorCode.ONBOARDING_NOT_COMPLETED);
-        }
-
-        // 동일한 지역 특징 선택 시 현재 지역 목록 반환
-        if (progress.getRegionType() == newRegionType) {
-            log.info("동일한 지역 특징 선택 - memberId: {}, regionType: {}", memberId, newRegionType);
-
+        if (isSameType) {
             return newRegionType.getRegions();
         }
 
@@ -95,18 +80,15 @@ public class UserPreferredRegionService {
 
         // 새로운 지역 특징에 따른 지역 매핑
         List<String> regions = newRegionType.getRegions();
+        List<UserPreferredRegions> newPreferredRegions = new ArrayList<>();
         for (String regionName : regions) {
-            UserPreferredRegions preferredRegion = UserPreferredRegions.builder()
+            newPreferredRegions.add(UserPreferredRegions.builder()
                 .member(member)
                 .regionName(regionName)
                 .isActive(true)
-                .build();
-            userPreferredRegionsRepository.save(preferredRegion);
+                .build());
         }
-
-        // OnboardingProgress의 RegionType도 업데이트
-        progress.updateRegion(newRegionType);
-        onboardingProgressRepository.save(progress);
+        userPreferredRegionsRepository.saveAll(newPreferredRegions);
 
         log.info("선호 지역 업데이트 완료 - memberId: {}, 새로운 regionType: {}, 매핑된 지역 수: {}",
             memberId, newRegionType, regions.size());

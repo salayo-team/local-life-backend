@@ -145,13 +145,16 @@ public class OnboardingProgressResponseDto {
 	/**
 	 * 온보딩 완료 응답 생성
 	 */
-	public static OnboardingProgressResponseDto createCompleteResponse(String sessionId, RegionType regionType) {
+	public static OnboardingProgressResponseDto createCompleteResponse(String sessionId,
+		RegionType regionType, AptitudeType aptitudeType) {
+
 		return OnboardingProgressResponseDto.builder()
 			.sessionId(sessionId)
 			.currentStep(OnboardingStep.COMPLETED)
 			.nextStep(null)
 			.isCompleted(true)
 			.regionType(regionType)
+			.aptitudeType(aptitudeType)
 			.guideMessage("온보딩이 완료되었습니다!")
 			.nextAction(NextAction.builder()
 				.type(OnboardingStep.COMPLETED)
