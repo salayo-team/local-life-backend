@@ -46,6 +46,7 @@ public class OnboardingProgressResponseDto {
 
 	@Getter
 	public static class NextAction {
+
 		private final OnboardingStep type;
 		private final String endpoint;
 		private final String method;
@@ -66,9 +67,12 @@ public class OnboardingProgressResponseDto {
 	public static OnboardingProgressResponseDto createStartResponse(String sessionId) {
 		return OnboardingProgressResponseDto.builder()
 			.sessionId(sessionId)
-			.currentStep(OnboardingStep.MEMBER_INFO)
-			.nextStep(OnboardingStep.REGION_SELECT)
+			.currentStep(OnboardingStep.REGION_SELECT)
+			.nextStep(OnboardingStep.APTITUDE_CHECK)
 			.isCompleted(false)
+			.regionType(null)
+			.aptitudeType(AptitudeType.PENDING)
+			.knowsAptitude(false)
 			.guideMessage("온보딩을 시작합니다. 선호 지역을 선택해주세요.")
 			.nextAction(NextAction.builder()
 				.type(OnboardingStep.REGION_SELECT)

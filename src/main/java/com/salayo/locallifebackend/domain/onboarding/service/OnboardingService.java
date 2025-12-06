@@ -37,63 +37,36 @@ public class OnboardingService {
 	}
 
 	/**
-     * 온보딩 시작
-     */
-    @Transactional
-    public OnboardingProgressResponseDto startOnboarding(Long memberId) {
-        Member member = memberRepository.findById(memberId)
-            .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
-        
-        // 기존 온보딩 진행 상태 확인
-        OnboardingProgress progress = onboardingProgressRepository.findByMember(member)
-            .orElseGet(() -> {
-                // 새로운 온보딩 시작
-                String sessionId = generateSessionId(memberId);
-                OnboardingProgress newProgress = OnboardingProgress.builder()
-                    .member(member)
-                    .isCompleted(false)
-                    .sessionId(sessionId)
-                    .build();
-                return onboardingProgressRepository.save(newProgress);
-            });
-        
-        // 이미 완료된 경우
-        if (progress.isCompleted()) {
-            log.info("온보딩이 이미 완료됨 - memberId: {}", memberId);
+	 * 온보딩 시작
+	 */
+	@Transactional
+	public OnboardingProgressResponseDto startOnboarding(Long memberId) {
+		Member member = memberRepository.findById(memberId)
+			.orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
-            AptitudeType finalAptitude = userAptitudeRepository.findByMember(member)
-                .map(UserAptitude::getAptitudeType)
-                .orElse(AptitudeType.PENDING);
+		// 기존 온보딩 진행 상태 확인
+		OnboardingProgress progress = onboardingProgressRepository.findByMember(member)
+			.orElseGet(() -> {
+				// 새로운 온보딩 시작
+				String sessionId = generateSessionId(memberId);
+				OnboardingProgress newProgress = OnboardingProgress.builder()
+					.member(member)
+					.isCompleted(false)
+					.sessionId(sessionId)
+					.build();
+				return onboardingProgressRepository.save(newProgress);
+			});
 
-            return OnboardingProgressResponseDto.createCompleteResponse(
-                progress.getSessionId(), 
-                progress.getRegionType(),
-                finalAptitude
-            );
-        }
+		if (progress.getCurrentStep() == OnboardingStep.MEMBER_INFO) {
+			progress.moveToNextStep(false);
+			log.info("온보딩 단계 진행: MEMBER_INFO -> REGION_SELECET");
+		}
 
-        if (progress.getCurrentStep() == OnboardingStep.MEMBER_INFO) {
-            progress.moveToNextStep(false);
-            log.info("온보딩 단계 진행: MEMBER_INFO -> REGION_SELECET");
-        }
+		log.info("온보딩 시작 - memberId: {}, sessionId: {}, currentStep: {}",
+			memberId, progress.getSessionId(), progress.getCurrentStep());
 
-        log.info("온보딩 시작 - memberId: {}, sessionId: {}, currentStep: {}",
-            memberId, progress.getSessionId(), progress.getCurrentStep());
-
-        return OnboardingProgressResponseDto.builder()
-            .sessionId(progress.getSessionId())
-            .currentStep(progress.getCurrentStep())
-            .nextStep(progress.getCurrentStep().getNextStep(false))
-            .isCompleted(progress.isCompleted())
-            .guideMessage("온보딩을 시작합니다. 선호 지역을 선택해주세요.")
-            .nextAction(OnboardingProgressResponseDto.NextAction.builder()
-                .type(OnboardingStep.REGION_SELECT)
-                .endpoint("/onboarding/region")
-                .method("POST")
-                .description("선호 지역 특징 선택")
-                .build())
-            .build();
-    }
+		return OnboardingProgressResponseDto.createStartResponse(progress.getSessionId());
+	}
 
     /**
      * 세션 ID 생성
