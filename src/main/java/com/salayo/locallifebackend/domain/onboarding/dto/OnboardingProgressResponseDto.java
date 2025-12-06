@@ -6,7 +6,6 @@ import com.salayo.locallifebackend.domain.onboarding.enums.RegionType;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
-import org.apache.commons.lang3.builder.ToStringExclude;
 
 /**
  * 온보딩 진행 상태 응답 DTO
@@ -15,7 +14,7 @@ import org.apache.commons.lang3.builder.ToStringExclude;
 @ToString
 public class OnboardingProgressResponseDto {
 
-	@ToStringExclude
+	@ToString.Exclude
 	private final String sessionId;
 
 	private final OnboardingStep currentStep;
