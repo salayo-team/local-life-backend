@@ -227,12 +227,8 @@ public class AptitudeService {
 				.isOnboardingCompleted(false)
 				.build());
 
-		// 온보딩 완료 여부에 따라 다르게 처리
-		if (!userAptitude.getIsOnboardingCompleted()) {
-			userAptitude.updateAptitudeFromOnboarding(finalAptitude);
-		} else {
-			userAptitude.updateAptitudeFromMypage(finalAptitude);
-		}
+		// 최종 적성 저장
+		userAptitude.updateAptitude(finalAptitude);
 
 		// 부분 저장 정보 초기화
 		userAptitude.clearPartialProgress();
@@ -271,7 +267,7 @@ public class AptitudeService {
 				.isOnboardingCompleted(false)
 				.build());
 
-		userAptitude.updateAptitudeFromOnboarding(aptitudeType);
+		userAptitude.updateAptitude(aptitudeType);
 		userAptitudeRepository.save(userAptitude);
 
 		return new AptitudeTestResultResponseDto(aptitudeType);

@@ -86,28 +86,26 @@ public class UserAptitude extends BaseEntity {
 			.build();
 	}
 
-	public void updateAptitudeFromOnboarding(AptitudeType aptitudeType) {
+	public void updateAptitude(AptitudeType aptitudeType) {
 		this.aptitudeType = aptitudeType;
-		this.isOnboardingCompleted = true;
-		this.aptitudeTestCount++;
-	}
-
-	public void updateAptitudeFromMypage(AptitudeType aptitudeType) {
-		this.aptitudeType = aptitudeType;
+		if (this.aptitudeTestCount == null) {
+			this.aptitudeTestCount = 0;
+		}
 		this.aptitudeTestCount++;
 	}
 
 	public void incrementMypageTestCount() {
+		if (this.mypageTestCount == null) {
+			this.mypageTestCount = 0;
+		}
 		this.mypageTestCount++;
 	}
 	
-	// 부분 저장 업데이트
 	public void updatePartialProgress(Integer step, String sessionId) {
 		this.lastPartialStep = step;
 		this.partialSessionId = sessionId;
 	}
 	
-	// 부분 저장 초기화
 	public void clearPartialProgress() {
 		this.lastPartialStep = null;
 		this.partialSessionId = null;
