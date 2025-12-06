@@ -222,7 +222,7 @@ public class AptitudeService {
 			.orElse(UserAptitude.builder()
 				.member(member)
 				.aptitudeType(finalAptitude)
-				.testCount(0)
+				.aptitudeTestCount(0)
 				.mypageTestCount(0)
 				.isOnboardingCompleted(false)
 				.build());
@@ -266,7 +266,7 @@ public class AptitudeService {
 			.orElse(UserAptitude.builder()
 				.member(member)
 				.aptitudeType(aptitudeType)
-				.testCount(0)
+				.aptitudeTestCount(0)
 				.mypageTestCount(0)
 				.isOnboardingCompleted(false)
 				.build());
@@ -357,7 +357,7 @@ public class AptitudeService {
 				.orElse(UserAptitude.builder()
 					.member(member)
 					.aptitudeType(AptitudeType.NATURE)
-					.testCount(0)
+					.aptitudeTestCount(0)
 					.mypageTestCount(0)
 					.isOnboardingCompleted(false)
 					.build());

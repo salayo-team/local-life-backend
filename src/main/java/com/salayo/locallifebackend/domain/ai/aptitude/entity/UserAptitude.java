@@ -41,11 +41,11 @@ public class UserAptitude extends BaseEntity {
 	@Column(name = "aptitude_code", nullable = false)
 	private AptitudeType aptitudeType;
 
-	@Column(name = "test_step")
-	private Integer testStep;
+	@Column(name = "aptitude_test_step")
+	private Integer aptitudeTestStep;
 
-	@Column(name = "test_count", nullable = false)
-	private Integer testCount;
+	@Column(name = "aptitude_test_count", nullable = false)
+	private Integer aptitudeTestCount;
 
 	@Column(name = "mypage_test_count", nullable = false)
 	private Integer mypageTestCount;
@@ -60,13 +60,13 @@ public class UserAptitude extends BaseEntity {
 	private String partialSessionId; // 부분 저장된 세션 ID
 
 	@Builder
-	public UserAptitude(Member member, AptitudeType aptitudeType, Integer testStep, 
-			Integer testCount, Integer mypageTestCount, Boolean isOnboardingCompleted,
+	public UserAptitude(Member member, AptitudeType aptitudeType, Integer aptitudeTestStep,
+			Integer aptitudeTestCount, Integer mypageTestCount, Boolean isOnboardingCompleted,
 			Integer lastPartialStep, String partialSessionId) {
 		this.member = member;
 		this.aptitudeType = aptitudeType;
-		this.testStep = testStep;
-		this.testCount = (testCount != null) ? testCount : 0;
+		this.aptitudeTestStep = aptitudeTestStep;
+		this.aptitudeTestCount = (aptitudeTestCount != null) ? aptitudeTestCount : 0;
 		this.mypageTestCount = (mypageTestCount != null) ? mypageTestCount : 0;
 		this.isOnboardingCompleted = (isOnboardingCompleted != null) ? isOnboardingCompleted : false;
 		this.lastPartialStep = lastPartialStep;
@@ -77,8 +77,8 @@ public class UserAptitude extends BaseEntity {
 		return UserAptitude.builder()
 			.member(member)
 			.aptitudeType(AptitudeType.PENDING)
-			.testStep(0)
-			.testCount(0)
+			.aptitudeTestStep(0)
+			.aptitudeTestCount(0)
 			.mypageTestCount(0)
 			.isOnboardingCompleted(false)
 			.lastPartialStep(null)
@@ -89,12 +89,12 @@ public class UserAptitude extends BaseEntity {
 	public void updateAptitudeFromOnboarding(AptitudeType aptitudeType) {
 		this.aptitudeType = aptitudeType;
 		this.isOnboardingCompleted = true;
-		this.testCount++;
+		this.aptitudeTestCount++;
 	}
 
 	public void updateAptitudeFromMypage(AptitudeType aptitudeType) {
 		this.aptitudeType = aptitudeType;
-		this.testCount++;
+		this.aptitudeTestCount++;
 	}
 
 	public void incrementMypageTestCount() {
