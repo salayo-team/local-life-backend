@@ -1,5 +1,8 @@
 package com.salayo.locallifebackend.domain.member.service;
 
+import com.salayo.locallifebackend.domain.localcreator.repository.LocalCreatorRepository;
+import com.salayo.locallifebackend.domain.member.dto.MemberInfoResponseDto;
+import com.salayo.locallifebackend.domain.member.dto.MemberUpdateRequestDto;
 import com.salayo.locallifebackend.domain.member.entity.Member;
 import com.salayo.locallifebackend.domain.member.repository.MemberRepository;
 import com.salayo.locallifebackend.global.error.ErrorCode;
@@ -15,11 +18,14 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final RedisUtil redisUtil;
+    private final LocalCreatorRepository localCreatorRepository;
 
-    public MemberService(MemberRepository memberRepository, PasswordEncoder passwordEncoder, RedisUtil redisUtil) {
+    public MemberService(MemberRepository memberRepository, PasswordEncoder passwordEncoder, RedisUtil redisUtil,
+        LocalCreatorRepository localCreatorRepository) {
         this.memberRepository = memberRepository;
         this.passwordEncoder = passwordEncoder;
         this.redisUtil = redisUtil;
+        this.localCreatorRepository = localCreatorRepository;
     }
 
     @Transactional
@@ -38,7 +44,7 @@ public class MemberService {
     }
 
     @Transactional
-    public void withdraw(Long memberId, String currentPassword ,String reason) {
+    public void withdraw(Long memberId, String currentPassword, String reason) {
         Member member = memberRepository.findActiveByIdOrThrow(memberId);
 
         if (member.isDeleted()) {
@@ -55,4 +61,39 @@ public class MemberService {
         redisUtil.deleteAccessToken(member.getId());
     }
 
+    @Transactional
+    public MemberInfoResponseDto updateMyInfo(Long memberId, MemberUpdateRequestDto memberUpdateRequestDto) {
+        Member member = memberRepository.findActiveByIdOrThrow(memberId);
+
+        if (memberUpdateRequestDto.getNickname() != null && !memberUpdateRequestDto.getNickname().equals(member.getNickname())) {
+
+            if (memberRepository.existsByNickname(memberUpdateRequestDto.getNickname())) {
+                throw new CustomException(ErrorCode.DUPLICATE_NICKNAME);
+            }
+
+            member.updateNickname(memberUpdateRequestDto.getNickname());
+        }
+
+        if (memberUpdateRequestDto.getPhoneNumber() != null && !memberUpdateRequestDto.getPhoneNumber().equals(member.getPhoneNumber())) {
+
+            boolean existsInMember = memberRepository.existsByPhoneNumberAndIdNot(memberUpdateRequestDto.getPhoneNumber(), memberId);
+            boolean existsInLocalcreator =
+                localCreatorRepository.existsByMember_PhoneNumberAndMember_IdNot(memberUpdateRequestDto.getPhoneNumber(), memberId);
+
+            if (existsInMember || existsInLocalcreator) {
+                throw new CustomException(ErrorCode.DUPLICATE_PHONE_NUMBER);
+            }
+
+            member.updatePhoneNumber(memberUpdateRequestDto.getPhoneNumber());
+        }
+
+        return new MemberInfoResponseDto(member);
+    }
+
+    @Transactional(readOnly = true)
+    public MemberInfoResponseDto getMyInfo(Long memberId) {
+        Member member = memberRepository.findActiveByIdOrThrow(memberId);
+
+        return new MemberInfoResponseDto(member);
+    }
 }

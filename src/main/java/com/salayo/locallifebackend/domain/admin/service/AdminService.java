@@ -8,6 +8,7 @@ import com.salayo.locallifebackend.domain.localcreator.dto.LocalCreatorEmailSear
 import com.salayo.locallifebackend.domain.localcreator.entity.LocalCreator;
 import com.salayo.locallifebackend.domain.localcreator.enums.CreatorStatus;
 import com.salayo.locallifebackend.domain.localcreator.repository.LocalCreatorRepository;
+import com.salayo.locallifebackend.global.enums.DeletedStatus;
 import com.salayo.locallifebackend.global.error.ErrorCode;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
 import java.time.Duration;
@@ -38,7 +39,7 @@ public class AdminService {
     }
 
     public List<CreatorPendingResponseDto> getPendingCreators() {
-        return localCreatorRepository.findAllByCreatorStatus(CreatorStatus.PENDING).stream()
+        return localCreatorRepository.findAllActiveByCreatorStatus(CreatorStatus.PENDING, DeletedStatus.DISPLAYED).stream()
             .map(CreatorPendingResponseDto::from)
             .collect(Collectors.toList());
     }

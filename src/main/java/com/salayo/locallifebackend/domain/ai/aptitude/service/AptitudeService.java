@@ -47,25 +47,31 @@ public class AptitudeService {
 
 	@Transactional
 	public AptitudeTestStartResponseDto startTest(Long memberId) {
-		Member member = memberRepository.findByIdOrElseThrow(memberId);
+		Member member = memberRepository.findActiveByIdOrThrow(memberId);
 
 		// 테스트 가능 여부 확인
-		UserAptitude userAptitude = userAptitudeRepository.findByMember(member).orElse(null);
-		
-		// 마이페이지에서 호출된 경우 (이미 온보딩을 완료한 경우)
-		if (userAptitude != null && userAptitude.getIsOnboardingCompleted()) {
-			// 마이페이지 테스트 횟수 확인 (최대 5회)
+		UserAptitude userAptitude = userAptitudeRepository.findByMember(member)
+			.orElseGet(() -> {
+				log.info("새로운 사용자의 UserAptitudes를 생성합니다. memberId: {}", memberId);
+
+				return UserAptitude.createNew(member);
+			});
+
+		if (userAptitude.getIsOnboardingCompleted()) {
+			log.info("온보딩 완료 사용자입니다. 마이페이지에서 테스트 횟수를 검사합니다. count: {}", userAptitude.getMypageTestCount());
+
 			if (userAptitude.getMypageTestCount() >= CacheKeyPrefix.APTITUDE_MAX_TEST_COUNT) {
 				throw new CustomException(ErrorCode.APTITUDE_TEST_LIMIT_EXCEEDED);
 			}
+			userAptitude.incrementMypageTestCount();
+		} else {
+			log.info("온보딩 진행 중인 사용자입니다. 횟수 제한 검사를 건너뜁니다.");
 		}
-		// 온보딩에서 처음 호출된 경우는 제한 없음
 
 		// 세션 ID 생성
 		String sessionId = generateSessionId(memberId);
 
 		// 미완료된 테스트 이력만 삭제 (완료된 이력은 보존)
-		// TODO: 테스트 완료 시점에만 testCount 증가하도록 수정 필요
 		testHistoryService.deleteIncompleteTests(member);
 
 		// Redis 기존 데이터 정리 (중복 방지)
@@ -93,7 +99,7 @@ public class AptitudeService {
 
 	@Transactional
 	public AptitudeTextProgressResponseDto submitAnswer(Long memberId, AptitudeAnswerRequestDto aptitudeAnswerRequestDto) {
-		Member member = memberRepository.findByIdOrElseThrow(memberId);
+		Member member = memberRepository.findActiveByIdOrThrow(memberId);
 
 		// Redis에서 현재 진행 상태 확인
 		String currentStepStr = aptitudeCacheService.getTestProgress(memberId);
@@ -254,7 +260,7 @@ public class AptitudeService {
 
 	@Transactional
 	public AptitudeTestResultResponseDto selectAptitudeManually(Long memberId, AptitudeType aptitudeType) {
-		Member member = memberRepository.findByIdOrElseThrow(memberId);
+		Member member = memberRepository.findActiveByIdOrThrow(memberId);
 
 		UserAptitude userAptitude = userAptitudeRepository.findByMember(member)
 			.orElse(UserAptitude.builder()
@@ -265,8 +271,6 @@ public class AptitudeService {
 				.isOnboardingCompleted(false)
 				.build());
 
-		// 수동 선택은 현재 온보딩에서만 가능하므로 온보딩 완료 처리 됨
-		// TODO : 수동 선택은 MyPage에서도 추후에 수동 선택해서 수정이 가능함.
 		userAptitude.updateAptitudeFromOnboarding(aptitudeType);
 		userAptitudeRepository.save(userAptitude);
 
@@ -275,7 +279,7 @@ public class AptitudeService {
 
 	@Transactional(readOnly = true)
 	public CanRetakeTestResponseDto canRetakeTest(Long memberId) {
-		Member member = memberRepository.findByIdOrElseThrow(memberId);
+		Member member = memberRepository.findActiveByIdOrThrow(memberId);
 
 		return userAptitudeRepository.findByMember(member)
 			.map(aptitude -> {
@@ -318,13 +322,17 @@ public class AptitudeService {
 				memberId, aptitudeType, score, aiAnalysis.getConfidenceScore());
 		} catch (IllegalArgumentException e) {
 			log.warn("AI 응답에서 유효하지 않은 적성 타입: {}", aiAnalysis.getAptitudeType());
+
 			// Fallback: reason에서 키워드 매칭
 			for (AptitudeType type : AptitudeType.values()) {
+
 				if (aiAnalysis.getReason() != null && 
 					(aiAnalysis.getReason().contains(type.name()) || 
 					 aiAnalysis.getReason().contains(type.getTitle()))) {
+
 					aptitudeCacheService.updateAptitudeScore(memberId, type, 1);
 					log.debug("Fallback 적성 점수 업데이트 - memberId: {}, type: {}", memberId, type);
+
 					break;
 				}
 			}
@@ -365,7 +373,7 @@ public class AptitudeService {
 	// 이어하기 기능
 	@Transactional
 	public AptitudeResumeResponseDto resumeTest(Long memberId) {
-		Member member = memberRepository.findByIdOrElseThrow(memberId);
+		Member member = memberRepository.findActiveByIdOrThrow(memberId);
 
 		// UserAptitude에서 부분 저장 정보 확인
 		UserAptitude userAptitude = userAptitudeRepository.findByMember(member).orElse(null);
