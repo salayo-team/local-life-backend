@@ -7,6 +7,10 @@ import com.salayo.locallifebackend.global.security.MemberDetails;
 import com.salayo.locallifebackend.global.success.SuccessCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +39,32 @@ public class ProgramRecommendationController {
 	}
 
 	@GetMapping("/random")
-	@Operation(summary = "체험 프로그램 6개 랜덤 추천", description = "체험 프로그램 6개를 사용자의 선호 지역과 적성 타입에 맞춰 랜덤 추천합니다")
+	@Operation(
+		summary = "체험 프로그램 6개 랜덤 추천",
+		description = "온보딩에서 설정된 사용자 적성 타입과 선호 지역을 기반으로 조건에 맞는 체험 프로그램을 조회하고, 그 중 6개를 랜덤으로 추천합니다."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(
+			responseCode = "200",
+			description = "체험 프로그램 추천 목록 조회 성공",
+			content = @Content(
+				mediaType = "application/json",
+				schema = @Schema(implementation = CommonResponseDto.class)
+			)
+		),
+		@ApiResponse(
+			responseCode = "400",
+			description = "온보딩이 완료되지 않음 또는 추천 가능한 프로그램이 없음"
+		),
+		@ApiResponse(
+			responseCode = "401",
+			description = "인증되지 않은 사용자"
+		),
+		@ApiResponse(
+			responseCode = "404",
+			description = "회원을 찾을 수 없음"
+		)
+	})
 	public ResponseEntity<CommonResponseDto<List<RecommendedProgramResponseDto>>> getRandomRecommendedPrograms(
 		@Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails) {
 

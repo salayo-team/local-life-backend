@@ -9,6 +9,10 @@ import com.salayo.locallifebackend.global.security.MemberDetails;
 import com.salayo.locallifebackend.global.success.SuccessCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -47,8 +51,32 @@ public class UserPreferredRegionController {
      * 마이페이지에서 현재 선택된 지역들을 확인할 때 사용
      */
     @GetMapping("/view")
-    @Operation(summary = "내 선호 지역 목록 조회",
-        description = "현재 사용자의 선호 지역 목록을 조회합니다 (마이페이지용)")
+    @Operation(
+        summary = "내 선호 지역 목록 조회",
+        description = "현재 사용자의 선호 지역 목록을 조회합니다. 온보딩이 완료된 사용자만 조회할 수 있습니다."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "선호 지역 목록 조회 성공",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = CommonResponseDto.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "온보딩이 완료되지 않음"
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "인증되지 않은 사용자"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "온보딩이 시작되지 않았거나 회원을 찾을 수 없음"
+        )
+    })
     public ResponseEntity<CommonResponseDto<List<String>>> getUserPreferredRegions(
         @Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails) {
 
@@ -67,8 +95,32 @@ public class UserPreferredRegionController {
      * 마이페이지에서 선호 지역을 변경할 때 사용
      */
     @PutMapping("/reselect")
-    @Operation(summary = "선호 지역 변경",
-        description = "선호 지역 특징을 변경합니다 (기존 지역 삭제 후 새로운 지역으로 자동 매핑)")
+    @Operation(
+        summary = "선호 지역 변경",
+        description = "선호 지역 특징을 변경합니다. 기존 선호 지역 목록은 모두 삭제되고, 새로운 지역 특징에 맞는 지역들로 자동 매핑됩니다."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "선호 지역 변경 성공",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = CommonResponseDto.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "온보딩이 완료되지 않았거나 유효하지 않은 요청 값"
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "인증되지 않은 사용자"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "온보딩이 시작되지 않았거나 회원을 찾을 수 없음"
+        )
+    })
     public ResponseEntity<CommonResponseDto<List<String>>> updateUserPreferredRegions(
         @Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails,
         @Valid @RequestBody OnboardingRegionRequestDto regionRequestDto) {

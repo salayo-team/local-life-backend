@@ -11,6 +11,10 @@ import com.salayo.locallifebackend.global.security.MemberDetails;
 import com.salayo.locallifebackend.global.success.SuccessCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -39,8 +43,29 @@ public class OnboardingController {
 		this.userRegionFacadeService = userRegionFacadeService;
 	}
 
-	@PostMapping("/start")
-    @Operation(summary = "온보딩 시작", description = "회원 온보딩 프로세스를 시작합니다")
+    @PostMapping("/start")
+    @Operation(
+        summary = "온보딩 시작",
+        description = "회원 온보딩 프로세스를 시작합니다. 이미 온보딩이 완료된 회원은 완료 상태와 함께 최종 적성 정보를 반환합니다."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "온보딩 시작 성공",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = CommonResponseDto.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "인증되지 않은 사용자"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "회원을 찾을 수 없음"
+        )
+    })
     public ResponseEntity<CommonResponseDto<OnboardingProgressResponseDto>> startOnboarding(
             @Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails) {
 
@@ -53,7 +78,28 @@ public class OnboardingController {
     }
 
     @GetMapping("/progress")
-    @Operation(summary = "온보딩 진행 상태 조회", description = "현재 온보딩 진행 상태를 조회합니다")
+    @Operation(
+        summary = "온보딩 진행 상태 조회",
+        description = "현재 온보딩 진행 상태를 조회합니다. 현재 단계, 다음 단계, 선택된 선호 지역 특징 및 적성 정보를 반환합니다."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "온보딩 진행 상태 조회 성공",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = CommonResponseDto.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "인증되지 않은 사용자"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "온보딩이 시작되지 않음 또는 회원을 찾을 수 없음"
+        )
+    })
     public ResponseEntity<CommonResponseDto<OnboardingProgressResponseDto>> getCurrentProgress(
         @Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails) {
 
@@ -67,7 +113,28 @@ public class OnboardingController {
     }
 
     @GetMapping("/status")
-    @Operation(summary = "온보딩 진행 상태 조회(이어하기용)", description = "완료되지 않은 온보딩이 있는지 확인하고, 있다면 현재 단계를 반환합니다")
+    @Operation(
+        summary = "온보딩 진행 상태 조회(이어하기용)",
+        description = "완료되지 않은 온보딩이 있는지 확인하고, 있다면 현재 단계를 반환합니다. 온보딩 완료 시에는 선호 지역과 최종 적성 타입만 함께 반환합니다."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "온보딩 상태 조회 성공",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = CommonResponseDto.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "인증되지 않은 사용자"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "회원을 찾을 수 없음"
+        )
+    })
     public ResponseEntity<CommonResponseDto<OnboardingStatusResponseDto>> getOnboardingStatus(
         @Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails) {
 
@@ -79,7 +146,32 @@ public class OnboardingController {
     }
 
     @PostMapping("/region")
-    @Operation(summary = "선호 지역 특징 선택", description = "온보딩 시 선호 지역 특징(도시형/균형형/자연형)을 선택합니다")
+    @Operation(
+        summary = "선호 지역 특징 선택",
+        description = "온보딩 시 선호 지역 특징(도시형/균형형/자연형)을 선택합니다. 선택된 특징에 따라 선호 지역 목록이 자동 매핑됩니다."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "선호 지역 특징 선택 성공",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = CommonResponseDto.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "잘못된 온보딩 단계 또는 유효하지 않은 요청 값"
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "인증되지 않은 사용자"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "온보딩이 시작되지 않았거나 회원을 찾을 수 없음"
+        )
+    })
     public ResponseEntity<CommonResponseDto<OnboardingProgressResponseDto>> selectRegion(
         @Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails,
         @Valid @RequestBody OnboardingRegionRequestDto regionRequestDto) {
@@ -93,8 +185,32 @@ public class OnboardingController {
     }
 
     @PostMapping("/aptitude-check")
-    @Operation(summary = "적성 인지 여부 확인",
-        description = "적성을 알고 있는지 확인하고 수동 선택/AI 적성 검사로 분기합니다")
+    @Operation(
+        summary = "적성 인지 여부 확인",
+        description = "적성을 알고 있는지 확인하고, 수동 선택 또는 AI 적성 검사 단계로 분기합니다."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "적성 인지 여부 확인 성공",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = CommonResponseDto.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "잘못된 온보딩 단계 또는 유효하지 않은 요청 값"
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "인증되지 않은 사용자"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "온보딩이 시작되지 않았거나 회원을 찾을 수 없음"
+        )
+    })
     public ResponseEntity<CommonResponseDto<OnboardingProgressResponseDto>> checkAptitudeKnowledge(
         @Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails,
         @Valid @RequestBody OnboardingAptitudeCheckRequestDto aptitudeCheckRequestDto) {
@@ -108,7 +224,32 @@ public class OnboardingController {
     }
 
     @PostMapping("/complete")
-    @Operation(summary = "온보딩 완료", description = "적성 설정 완료 후 온보딩을 완료합니다")
+    @Operation(
+        summary = "온보딩 완료",
+        description = "적성 설정 완료 후 온보딩을 최종 완료 처리합니다. 사용자 선호 지역, 최종 적성 타입과 함께 완료 상태를 반환합니다."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "온보딩 완료 처리 성공",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = CommonResponseDto.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "잘못된 온보딩 단계 또는 적성 정보 없음"
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "인증되지 않은 사용자"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "온보딩이 시작되지 않았거나 회원을 찾을 수 없음"
+        )
+    })
     public ResponseEntity<CommonResponseDto<OnboardingProgressResponseDto>> completeOnboarding(
             @Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails) {
 
