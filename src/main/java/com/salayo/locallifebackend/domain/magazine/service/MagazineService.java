@@ -9,6 +9,7 @@ import com.salayo.locallifebackend.domain.localcreator.entity.LocalCreator;
 import com.salayo.locallifebackend.domain.localcreator.enums.CreatorStatus;
 import com.salayo.locallifebackend.domain.localcreator.repository.LocalCreatorRepository;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineCreateRequestDto;
+import com.salayo.locallifebackend.domain.magazine.dto.MagazineDetailResponseDto;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineDraftDetailResponseDto;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineDraftListResponseDto;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineListResponseDto;
@@ -421,6 +422,36 @@ public class MagazineService {
         );
 
         return PaginationResponseDto.of(dtoPage);
+    }
+
+    @Transactional
+    public MagazineDetailResponseDto getRegisteredMagazineDetail(Long magazineId, Member member) {
+        Magazine magazine = magazineRepository.findById(magazineId)
+            .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_NOT_FOUND));
+
+        if (magazine.getDeletedStatus() == DeletedStatus.DELETED) {
+            throw new CustomException(ErrorCode.MAGAZINE_NOT_FOUND);
+        }
+
+        if (magazine.getMagazineStatus() != MagazineStatus.REGISTERED) {
+            throw new CustomException(ErrorCode.MAGAZINE_NOT_FOUND);
+        }
+
+        magazine.increaseViews();
+
+        List<String> detailImageUrls = magazineFileService.getDetailImageUrls(magazineId);
+
+        return MagazineDetailResponseDto.builder()
+            .id(magazine.getId())
+            .title(magazine.getTitle())
+            .content(magazine.getContent())
+            .thumbnailUrl(magazine.getThumbnailUrl())
+            .detailImageUrls(detailImageUrls)
+            .regionName(magazine.getRegionCategory().getRegionName())
+            .aptitudeName(magazine.getAptitudeCategory().getAptitudeName())
+            .registeredAt(magazine.getRegisteredAt())
+            .views(magazine.getViews())
+            .build();
     }
 
 }
