@@ -112,4 +112,8 @@ public class Magazine extends BaseEntity {
         this.deletedAt = LocalDateTime.now();
     }
 
+    public void markAsRegistered() {
+        this.registeredAt = LocalDateTime.now();
+    }
+
 }

@@ -71,8 +71,10 @@ public enum ErrorCode {
 	PAYMENT_REFUND_REASON_REQUIRED(HttpStatus.BAD_REQUEST, "환불 사유는 필수입니다."),
 	RESERVATION_NOT_CANCELABLE(HttpStatus.BAD_REQUEST, "예약 취소가 불가능합니다."),
 	RESERVATION_NOT_REJECTABLE(HttpStatus.BAD_REQUEST, "예약 거절이 불가능합니다."),
+    MAGAZINE_ALREADY_REGISTERED(HttpStatus.BAD_REQUEST, "이미 등록된 매거진입니다."),
+    MAGAZINE_INVALID_STATUS_FOR_REGISTER(HttpStatus.BAD_REQUEST, "해당 상태에서는 매거진을 등록할 수 없습니다."),
 
-	// 401 Unauthorized
+    // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
     TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "만료된 토큰입니다."),
     TOKEN_MALFORMED(HttpStatus.UNAUTHORIZED, "잘못된 형식의 토큰입니다."),
