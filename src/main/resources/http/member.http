@@ -1,9 +1,9 @@
-### 일반 사용자 로그인 2
+### 일반 사용자 로그인
 POST http://localhost:8080/auth/login
 Content-Type: application/json
 
 {
-  "email": "testuser4@example.com",
+  "email": "testuser5@example.com",
   "password": "Test1234!"
 }
 
@@ -32,3 +32,17 @@ Authorization: Bearer {{accessToken}}
   "currentPassword": "Test1234!",
   "reason": "서비스가 마음에 들지 않음, 환불이 너무 까다로워요"
 }
+
+### 내 정보 수정
+PATCH http://localhost:8080/user/me
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "nickname": "힘들어용",
+  "phoneNumber": "01012347778"
+}
+
+### 내 정보 조회
+GET http://localhost:8080/user/me
+Authorization: Bearer {{accessToken}}
