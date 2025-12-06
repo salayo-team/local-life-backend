@@ -3,8 +3,8 @@ POST http://localhost:8080/auth/login
 Content-Type: application/json
 
 {
-  "email": "Admin001@salayo.com",
-  "password": "Adminpass1@"
+  "email": "Admin003@salayo.com",
+  "password": "Adminpass3@"
 }
 
 > {%
@@ -112,6 +112,11 @@ Accept: application/json
 
 ### [관리자] 임시 매거진 삭제
 DELETE http://localhost:8080/magazines/3
+Authorization: Bearer {{accessToken}}
+Accept: application/json
+
+### [관리자] 매거진 최종 등록 (REGISTER)
+POST http://localhost:8080/magazines/1/register
 Authorization: Bearer {{accessToken}}
 Accept: application/json
 

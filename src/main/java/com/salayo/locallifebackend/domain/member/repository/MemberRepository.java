@@ -15,7 +15,9 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
 
     boolean existsByNickname(String nickname);
 
-	default Member findByIdOrElseThrow(long memberId){
+    boolean existsByPhoneNumberAndIdNot(String phoneNumber, Long id);
+
+    default Member findByIdOrElseThrow(long memberId){
 		return findById(memberId).orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 	};
 

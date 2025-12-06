@@ -4,5 +4,6 @@ public enum MagazineStatus {
     DRAFT,
     REQUEST_REVISION,
     PENDING_CONFIRMATION,
-    REGISTERED
+    REGISTERED,
+    HIDDEN
 }

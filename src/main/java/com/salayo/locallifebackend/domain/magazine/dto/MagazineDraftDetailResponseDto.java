@@ -12,7 +12,7 @@ public class MagazineDraftDetailResponseDto {
     private Long id;
     private String title;
     private String content;
-    private String thumnailUrl;
+    private String thumbnailUrl;
     private List<String> detailImageUrls;
     private String regionName;
     private String aptitudeName;
