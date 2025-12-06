@@ -22,8 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 체험 프로그램 추천 Controller
- * 온보딩 완료 후 사용자 맞춤 프로그램 6개 추천 조회 기능 제공
+ * 체험 프로그램 추천 Controller 온보딩 완료 후 사용자 맞춤 프로그램 6개 추천 조회 기능 제공
  */
 @Slf4j
 @RestController
