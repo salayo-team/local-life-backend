@@ -71,11 +71,28 @@ public class OnboardingService {
                 finalAptitude
             );
         }
-        
-        log.info("온보딩 시작 - memberId: {}, sessionId: {}, currentStep: {}", 
+
+        if (progress.getCurrentStep() == OnboardingStep.MEMBER_INFO) {
+            progress.moveToNextStep(false);
+            log.info("온보딩 단계 진행: MEMBER_INFO -> REGION_SELECET");
+        }
+
+        log.info("온보딩 시작 - memberId: {}, sessionId: {}, currentStep: {}",
             memberId, progress.getSessionId(), progress.getCurrentStep());
 
-        return OnboardingProgressResponseDto.createStartResponse(progress.getSessionId());
+        return OnboardingProgressResponseDto.builder()
+            .sessionId(progress.getSessionId())
+            .currentStep(progress.getCurrentStep())
+            .nextStep(progress.getCurrentStep().getNextStep(false))
+            .isCompleted(progress.isCompleted())
+            .guideMessage("온보딩을 시작합니다. 선호 지역을 선택해주세요.")
+            .nextAction(OnboardingProgressResponseDto.NextAction.builder()
+                .type(OnboardingStep.REGION_SELECT)
+                .endpoint("/onboarding/region")
+                .method("POST")
+                .description("선호 지역 특징 선택")
+                .build())
+            .build();
     }
 
     /**
