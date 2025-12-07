@@ -2,7 +2,6 @@ package com.salayo.locallifebackend.domain.ai.aptitude.controller;
 
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeSelectRequestDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.UserAptitudeResponseDto;
-import com.salayo.locallifebackend.domain.ai.aptitude.enums.AptitudeType;
 import com.salayo.locallifebackend.domain.ai.aptitude.service.AptitudeService;
 import com.salayo.locallifebackend.global.dto.CommonResponseDto;
 import com.salayo.locallifebackend.global.security.MemberDetails;
@@ -18,7 +17,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j

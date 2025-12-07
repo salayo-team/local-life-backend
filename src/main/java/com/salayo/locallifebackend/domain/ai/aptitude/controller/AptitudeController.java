@@ -67,7 +67,7 @@ public class AptitudeController {
 		),
 		@ApiResponse(
 			responseCode = "400",
-			description = "적성 검사 횟수 초과 (APTITUDE_TEST_LIMIT_EXCEEDED)"
+			description = "적성 검사 횟수 초과"
 		),
 		@ApiResponse(
 			responseCode = "401",
@@ -75,7 +75,7 @@ public class AptitudeController {
 		),
 		@ApiResponse(
 			responseCode = "404",
-			description = "회원을 찾을 수 없음 (MEMBER_NOT_FOUND)"
+			description = "회원을 찾을 수 없음"
 		)
 	})
 	public CommonResponseDto<AptitudeTestStartResponseDto> startTest(
@@ -110,7 +110,7 @@ public class AptitudeController {
 		),
 		@ApiResponse(
 			responseCode = "404",
-			description = "진행 중인 테스트가 없음 (NOT_FOUND_TEST_PROGRESS) 또는 회원을 찾을 수 없음 (MEMBER_NOT_FOUND)"
+			description = "진행 중인 테스트가 없음 또는 회원을 찾을 수 없음"
 		)
 	})
 	public CommonResponseDto<AptitudeTextProgressResponseDto> submitAnswer(
@@ -146,7 +146,7 @@ public class AptitudeController {
 		),
 		@ApiResponse(
 			responseCode = "404",
-			description = "회원을 찾을 수 없음 (MEMBER_NOT_FOUND)"
+			description = "회원을 찾을 수 없음"
 		)
 	})
 	public CommonResponseDto<AptitudeTestResultResponseDto> selectManually(
@@ -178,7 +178,7 @@ public class AptitudeController {
 		),
 		@ApiResponse(
 			responseCode = "404",
-			description = "회원을 찾을 수 없음 (MEMBER_NOT_FOUND)"
+			description = "회원을 찾을 수 없음"
 		)
 	})
 	public CommonResponseDto<CanRetakeTestResponseDto> canRetakeTest(
@@ -208,7 +208,7 @@ public class AptitudeController {
 		),
 		@ApiResponse(
 			responseCode = "404",
-			description = "회원을 찾을 수 없음 (MEMBER_NOT_FOUND)"
+			description = "회원을 찾을 수 없음"
 		)
 	})
 	public CommonResponseDto<List<AptitudeTestHistoryResponseDto>> getCompletedHistory(
@@ -238,11 +238,11 @@ public class AptitudeController {
 		),
 		@ApiResponse(
 			responseCode = "403",
-			description = "다른 사용자의 이력에 접근 시도 (FORBIDDEN_ACCESS)"
+			description = "다른 사용자의 이력에 접근 시도"
 		),
 		@ApiResponse(
 			responseCode = "404",
-			description = "회원을 찾을 수 없음 (MEMBER_NOT_FOUND)"
+			description = "회원을 찾을 수 없음"
 		)
 	})
 	public CommonResponseDto<List<AptitudeTestHistoryResponseDto>> getHistoryBySession(
@@ -274,7 +274,7 @@ public class AptitudeController {
 		),
 		@ApiResponse(
 			responseCode = "404",
-			description = "이어할 테스트가 없음 (NO_INCOMPLETE_TEST)"
+			description = "이어할 테스트가 없음"
 		)
 	})
 	public CommonResponseDto<AptitudeResumeResponseDto> resumeTest(
