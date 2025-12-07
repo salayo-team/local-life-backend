@@ -1,46 +1,86 @@
 package com.salayo.locallifebackend.domain.onboarding.dto;
 
+import com.salayo.locallifebackend.domain.ai.aptitude.enums.AptitudeType;
 import com.salayo.locallifebackend.domain.onboarding.enums.OnboardingStep;
 import com.salayo.locallifebackend.domain.onboarding.enums.RegionType;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.ToString;
 
-/**
- * 온보딩 진행 상태 응답 DTO
- */
 @Getter
+@ToString
+@Schema(description = "온보딩 전체 진행 상태 응답 DTO")
 public class OnboardingProgressResponseDto {
+
+	@Schema(description = "온보딩 세션 ID",
+		example = "ONB-1-ab12cd34")
+	@ToString.Exclude
 	private final String sessionId;
+
+	@Schema(description = "현재 온보딩 단계",
+		example = "REGION_SELECT")
 	private final OnboardingStep currentStep;
+
+	@Schema(description = "다음 온보딩 단계 (마지막 단계면 null)",
+		example = "APTITUDE_CHECK")
 	private final OnboardingStep nextStep;
+
+	@Schema(description = "온보딩 완료 여부",
+		example = "false")
 	private final Boolean isCompleted;
+
+	@Schema(description = "사용자가 선택한 지역 특징 타입 (초기 단계에서는 null)",
+		example = "URBAN")
 	private final RegionType regionType;
+
+	@Schema(description = "적성 타입 (초기 단계에서는 PENDING)",
+		example = "PENDING")
+	private final AptitudeType aptitudeType;
+
+	@Schema(description = "사용자가 적성을 알고 있다고 응답했는지 여부 (AI 검사와 수동 선택 분기용)",
+		example = "false")
 	private final Boolean knowsAptitude;
+
+	@Schema(description = "현재 단계에 대한 안내 메시지",
+		example = "온보딩을 시작합니다. 선호 지역을 선택해주세요.")
 	private final String guideMessage;
 
-	/**
-	 * 다음 액션 정보
-	 */
+	@Schema(description = "다음 단계 이동을 위한 액션 정보")
 	private final NextAction nextAction;
 
 	@Builder
 	public OnboardingProgressResponseDto(String sessionId, OnboardingStep currentStep, OnboardingStep nextStep, Boolean isCompleted,
-		RegionType regionType, Boolean knowsAptitude, String guideMessage, NextAction nextAction) {
+		RegionType regionType, AptitudeType aptitudeType, Boolean knowsAptitude, String guideMessage, NextAction nextAction) {
 		this.sessionId = sessionId;
 		this.currentStep = currentStep;
 		this.nextStep = nextStep;
 		this.isCompleted = isCompleted;
 		this.regionType = regionType;
+		this.aptitudeType = aptitudeType;
 		this.knowsAptitude = knowsAptitude;
 		this.guideMessage = guideMessage;
 		this.nextAction = nextAction;
 	}
 
 	@Getter
+	@Schema(description = "온보딩 다음 액션 정보 DTO")
 	public static class NextAction {
+
+		@Schema(description = "다음 온보딩 단계",
+			example = "REGION_SELECT")
 		private final OnboardingStep type;
+
+		@Schema(description = "다음 호출해야 하는 API 엔드포인트",
+			example = "/onboarding/region")
 		private final String endpoint;
+
+		@Schema(description = "HTTP 메서드",
+			example = "POST")
 		private final String method;
+
+		@Schema(description = "다음 단계에 대한 설명",
+			example = "선호 지역 특징 선택")
 		private final String description;
 
 		@Builder
@@ -58,9 +98,12 @@ public class OnboardingProgressResponseDto {
 	public static OnboardingProgressResponseDto createStartResponse(String sessionId) {
 		return OnboardingProgressResponseDto.builder()
 			.sessionId(sessionId)
-			.currentStep(OnboardingStep.MEMBER_INFO)
-			.nextStep(OnboardingStep.REGION_SELECT)
+			.currentStep(OnboardingStep.REGION_SELECT)
+			.nextStep(OnboardingStep.APTITUDE_CHECK)
 			.isCompleted(false)
+			.regionType(null)
+			.aptitudeType(AptitudeType.PENDING)
+			.knowsAptitude(false)
 			.guideMessage("온보딩을 시작합니다. 선호 지역을 선택해주세요.")
 			.nextAction(NextAction.builder()
 				.type(OnboardingStep.REGION_SELECT)
@@ -73,7 +116,6 @@ public class OnboardingProgressResponseDto {
 
 	/**
 	 * 지역 선택 완료 응답 생성
-	 * TODO: Issue #156 - 지역 특징별 실제 지역 매핑 구현 예정
 	 */
 	public static OnboardingProgressResponseDto createRegionCompleteResponse(String sessionId, RegionType regionType) {
 		return OnboardingProgressResponseDto.builder()
@@ -137,13 +179,16 @@ public class OnboardingProgressResponseDto {
 	/**
 	 * 온보딩 완료 응답 생성
 	 */
-	public static OnboardingProgressResponseDto createCompleteResponse(String sessionId, RegionType regionType) {
+	public static OnboardingProgressResponseDto createCompleteResponse(String sessionId,
+		RegionType regionType, AptitudeType aptitudeType) {
+
 		return OnboardingProgressResponseDto.builder()
 			.sessionId(sessionId)
 			.currentStep(OnboardingStep.COMPLETED)
 			.nextStep(null)
 			.isCompleted(true)
 			.regionType(regionType)
+			.aptitudeType(aptitudeType)
 			.guideMessage("온보딩이 완료되었습니다!")
 			.nextAction(NextAction.builder()
 				.type(OnboardingStep.COMPLETED)
