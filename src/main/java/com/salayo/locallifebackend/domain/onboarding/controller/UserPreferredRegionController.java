@@ -2,7 +2,6 @@ package com.salayo.locallifebackend.domain.onboarding.controller;
 
 import com.salayo.locallifebackend.domain.onboarding.dto.OnboardingRegionRequestDto;
 import com.salayo.locallifebackend.domain.onboarding.service.OnboardingService;
-import com.salayo.locallifebackend.domain.onboarding.service.UserPreferredRegionService;
 import com.salayo.locallifebackend.domain.onboarding.service.UserRegionFacadeService;
 import com.salayo.locallifebackend.global.dto.CommonResponseDto;
 import com.salayo.locallifebackend.global.security.MemberDetails;
@@ -48,7 +47,7 @@ public class UserPreferredRegionController {
 	/**
 	 * 사용자의 선호 지역 목록 조회 마이페이지에서 현재 선택된 지역들을 확인할 때 사용
 	 */
-	@GetMapping("/view")
+	@GetMapping("/details")
 	@Operation(
 		summary = "내 선호 지역 목록 조회",
 		description = "현재 사용자의 선호 지역 목록을 조회합니다. 온보딩이 완료된 사용자만 조회할 수 있습니다."
