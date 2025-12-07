@@ -38,13 +38,13 @@ public class UserAptitudeController {
 
 	@GetMapping("/info")
 	@Operation(
-		summary = "내 적성 조회",
+		summary = "나의 적성 조회",
 		description = "마이페이지에서 현재 설정된 나의 적성을 조회합니다. 온보딩이 완료된 사용자만 조회할 수 있습니다."
 	)
 	@ApiResponses(value = {
 		@ApiResponse(
 			responseCode = "200",
-			description = "성공적으로 조회되었습니다.",
+			description = "나의 적성 정보를 성공적으로 조회",
 			content = @Content(
 				mediaType = "application/json",
 				schema = @Schema(implementation = CommonResponseDto.class)
@@ -75,18 +75,19 @@ public class UserAptitudeController {
 		@Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails) {
 
 		UserAptitudeResponseDto responseDto = userAptitudeService.getMyAptitude(memberDetails.getMember().getId());
+
 		return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, responseDto));
 	}
 
 	@PutMapping("/settings")
 	@Operation(
-		summary = "내 적성 수정",
+		summary = "나의 적성 수정",
 		description = "마이페이지에서 나의 적성을 수동으로 변경합니다. 온보딩이 완료된 사용자만 수정할 수 있습니다."
 	)
 	@ApiResponses(value = {
 		@ApiResponse(
 			responseCode = "200",
-			description = "성공적으로 수정되었습니다.",
+			description = "나의 적성 정보를 성공적으로 수정",
 			content = @Content(
 				mediaType = "application/json",
 				schema = @Schema(implementation = CommonResponseDto.class)
@@ -119,6 +120,7 @@ public class UserAptitudeController {
 
 		UserAptitudeResponseDto responseDto = userAptitudeService.updateMyAptitude(memberDetails.getMember().getId(),
 			requestDto.aptitudeType());
+
 		return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.UPDATE_SUCCESS, responseDto));
 	}
 }
