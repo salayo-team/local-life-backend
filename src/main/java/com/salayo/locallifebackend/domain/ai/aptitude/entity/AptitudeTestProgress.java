@@ -56,13 +56,11 @@ public class AptitudeTestProgress extends BaseEntity {
 		this.mypageTestCount++;
 	}
 
-	// 부분 저장 업데이트
 	public void updatePartialProgress(Integer step, String sessionId) {
 		this.lastPartialStep = step;
 		this.partialSessionId = sessionId;
 	}
 
-	// 부분 저장 초기화
 	public void clearPartialProgress() {
 		this.lastPartialStep = null;
 		this.partialSessionId = null;

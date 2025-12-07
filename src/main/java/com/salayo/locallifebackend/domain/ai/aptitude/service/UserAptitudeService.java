@@ -29,19 +29,14 @@ public class UserAptitudeService {
 		this.onboardingProgressRepository = onboardingProgressRepository;
 	}
 
-	/**
-	 * 마이페이지 - 내 적성 조회
-	 */
 	@Transactional(readOnly = true)
 	public UserAptitudeResponseDto getMyAptitude(Long memberId) {
 		Member member = memberRepository.findActiveByIdOrThrow(memberId);
 
-		// 온보딩 완료 여부 확인 (안전장치)
 		checkOnboardingCompleted(member);
 
-		// UserAptitude 조회, 없으면 PENDING 상태로 응답
 		UserAptitude userAptitude = userAptitudeRepository.findByMember(member)
-			.orElse(null); // 없으면 null
+			.orElse(null);
 
 		if (userAptitude == null) {
 			return new UserAptitudeResponseDto(AptitudeType.PENDING);
@@ -50,20 +45,16 @@ public class UserAptitudeService {
 		return new UserAptitudeResponseDto(userAptitude.getAptitudeType());
 	}
 
-	/**
-	 * 마이페이지 - 내 적성 수정
-	 */
 	@Transactional
 	public UserAptitudeResponseDto updateMyAptitude(Long memberId, AptitudeType newAptitudeType) {
 		Member member = memberRepository.findActiveByIdOrThrow(memberId);
 
-		// 1. 온보딩 완료 여부 확인 (안전장치)
 		checkOnboardingCompleted(member);
 
-		// 2. UserAptitude 조회, 없으면 새로 생성
 		UserAptitude userAptitude = userAptitudeRepository.findByMember(member)
 			.orElseGet(() -> {
 				log.info("기존 적성 정보가 없어 새로 생성합니다. memberId: {}", memberId);
+
 				return UserAptitude.builder()
 					.member(member)
 					.aptitudeType(AptitudeType.PENDING)
@@ -71,7 +62,6 @@ public class UserAptitudeService {
 					.build();
 			});
 
-		// 3. 새로운 적성으로 수동 업데이트
 		userAptitude.manuallyUpdateAptitude(newAptitudeType);
 		userAptitudeRepository.save(userAptitude);
 

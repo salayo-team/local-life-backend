@@ -35,19 +35,19 @@ public class AptitudeTestProgressService {
 	private final AptitudeCacheService aptitudeCacheService;
 
 	public AptitudeTestProgressService(UserAptitudeRepository userAptitudeRepository,
-			AptitudeTestProgressRepository aptitudeTestProgressRepository,
-			OnboardingProgressRepository onboardingProgressRepository,
-			MemberRepository memberRepository,
-			AptitudeTestHistoryService testHistoryService,
-			AptitudeAiService aptitudeAiService,
-			AptitudeCacheService aptitudeCacheService) {
-			this.userAptitudeRepository = userAptitudeRepository;
-			this.aptitudeTestProgressRepository = aptitudeTestProgressRepository;
-			this.onboardingProgressRepository = onboardingProgressRepository;
-			this.memberRepository = memberRepository;
-			this.testHistoryService = testHistoryService;
-			this.aptitudeAiService = aptitudeAiService;
-			this.aptitudeCacheService = aptitudeCacheService;
+		AptitudeTestProgressRepository aptitudeTestProgressRepository,
+		OnboardingProgressRepository onboardingProgressRepository,
+		MemberRepository memberRepository,
+		AptitudeTestHistoryService testHistoryService,
+		AptitudeAiService aptitudeAiService,
+		AptitudeCacheService aptitudeCacheService) {
+		this.userAptitudeRepository = userAptitudeRepository;
+		this.aptitudeTestProgressRepository = aptitudeTestProgressRepository;
+		this.onboardingProgressRepository = onboardingProgressRepository;
+		this.memberRepository = memberRepository;
+		this.testHistoryService = testHistoryService;
+		this.aptitudeAiService = aptitudeAiService;
+		this.aptitudeCacheService = aptitudeCacheService;
 	}
 
 	@Transactional
@@ -80,10 +80,9 @@ public class AptitudeTestProgressService {
 				return aptitudeTestProgressRepository.save(newProgress);
 			});
 
-		// OnboardingProgress가 존재하고 완료되었다면 true, 그렇지 않으면 false
 		boolean isRetakeAfterOnboarding = onboardingProgressRepository.findByMember(member)
-			.map(OnboardingProgress::isCompleted) // Optional<OnboardingProgress> -> Optional<Boolean>
-			.orElse(false); // Optional<Boolean> -> boolean (값이 없으면 false)
+			.map(OnboardingProgress::isCompleted)
+			.orElse(false);
 
 		if (isRetakeAfterOnboarding) {
 			log.info("온보딩 완료 사용자입니다. 마이페이지에서 테스트 횟수를 검사합니다. count: {}", progress.getMypageTestCount());
@@ -95,32 +94,19 @@ public class AptitudeTestProgressService {
 		} else {
 			log.info("온보딩 진행 중인 사용자입니다. 횟수 제한 검사를 건너뜁니다.");
 		}
-
-		// 세션 ID 생성
 		String sessionId = generateSessionId(memberId);
-
-		// 미완료된 테스트 이력만 삭제 (완료된 이력은 보존)
 		testHistoryService.deleteIncompleteTests(member);
-
-		// Redis 기존 데이터 정리 (중복 방지)
 		aptitudeCacheService.deleteAllTestData(memberId);
 
-		// Redis에 테스트 진행 상태 저장
 		aptitudeCacheService.saveTestProgress(memberId, "1");
-
-		// Redis에 세션 ID 저장
 		aptitudeCacheService.saveSessionId(memberId, sessionId);
 
-		// 첫 질문 가져오기 - AI가 동적으로 생성
 		AptitudeQuestionResponseDto firstQuestion = aptitudeAiService.getNextQuestion(memberId, 1);
-
-		// 첫 질문을 Redis에 저장
 		aptitudeCacheService.saveQuestion(memberId, 1, firstQuestion.getQuestion());
 
 		return new AptitudeTestStartResponseDto(1, CacheKeyPrefix.APTITUDE_TOTAL_QUESTIONS, firstQuestion);
 	}
 
-	// 세션 ID 생성
 	private String generateSessionId(Long memberId) {
 		return String.format("APT-%d-%d", memberId, System.currentTimeMillis());
 	}
@@ -129,13 +115,11 @@ public class AptitudeTestProgressService {
 		String sessionId = aptitudeCacheService.getSessionId(memberId);
 		if (sessionId == null) {
 
-			// 세션이 만료되거나 없는 경우 재생성
 			sessionId = generateSessionId(memberId);
 			aptitudeCacheService.saveSessionId(memberId, sessionId);
 			log.warn("세션이 없어 재생성 - memberId: {}, newSessionId: {}", memberId, sessionId);
 		} else {
 
-			// 세션 TTL 갱신 (60분 연장)
 			aptitudeCacheService.refreshSession(memberId);
 		}
 		return sessionId;
@@ -149,12 +133,10 @@ public class AptitudeTestProgressService {
 			.map(OnboardingProgress::isCompleted)
 			.orElse(false);
 
-		// 온보딩 미완료 시 항상 재검사 가능
 		if (!isOnboardingCompleted) {
-			return new CanRetakeTestResponseDto(true, 0, CacheKeyPrefix.APTITUDE_MAX_TEST_COUNT);
+			return new CanRetakeTestResponseDto(true, 0,
+				CacheKeyPrefix.APTITUDE_MAX_TEST_COUNT);
 		}
-
-		// 온보딩 완료 후에는 DB에 저장된 재검사 횟수를 기준으로 판단
 		return aptitudeTestProgressRepository.findByMember(member)
 			.map(progress -> new CanRetakeTestResponseDto(
 				progress.getMypageTestCount() < CacheKeyPrefix.APTITUDE_MAX_TEST_COUNT,
@@ -162,10 +144,9 @@ public class AptitudeTestProgressService {
 				CacheKeyPrefix.APTITUDE_MAX_TEST_COUNT
 			))
 			.orElse(new CanRetakeTestResponseDto(true, 0,
-				CacheKeyPrefix.APTITUDE_MAX_TEST_COUNT)); // progress 정보가 없으면 첫 재검사로 간주
+				CacheKeyPrefix.APTITUDE_MAX_TEST_COUNT));
 	}
 
-	// 이어하기 기능
 	@Transactional
 	public AptitudeResumeResponseDto resumeTest(Long memberId) {
 		Member member = memberRepository.findActiveByIdOrThrow(memberId);
@@ -177,34 +158,26 @@ public class AptitudeTestProgressService {
 			String sessionId = progress.getPartialSessionId();
 			Integer lastStep = progress.getLastPartialStep();
 
-			// 세션의 이력 조회
 			List<AptitudeTestHistory> histories = testHistoryService
 				.getSessionHistories(sessionId, member);
 
 			if (!histories.isEmpty()) {
-				// Redis 복구 - 세션 ID와 진행 상태
 				aptitudeCacheService.saveSessionId(memberId, sessionId);
 				aptitudeCacheService.saveTestProgress(memberId, String.valueOf(lastStep + 1));
 
-				// 기존 점수 복구
 				for (AptitudeTestHistory history : histories) {
 					if (history.getAnalyzedAptitudeType() != null) {
 						int score = history.getConfidenceScore() > 0.7 ? 2 : 1;
 						aptitudeCacheService.updateAptitudeScore(memberId,
 							history.getAnalyzedAptitudeType(), score);
 					}
-
-					// 답변도 복구
 					aptitudeCacheService.saveAnswer(memberId, history.getStep(),
 						history.getUserResponse());
 				}
-
-				// 다음 질문 반환 - AI가 대화 맥락을 고려하여 생성
 				AptitudeQuestionResponseDto nextQuestion = aptitudeAiService.getNextQuestion(
 					member.getId(),
 					lastStep + 1
 				);
-
 				return AptitudeResumeResponseDto.builder()
 					.sessionId(sessionId)
 					.nextStep(lastStep + 1)
@@ -215,7 +188,6 @@ public class AptitudeTestProgressService {
 					.build();
 			}
 		}
-
 		throw new CustomException(ErrorCode.NO_INCOMPLETE_TEST);
 	}
 }
