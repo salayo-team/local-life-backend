@@ -51,8 +51,12 @@ public class UserAptitude extends BaseEntity {
 		this.aptitudeTestCount = (aptitudeTestCount != null) ? aptitudeTestCount : 0;
 	}
 
-	public void updateAptitude(AptitudeType aptitudeType) {
+	public void updateAptitudeFromTest(AptitudeType aptitudeType) {
 		this.aptitudeType = aptitudeType;
 		this.aptitudeTestCount++;
+	}
+
+	public void manuallyUpdateAptitude(AptitudeType aptitudeType) {
+		this.aptitudeType = aptitudeType;
 	}
 }

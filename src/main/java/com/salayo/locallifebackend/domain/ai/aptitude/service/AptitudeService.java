@@ -4,6 +4,7 @@ import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeAnswerRequestD
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeQuestionResponseDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeTextProgressResponseDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeTestResultResponseDto;
+import com.salayo.locallifebackend.domain.ai.aptitude.dto.UserAptitudeResponseDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.entity.AptitudeTestHistory;
 import com.salayo.locallifebackend.domain.ai.aptitude.entity.AptitudeTestProgress;
 import com.salayo.locallifebackend.domain.ai.aptitude.entity.UserAptitude;
@@ -13,6 +14,8 @@ import com.salayo.locallifebackend.domain.ai.aptitude.repository.UserAptitudeRep
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AiAptitudeAnalysisResponseDto;
 import com.salayo.locallifebackend.domain.member.entity.Member;
 import com.salayo.locallifebackend.domain.member.repository.MemberRepository;
+import com.salayo.locallifebackend.domain.onboarding.entity.OnboardingProgress;
+import com.salayo.locallifebackend.domain.onboarding.repository.OnboardingProgressRepository;
 import com.salayo.locallifebackend.domain.onboarding.service.OnboardingService;
 import com.salayo.locallifebackend.global.error.ErrorCode;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
@@ -28,28 +31,30 @@ public class AptitudeService {
 
 	private final UserAptitudeRepository userAptitudeRepository;
 	private final AptitudeTestProgressRepository aptitudeTestProgressRepository;
+	private final MemberRepository memberRepository;
+	private final OnboardingProgressRepository onboardingProgressRepository;
 	private final AptitudeTestProgressService aptitudeTestProgressService;
 	private final AptitudeTestHistoryService testHistoryService;
-	private final MemberRepository memberRepository;
 	private final AptitudeAiService aptitudeAiService;
 	private final AptitudeCacheService aptitudeCacheService;
 	private final OnboardingService onboardingService;
 
 	public AptitudeService(UserAptitudeRepository userAptitudeRepository,
-			AptitudeTestProgressRepository aptitudeTestProgressRepository,
-			AptitudeTestProgressService aptitudeTestProgressService,
-			AptitudeTestHistoryService testHistoryService,
-			MemberRepository memberRepository,
-			AptitudeAiService aptitudeAiService,
-			AptitudeCacheService aptitudeCacheService, OnboardingService onboardingService) {
-			this.userAptitudeRepository = userAptitudeRepository;
-			this.aptitudeTestProgressRepository = aptitudeTestProgressRepository;
-			this.aptitudeTestProgressService = aptitudeTestProgressService;
-			this.testHistoryService = testHistoryService;
-			this.memberRepository = memberRepository;
-			this.aptitudeAiService = aptitudeAiService;
-			this.aptitudeCacheService = aptitudeCacheService;
-			this.onboardingService = onboardingService;
+		AptitudeTestProgressRepository aptitudeTestProgressRepository, MemberRepository memberRepository,
+		OnboardingProgressRepository onboardingProgressRepository,
+		AptitudeTestProgressService aptitudeTestProgressService,
+		AptitudeTestHistoryService testHistoryService,
+		AptitudeAiService aptitudeAiService,
+		AptitudeCacheService aptitudeCacheService, OnboardingService onboardingService) {
+		this.userAptitudeRepository = userAptitudeRepository;
+		this.aptitudeTestProgressRepository = aptitudeTestProgressRepository;
+		this.memberRepository = memberRepository;
+		this.onboardingProgressRepository = onboardingProgressRepository;
+		this.aptitudeTestProgressService = aptitudeTestProgressService;
+		this.testHistoryService = testHistoryService;
+		this.aptitudeAiService = aptitudeAiService;
+		this.aptitudeCacheService = aptitudeCacheService;
+		this.onboardingService = onboardingService;
 	}
 
 	@Transactional
@@ -61,7 +66,7 @@ public class AptitudeService {
 		if (currentStepStr == null) {
 			throw new CustomException(ErrorCode.NOT_FOUND_TEST_PROGRESS);
 		}
-		
+
 		// AptitudeTestProgressService에게 세션 ID 요청
 		String sessionId = aptitudeTestProgressService.getOrCreateSessionId(memberId);
 
@@ -74,34 +79,34 @@ public class AptitudeService {
 		);
 
 		// Redis에 답변 저장
-		aptitudeCacheService.saveAnswer(memberId, aptitudeAnswerRequestDto.getStep(), 
+		aptitudeCacheService.saveAnswer(memberId, aptitudeAnswerRequestDto.getStep(),
 			aptitudeAnswerRequestDto.getAnswer());
-		
+
 		// 디버깅용 로그 (테스트 후 제거)
 		log.info("[TEST] Redis 답변 저장 완료 - memberId: {}, step: {}", memberId, aptitudeAnswerRequestDto.getStep());
 
 		// AI 분석 결과에서 적성 추출 및 점수 업데이트 (객체로 변경)
 		updateScoreFromAnalysis(memberId, aiAnalysis);
-		
+
 		// JSON 파싱 테스트 로그
-		log.info("[JSON 파싱 테스트] Step {} 처리 완료 - 적성: {}, 신뢰도: {}", 
-			aptitudeAnswerRequestDto.getStep(), 
-			aiAnalysis.getAptitudeType(), 
+		log.info("[JSON 파싱 테스트] Step {} 처리 완료 - 적성: {}, 신뢰도: {}",
+			aptitudeAnswerRequestDto.getStep(),
+			aiAnalysis.getAptitudeType(),
 			aiAnalysis.getConfidenceScore());
-		
+
 		// 이력 저장용 AI 응답 문자열 생성
 		String aiResponseStr;
 		if (aiAnalysis.getAptitudeType() != null) {
-			aiResponseStr = String.format("%s - %s (신뢰도: %.2f)", 
-				aiAnalysis.getAptitudeType(), 
-				aiAnalysis.getReason(), 
+			aiResponseStr = String.format("%s - %s (신뢰도: %.2f)",
+				aiAnalysis.getAptitudeType(),
+				aiAnalysis.getReason(),
 				aiAnalysis.getConfidenceScore());
 		} else {
 			// 무효 답변인 경우
-			aiResponseStr = String.format("무효 답변 - %s", 
+			aiResponseStr = String.format("무효 답변 - %s",
 				aiAnalysis.getReason() != null ? aiAnalysis.getReason() : "적성 판단 불가");
 		}
-		
+
 		// 디버깅용 로그
 		Map<AptitudeType, Integer> currentScores = aptitudeCacheService.getAllAptitudeScores(memberId);
 		log.info("[TEST] 현재 적성 점수 상태: {}", currentScores);
@@ -118,7 +123,7 @@ public class AptitudeService {
 			.sessionId(sessionId)
 			.isCompleted(false)
 			.build();
-		
+
 		testHistoryService.saveTestHistory(member, history);
 
 		// 모든 단계에서 부분 저장 (중단 시 이어하기 가능)
@@ -136,12 +141,12 @@ public class AptitudeService {
 
 			// 다음 질문 - AI가 대화 맥락을 고려하여 생성
 			AptitudeQuestionResponseDto nextQuestion = aptitudeAiService.getNextQuestion(
-				member.getId(), 
+				member.getId(),
 				aptitudeAnswerRequestDto.getStep() + 1
 			);
-			
+
 			// 질문을 Redis에 저장
-			aptitudeCacheService.saveQuestion(memberId, aptitudeAnswerRequestDto.getStep() + 1, 
+			aptitudeCacheService.saveQuestion(memberId, aptitudeAnswerRequestDto.getStep() + 1,
 				nextQuestion.getQuestion());
 			return new AptitudeTextProgressResponseDto(
 				aptitudeAnswerRequestDto.getStep() + 1,
@@ -232,7 +237,7 @@ public class AptitudeService {
 		UserAptitude userAptitude = userAptitudeRepository.findByMember(member)
 			.orElseThrow(() -> new CustomException(ErrorCode.USER_APTITUDE_NOT_FOUND));
 
-		userAptitude.updateAptitude(finalAptitude);
+		userAptitude.updateAptitudeFromTest(finalAptitude);
 
 		// AptitudeTestProgress 초기화
 		aptitudeTestProgressRepository.findByMember(member)
@@ -249,7 +254,7 @@ public class AptitudeService {
 			testHistoryService.markSessionAsCompleted(sessionId);
 			log.info("[테스트 완료] 최종 적성: {}", finalAptitude);
 		}
-		
+
 		// Redis 데이터 정리
 		log.info("[TEST] Redis 데이터 정리 시작 - memberId: {}", member.getId());
 		aptitudeCacheService.deleteAllTestData(member.getId());
@@ -276,10 +281,73 @@ public class AptitudeService {
 				.aptitudeTestCount(0)
 				.build());
 
-		userAptitude.updateAptitude(aptitudeType);
+		userAptitude.updateAptitudeFromTest(aptitudeType);
 
 		onboardingService.completeOnboardingAfterAptitudeTest(memberId);
 
 		return new AptitudeTestResultResponseDto(aptitudeType);
+	}
+
+	/**
+	 * 마이페이지 - 내 적성 조회
+	 */
+	@Transactional(readOnly = true)
+	public UserAptitudeResponseDto getMyAptitude(Long memberId) {
+		Member member = memberRepository.findActiveByIdOrThrow(memberId);
+
+		// 온보딩 완료 여부 확인 (안전장치)
+		checkOnboardingCompleted(member);
+
+		// UserAptitude 조회, 없으면 PENDING 상태로 응답
+		UserAptitude userAptitude = userAptitudeRepository.findByMember(member)
+			.orElse(null); // 없으면 null
+
+		if (userAptitude == null) {
+			return new UserAptitudeResponseDto(AptitudeType.PENDING);
+		}
+
+		return new UserAptitudeResponseDto(userAptitude.getAptitudeType());
+	}
+
+	/**
+	 * 마이페이지 - 내 적성 수정
+	 */
+	@Transactional
+	public UserAptitudeResponseDto updateMyAptitude(Long memberId, AptitudeType newAptitudeType) {
+		Member member = memberRepository.findActiveByIdOrThrow(memberId);
+
+		// 1. 온보딩 완료 여부 확인 (안전장치)
+		checkOnboardingCompleted(member);
+
+		// 2. UserAptitude 조회, 없으면 새로 생성
+		UserAptitude userAptitude = userAptitudeRepository.findByMember(member)
+			.orElseGet(() -> {
+				log.info("기존 적성 정보가 없어 새로 생성합니다. memberId: {}", memberId);
+				return UserAptitude.builder()
+					.member(member)
+					.aptitudeType(AptitudeType.PENDING)
+					.aptitudeTestCount(0)
+					.build();
+			});
+
+		// 3. 새로운 적성으로 수동 업데이트
+		userAptitude.manuallyUpdateAptitude(newAptitudeType);
+		userAptitudeRepository.save(userAptitude);
+
+		log.info("사용자 적성 수동 업데이트 완료. memberId: {}, newAptitude: {}", memberId, newAptitudeType);
+
+		return new UserAptitudeResponseDto(userAptitude.getAptitudeType());
+	}
+
+	/**
+	 * 온보딩 완료 여부를 확인하는 private 헬퍼 메서드
+	 */
+	private void checkOnboardingCompleted(Member member) {
+		OnboardingProgress progress = onboardingProgressRepository.findByMember(member)
+			.orElseThrow(() -> new CustomException(ErrorCode.ONBOARDING_NOT_STARTED));
+
+		if (!progress.isCompleted()) {
+			throw new CustomException(ErrorCode.ONBOARDING_NOT_COMPLETED);
+		}
 	}
 }

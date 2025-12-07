@@ -187,7 +187,7 @@ public class AptitudeController {
 		CanRetakeTestResponseDto response = aptitudeTestProgressService.canRetakeTest(memberId);
 		return CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, response);
 	}
-	
+
 	@GetMapping("/history")
 	@Operation(
 		summary = "완료된 적성 검사 이력 조회",
@@ -217,7 +217,7 @@ public class AptitudeController {
 		List<AptitudeTestHistoryResponseDto> response = testHistoryService.getCompletedTestHistory(memberId);
 		return CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, response);
 	}
-	
+
 	@GetMapping("/history/session")
 	@Operation(
 		summary = "특정 세션의 적성 검사 이력 조회",
