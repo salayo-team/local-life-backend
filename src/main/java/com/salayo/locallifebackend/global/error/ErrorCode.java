@@ -73,6 +73,7 @@ public enum ErrorCode {
 	RESERVATION_NOT_REJECTABLE(HttpStatus.BAD_REQUEST, "예약 거절이 불가능합니다."),
     MAGAZINE_ALREADY_REGISTERED(HttpStatus.BAD_REQUEST, "이미 등록된 매거진입니다."),
     MAGAZINE_INVALID_STATUS_FOR_REGISTER(HttpStatus.BAD_REQUEST, "해당 상태에서는 매거진을 등록할 수 없습니다."),
+    SIGNUP_REQUIRED(HttpStatus.BAD_REQUEST, "회원가입을 먼저 완료해주세요."),
 
     // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
