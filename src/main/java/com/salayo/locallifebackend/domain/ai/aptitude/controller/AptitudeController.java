@@ -59,7 +59,7 @@ public class AptitudeController {
 	@ApiResponses(value = {
 		@ApiResponse(
 			responseCode = "201",
-			description = "적성 검사 시작 성공",
+			description = "AI 적성 검사가 시작되었습니다.",
 			content = @Content(
 				mediaType = "application/json",
 				schema = @Schema(implementation = CommonResponseDto.class)
@@ -67,15 +67,31 @@ public class AptitudeController {
 		),
 		@ApiResponse(
 			responseCode = "400",
-			description = "적성 검사 횟수 초과"
+			description = "검사 가능 횟수를 초과했거나 온보딩이 완료되지 않는 등 요청 값이 올바르지 않은 경우"
 		),
 		@ApiResponse(
 			responseCode = "401",
-			description = "인증되지 않은 사용자"
+			description = "인증이 필요하거나 토큰이 유효하지 않은 경우"
+		),
+		@ApiResponse(
+			responseCode = "403",
+			description = "접근 권한이 없거나 차단된 인증으로 요청한 경우"
 		),
 		@ApiResponse(
 			responseCode = "404",
-			description = "회원을 찾을 수 없음"
+			description = "회원 또는 온보딩 정보가 존재하지 않는 경우"
+		),
+		@ApiResponse(
+			responseCode = "408",
+			description = "AI 응답 시간이 초과된 경우"
+		),
+		@ApiResponse(
+			responseCode = "422",
+			description = "AI 응답 형식이 올바르지 않아 처리할 수 없는 경우"
+		),
+		@ApiResponse(
+			responseCode = "500",
+			description = "서버 내부 오류 또는 AI 처리 중 오류가 발생한 경우"
 		)
 	})
 	public CommonResponseDto<AptitudeTestStartResponseDto> startTest(
@@ -94,7 +110,7 @@ public class AptitudeController {
 	@ApiResponses(value = {
 		@ApiResponse(
 			responseCode = "200",
-			description = "답변 제출 성공",
+			description = "성공적으로 답변을 제출했습니다.",
 			content = @Content(
 				mediaType = "application/json",
 				schema = @Schema(implementation = CommonResponseDto.class)
@@ -102,15 +118,31 @@ public class AptitudeController {
 		),
 		@ApiResponse(
 			responseCode = "400",
-			description = "잘못된 요청"
+			description = "요청 값이 유효하지 않거나 온보딩/검사 단계가 올바르지 않은 경우"
 		),
 		@ApiResponse(
 			responseCode = "401",
-			description = "인증되지 않은 사용자"
+			description = "인증이 필요하거나 토큰이 유효하지 않은 경우"
+		),
+		@ApiResponse(
+			responseCode = "403",
+			description = "접근 권한이 없거나 차단된 인증으로 요청한 경우"
 		),
 		@ApiResponse(
 			responseCode = "404",
-			description = "진행 중인 테스트가 없음 또는 회원을 찾을 수 없음"
+			description = "진행 중인 테스트가 없거나 회원 정보를 찾을 수 없는 경우"
+		),
+		@ApiResponse(
+			responseCode = "408",
+			description = "AI 응답 시간이 초과된 경우"
+		),
+		@ApiResponse(
+			responseCode = "422",
+			description = "AI 응답 형식이 올바르지 않아 처리할 수 없는 경우"
+		),
+		@ApiResponse(
+			responseCode = "500",
+			description = "서버 내부 오류 또는 AI 처리 중 오류가 발생한 경우"
 		)
 	})
 	public CommonResponseDto<AptitudeTextProgressResponseDto> submitAnswer(
@@ -129,8 +161,8 @@ public class AptitudeController {
 	)
 	@ApiResponses(value = {
 		@ApiResponse(
-			responseCode = "201",
-			description = "적성 선택 성공",
+			responseCode = "200",
+			description = "선택이 완료되었습니다.",
 			content = @Content(
 				mediaType = "application/json",
 				schema = @Schema(implementation = CommonResponseDto.class)
@@ -138,15 +170,23 @@ public class AptitudeController {
 		),
 		@ApiResponse(
 			responseCode = "400",
-			description = "잘못된 적성 타입"
+			description = "잘못된 적성 타입이거나 온보딩/검사 단계가 올바르지 않은 경우"
 		),
 		@ApiResponse(
 			responseCode = "401",
-			description = "인증되지 않은 사용자"
+			description = "인증이 필요하거나 토큰이 유효하지 않은 경우"
+		),
+		@ApiResponse(
+			responseCode = "403",
+			description = "접근 권한이 없거나 차단된 인증으로 요청한 경우"
 		),
 		@ApiResponse(
 			responseCode = "404",
-			description = "회원을 찾을 수 없음"
+			description = "회원 또는 적성 정보를 찾을 수 없는 경우"
+		),
+		@ApiResponse(
+			responseCode = "500",
+			description = "서버 내부 오류가 발생한 경우"
 		)
 	})
 	public CommonResponseDto<AptitudeTestResultResponseDto> selectManually(
@@ -166,7 +206,7 @@ public class AptitudeController {
 	@ApiResponses(value = {
 		@ApiResponse(
 			responseCode = "200",
-			description = "조회 성공",
+			description = "성공적으로 조회되었습니다.",
 			content = @Content(
 				mediaType = "application/json",
 				schema = @Schema(implementation = CommonResponseDto.class)
@@ -174,11 +214,19 @@ public class AptitudeController {
 		),
 		@ApiResponse(
 			responseCode = "401",
-			description = "인증되지 않은 사용자"
+			description = "인증이 필요하거나 토큰이 유효하지 않은 경우"
+		),
+		@ApiResponse(
+			responseCode = "403",
+			description = "접근 권한이 없거나 차단된 인증으로 요청한 경우"
 		),
 		@ApiResponse(
 			responseCode = "404",
-			description = "회원을 찾을 수 없음"
+			description = "회원 정보를 찾을 수 없는 경우"
+		),
+		@ApiResponse(
+			responseCode = "500",
+			description = "서버 내부 오류가 발생한 경우"
 		)
 	})
 	public CommonResponseDto<CanRetakeTestResponseDto> canRetakeTest(
@@ -196,19 +244,31 @@ public class AptitudeController {
 	@ApiResponses(value = {
 		@ApiResponse(
 			responseCode = "200",
-			description = "조회 성공",
+			description = "성공적으로 조회되었습니다.",
 			content = @Content(
 				mediaType = "application/json",
 				schema = @Schema(implementation = CommonResponseDto.class)
 			)
 		),
 		@ApiResponse(
+			responseCode = "400",
+			description = "요청 값이 올바르지 않은 경우"
+		),
+		@ApiResponse(
 			responseCode = "401",
-			description = "인증되지 않은 사용자"
+			description = "인증이 필요하거나 토큰이 유효하지 않은 경우"
+		),
+		@ApiResponse(
+			responseCode = "403",
+			description = "접근 권한이 없거나 차단된 인증으로 요청한 경우"
 		),
 		@ApiResponse(
 			responseCode = "404",
-			description = "회원을 찾을 수 없음"
+			description = "회원 정보를 찾을 수 없는 경우"
+		),
+		@ApiResponse(
+			responseCode = "500",
+			description = "서버 내부 오류가 발생한 경우"
 		)
 	})
 	public CommonResponseDto<List<AptitudeTestHistoryResponseDto>> getCompletedHistory(
@@ -226,23 +286,31 @@ public class AptitudeController {
 	@ApiResponses(value = {
 		@ApiResponse(
 			responseCode = "200",
-			description = "조회 성공",
+			description = "성공적으로 조회되었습니다.",
 			content = @Content(
 				mediaType = "application/json",
 				schema = @Schema(implementation = CommonResponseDto.class)
 			)
 		),
 		@ApiResponse(
+			responseCode = "400",
+			description = "세션 ID 형식이 올바르지 않거나 요청 값이 유효하지 않은 경우"
+		),
+		@ApiResponse(
 			responseCode = "401",
-			description = "인증되지 않은 사용자"
+			description = "인증이 필요하거나 토큰이 유효하지 않은 경우"
 		),
 		@ApiResponse(
 			responseCode = "403",
-			description = "다른 사용자의 이력에 접근 시도"
+			description = "다른 사용자의 이력에 접근하려 할 때와 같이 권한이 없는 경우"
 		),
 		@ApiResponse(
 			responseCode = "404",
-			description = "회원을 찾을 수 없음"
+			description = "회원 또는 세션 ID에 해당하는 적성 검사 이력을 찾을 수 없는 경우"
+		),
+		@ApiResponse(
+			responseCode = "500",
+			description = "서버 내부 오류가 발생한 경우"
 		)
 	})
 	public CommonResponseDto<List<AptitudeTestHistoryResponseDto>> getHistoryBySession(
@@ -262,19 +330,39 @@ public class AptitudeController {
 	@ApiResponses(value = {
 		@ApiResponse(
 			responseCode = "200",
-			description = "이어하기 성공",
+			description = "이어하기가 성공적으로 처리되었습니다.",
 			content = @Content(
 				mediaType = "application/json",
 				schema = @Schema(implementation = AptitudeResumeResponseDto.class)
 			)
 		),
 		@ApiResponse(
+			responseCode = "400",
+			description = "온보딩이 완료되지 않았거나 이어하기 조건에 맞지 않는 등 요청이 올바르지 않은 경우"
+		),
+		@ApiResponse(
 			responseCode = "401",
-			description = "인증되지 않은 사용자"
+			description = "인증이 필요하거나 토큰이 유효하지 않은 경우"
+		),
+		@ApiResponse(
+			responseCode = "403",
+			description = "접근 권한이 없거나 차단된 인증으로 요청한 경우"
 		),
 		@ApiResponse(
 			responseCode = "404",
-			description = "이어할 테스트가 없음"
+			description = "이어할 수 있는 테스트가 없거나 회원 정보를 찾을 수 없는 경우"
+		),
+		@ApiResponse(
+			responseCode = "408",
+			description = "AI 응답 시간이 초과된 경우"
+		),
+		@ApiResponse(
+			responseCode = "422",
+			description = "AI 응답 형식이 올바르지 않아 처리할 수 없는 경우"
+		),
+		@ApiResponse(
+			responseCode = "500",
+			description = "서버 내부 오류 또는 AI 처리 중 오류가 발생한 경우"
 		)
 	})
 	public CommonResponseDto<AptitudeResumeResponseDto> resumeTest(
