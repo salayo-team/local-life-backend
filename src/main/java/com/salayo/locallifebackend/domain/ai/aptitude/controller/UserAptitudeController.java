@@ -2,7 +2,7 @@ package com.salayo.locallifebackend.domain.ai.aptitude.controller;
 
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.AptitudeSelectRequestDto;
 import com.salayo.locallifebackend.domain.ai.aptitude.dto.UserAptitudeResponseDto;
-import com.salayo.locallifebackend.domain.ai.aptitude.service.AptitudeService;
+import com.salayo.locallifebackend.domain.ai.aptitude.service.UserAptitudeService;
 import com.salayo.locallifebackend.global.dto.CommonResponseDto;
 import com.salayo.locallifebackend.global.security.MemberDetails;
 import com.salayo.locallifebackend.global.success.SuccessCode;
@@ -26,10 +26,10 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "my-aptitude", description = "사용자 적성 관리 API")
 public class UserAptitudeController {
 
-	private final AptitudeService aptitudeService;
+	private final UserAptitudeService userAptitudeService;
 
-	public UserAptitudeController(AptitudeService aptitudeService) {
-		this.aptitudeService = aptitudeService;
+	public UserAptitudeController(UserAptitudeService userAptitudeService) {
+		this.userAptitudeService = userAptitudeService;
 	}
 
 	@GetMapping("/info")
@@ -37,7 +37,7 @@ public class UserAptitudeController {
 	public ResponseEntity<CommonResponseDto<UserAptitudeResponseDto>> getMyAptitude(
 		@Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails) {
 
-		UserAptitudeResponseDto responseDto = aptitudeService.getMyAptitude(memberDetails.getMember().getId());
+		UserAptitudeResponseDto responseDto = userAptitudeService.getMyAptitude(memberDetails.getMember().getId());
 		return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, responseDto));
 	}
 
@@ -47,7 +47,7 @@ public class UserAptitudeController {
 		@Parameter(hidden = true) @AuthenticationPrincipal MemberDetails memberDetails,
 		@RequestBody AptitudeSelectRequestDto requestDto) {
 
-		UserAptitudeResponseDto responseDto = aptitudeService.updateMyAptitude(memberDetails.getMember().getId(),
+		UserAptitudeResponseDto responseDto = userAptitudeService.updateMyAptitude(memberDetails.getMember().getId(),
 			requestDto.aptitudeType());
 		return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.UPDATE_SUCCESS, responseDto));
 	}
