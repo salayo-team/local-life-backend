@@ -253,7 +253,7 @@ public class OnboardingService {
 		UserAptitude userAptitude = userAptitudeRepository.findByMember(member)
 			.orElseThrow(() -> new CustomException(ErrorCode.APTITUDE_NOT_FOUND));
 
-		progress.complete();
+		progress.completeOnboardingStep();
 		log.info("온보딩 완료 - memberId: {}, regionType: {}, aptitudeType: {}",
 			memberId, progress.getRegionType(), userAptitude.getAptitudeType());
 

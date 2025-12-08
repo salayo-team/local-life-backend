@@ -91,7 +91,7 @@ public class OnboardingProgress extends BaseEntity {
 	/**
 	 * 온보딩 완료 처리
 	 */
-	public void complete() {
+	public void completeOnboardingStep() {
 		this.currentStep = OnboardingStep.COMPLETED;
 		this.isCompleted = true;
 	}
