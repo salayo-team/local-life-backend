@@ -37,10 +37,10 @@ public class AptitudeTestProgress extends BaseEntity {
 	private Integer mypageTestCount;
 
 	@Column(name = "last_partial_step")
-	private Integer lastPartialStep; // 중단 시 마지막 단계
+	private Integer lastPartialStep;
 
 	@Column(name = "partial_session_id", length = 100)
-	private String partialSessionId; // 검사 진행 중인 세션 ID
+	private String partialSessionId;
 
 	@Builder
 	public AptitudeTestProgress(UserAptitude userAptitude, Integer aptitudeTestStep,

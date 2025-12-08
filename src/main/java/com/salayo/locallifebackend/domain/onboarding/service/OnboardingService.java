@@ -367,7 +367,7 @@ public class OnboardingService {
 	}
 
 	/**
-	 * [내부용] 온보딩 완료 여부 검증 완료되지 않았을 경우 예외를 발생 시킴
+	 * [내부용] 온보딩 완료 여부 검증 완료되지 않았을 경우 예외를 발생시킴
 	 */
 	@Transactional(readOnly = true)
 	public OnboardingProgress getCompletedOnboardingProgress(Long memberId) {
