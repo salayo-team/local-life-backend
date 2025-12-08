@@ -2,5 +2,8 @@ package com.salayo.locallifebackend.domain.magazine.enums;
 
 public enum MagazineStatus {
     DRAFT,
-    REGISTERED
+    REQUEST_REVISION,
+    PENDING_CONFIRMATION,
+    REGISTERED,
+    HIDDEN
 }

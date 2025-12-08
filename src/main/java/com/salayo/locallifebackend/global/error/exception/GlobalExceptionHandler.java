@@ -3,8 +3,10 @@ package com.salayo.locallifebackend.global.error.exception;
 import com.salayo.locallifebackend.global.error.ErrorCode;
 import com.salayo.locallifebackend.global.error.response.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import java.nio.file.AccessDeniedException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -36,6 +38,20 @@ public class GlobalExceptionHandler {
             uri,
             httpServletRequest.getMethod()
         );
+    }
+
+    @ExceptionHandler({ AccessDeniedException.class, AuthorizationDeniedException.class })
+    public ResponseEntity<ErrorResponse> handleAccessDenied(Exception ex, HttpServletRequest request) {
+
+        ErrorCode errorCode = ErrorCode.FORBIDDEN_ACCESS;
+
+        ErrorResponse response = ErrorResponse.of(
+            errorCode,
+            request.getRequestURI(),
+            request.getMethod()
+        );
+
+        return ResponseEntity.status(errorCode.getHttpStatus()).body(response);
     }
 
 }

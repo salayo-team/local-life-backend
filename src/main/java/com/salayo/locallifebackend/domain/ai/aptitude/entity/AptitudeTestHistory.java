@@ -1,9 +1,12 @@
 package com.salayo.locallifebackend.domain.ai.aptitude.entity;
 
+import com.salayo.locallifebackend.domain.ai.aptitude.enums.AptitudeType;
 import com.salayo.locallifebackend.domain.member.entity.Member;
 import com.salayo.locallifebackend.global.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -42,13 +45,41 @@ public class AptitudeTestHistory extends BaseEntity {
 
 	@Column(name = "ai_response", columnDefinition = "TEXT")
 	private String aiResponse;
+	
+	@Enumerated(EnumType.STRING)
+	@Column(name = "analyzed_aptitude_type", length = 30)
+	private AptitudeType analyzedAptitudeType; // 각 답변에서 AI가 분석한 적성 타입
+	
+	@Column(name = "confidence_score")
+	private Double confidenceScore; // AI 신뢰도 점수
+	
+	@Column(name = "session_id", length = 100)
+	private String sessionId; // 테스트 세션 ID
+	
+	@Column(name = "is_completed", nullable = false)
+	private boolean isCompleted = false; // 테스트 완료 여부
+	
+	@Column(name = "is_partial_save", nullable = false)
+	private boolean isPartialSave = false; // 부분 저장 여부
+	
+	@Column(name = "last_completed_step")
+	private Integer lastCompletedStep; // 마지막 완료 단계
 
 	@Builder
-	public AptitudeTestHistory(Member member, Integer step, String questionText, String userResponse, String aiResponse) {
+	public AptitudeTestHistory(Member member, Integer step, String questionText, 
+							   String userResponse, String aiResponse, AptitudeType analyzedAptitudeType,
+							   Double confidenceScore, String sessionId, Boolean isCompleted,
+							   Boolean isPartialSave, Integer lastCompletedStep) {
 		this.member = member;
 		this.step = step;
 		this.questionText = questionText;
 		this.userResponse = userResponse;
 		this.aiResponse = aiResponse;
+		this.analyzedAptitudeType = analyzedAptitudeType;
+		this.confidenceScore = confidenceScore;
+		this.sessionId = sessionId;
+		this.isCompleted = isCompleted != null ? isCompleted : false;
+		this.isPartialSave = isPartialSave != null ? isPartialSave : false;
+		this.lastCompletedStep = lastCompletedStep;
 	}
 }

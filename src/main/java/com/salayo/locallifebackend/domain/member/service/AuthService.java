@@ -1,5 +1,9 @@
 package com.salayo.locallifebackend.domain.member.service;
 
+import static com.salayo.locallifebackend.global.util.CacheKeyPrefix.EMAIL_VERIFIED;
+import static com.salayo.locallifebackend.global.util.CacheKeyPrefix.PASSWORD_RESET_CODE;
+import static com.salayo.locallifebackend.global.util.CacheKeyPrefix.TOKEN_BLACKLIST;
+
 import com.salayo.locallifebackend.domain.email.service.EmailService;
 import com.salayo.locallifebackend.domain.file.entity.File;
 import com.salayo.locallifebackend.domain.file.entity.FileMapping;
@@ -32,6 +36,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.core.parameters.P;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,221 +45,239 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class AuthService {
 
-	private final MemberRepository memberRepository;
-	private final PasswordEncoder passwordEncoder;
-	private final LocalCreatorRepository localCreatorRepository;
-	private final S3Uploader s3Uploader;
-	private final FileRepository fileRepository;
-	private final FileMappingRepository fileMappingRepository;
-	private final JwtProvider jwtProvider;
-	private final RedisUtil redisUtil;
-	private final RedisTemplate<String, String> blacklistRedisTemplate;
-	private final RedisTemplate<String, String> emailVerifiedRedisTemplate;
-	private final EmailService emailService;
+    private final MemberRepository memberRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final LocalCreatorRepository localCreatorRepository;
+    private final S3Uploader s3Uploader;
+    private final FileRepository fileRepository;
+    private final FileMappingRepository fileMappingRepository;
+    private final JwtProvider jwtProvider;
+    private final RedisUtil redisUtil;
+    private final RedisTemplate<String, String> blacklistRedisTemplate;
+    private final RedisTemplate<String, String> emailVerifiedRedisTemplate;
+    private final EmailService emailService;
 
-	public AuthService(MemberRepository memberRepository, PasswordEncoder passwordEncoder, LocalCreatorRepository localCreatorRepository,
-		S3Uploader s3Uploader, FileRepository fileRepository, FileMappingRepository fileMappingRepository, JwtProvider jwtProvider,
-		RedisUtil redisUtil, @Qualifier("blacklistRedisTemplate") RedisTemplate<String, String> blacklistRedisTemplate,
-		@Qualifier("emailVerifiedRedisTemplate") RedisTemplate<String, String> emailVerifiedRedisTemplate, EmailService emailService) {
-		this.memberRepository = memberRepository;
-		this.passwordEncoder = passwordEncoder;
-		this.localCreatorRepository = localCreatorRepository;
-		this.s3Uploader = s3Uploader;
-		this.fileRepository = fileRepository;
-		this.fileMappingRepository = fileMappingRepository;
-		this.jwtProvider = jwtProvider;
-		this.redisUtil = redisUtil;
-		this.blacklistRedisTemplate = blacklistRedisTemplate;
-		this.emailVerifiedRedisTemplate = emailVerifiedRedisTemplate;
-		this.emailService = emailService;
-	}
+    public AuthService(MemberRepository memberRepository, PasswordEncoder passwordEncoder, LocalCreatorRepository localCreatorRepository,
+        S3Uploader s3Uploader, FileRepository fileRepository, FileMappingRepository fileMappingRepository, JwtProvider jwtProvider,
+        RedisUtil redisUtil, @Qualifier("blacklistRedisTemplate") RedisTemplate<String, String> blacklistRedisTemplate,
+        @Qualifier("emailVerifiedRedisTemplate") RedisTemplate<String, String> emailVerifiedRedisTemplate, EmailService emailService) {
+        this.memberRepository = memberRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.localCreatorRepository = localCreatorRepository;
+        this.s3Uploader = s3Uploader;
+        this.fileRepository = fileRepository;
+        this.fileMappingRepository = fileMappingRepository;
+        this.jwtProvider = jwtProvider;
+        this.redisUtil = redisUtil;
+        this.blacklistRedisTemplate = blacklistRedisTemplate;
+        this.emailVerifiedRedisTemplate = emailVerifiedRedisTemplate;
+        this.emailService = emailService;
+    }
 
-	public UserSignupResponseDto signupUser(UserSignupRequestDto requestDto) {
-		checkEmailVerifiedOrThrow(requestDto.getEmail());
+    public UserSignupResponseDto signupUser(UserSignupRequestDto requestDto) {
+        checkEmailVerifiedOrThrow(requestDto.getEmail());
 
-		if (memberRepository.existsByEmail(requestDto.getEmail())) {
-			throw new CustomException(ErrorCode.DUPLICATE_EMAIL);
-		}
+        if (memberRepository.existsByEmail(requestDto.getEmail())) {
+            throw new CustomException(ErrorCode.DUPLICATE_EMAIL);
+        }
 
-		String nickname = requestDto.getNickname();
-		if (nickname == null || nickname.isBlank()) {
+        String nickname = requestDto.getNickname();
+        if (nickname == null || nickname.isBlank()) {
 
-			do {
-				nickname = NicknameGenerator.generate();
-			} while (memberRepository.existsByNickname(nickname));
-		} else if (memberRepository.existsByNickname(nickname)) {
-			throw new CustomException(ErrorCode.DUPLICATE_NICKNAME);
-		}
+            do {
+                nickname = NicknameGenerator.generate();
+            } while (memberRepository.existsByNickname(nickname));
+        } else if (memberRepository.existsByNickname(nickname)) {
+            throw new CustomException(ErrorCode.DUPLICATE_NICKNAME);
+        }
 
-		Member member = Member.builder()
-			.email(requestDto.getEmail())
-			.encodedPassword(passwordEncoder.encode(requestDto.getPassword()))
-			.birth(requestDto.getBirth())
-			.nickname(nickname)
-			.gender(Gender.FEMALE)
-			.memberRole(MemberRole.USER)
-			.build();
+        Member member = Member.builder()
+            .email(requestDto.getEmail())
+            .encodedPassword(passwordEncoder.encode(requestDto.getPassword()))
+            .birth(requestDto.getBirth())
+            .nickname(nickname)
+            .gender(Gender.FEMALE)
+            .memberRole(MemberRole.USER)
+            .build();
 
-		memberRepository.save(member);
+        memberRepository.save(member);
 
-		return new UserSignupResponseDto(member.getNickname(), "일반회원");
-	}
+        return new UserSignupResponseDto(member.getNickname(), "일반회원");
+    }
 
-	public LocalCreatorSignupResponseDto signupLocalCreator(
-		LocalCreatorSignupRequestDto requestDto, List<MultipartFile> files,
-		List<FilePurpose> filePurposes) {
-		checkEmailVerifiedOrThrow(requestDto.getEmail());
+    public LocalCreatorSignupResponseDto signupLocalCreator(
+        LocalCreatorSignupRequestDto requestDto, List<MultipartFile> files,
+        List<FilePurpose> filePurposes) {
+        checkEmailVerifiedOrThrow(requestDto.getEmail());
 
-		if (memberRepository.existsByEmail(requestDto.getEmail())) {
-			throw new CustomException(ErrorCode.DUPLICATE_EMAIL);
-		}
+        if (memberRepository.existsByEmail(requestDto.getEmail())) {
+            throw new CustomException(ErrorCode.DUPLICATE_EMAIL);
+        }
 
-		Member member = Member.builder()
-			.email(requestDto.getEmail())
-			.encodedPassword(passwordEncoder.encode(requestDto.getPassword()))
-			.birth(requestDto.getBirth())
-			.phoneNumber(requestDto.getPhoneNumber())
-			.nickname(null)
-			.gender(Gender.FEMALE)
-			.memberRole(MemberRole.LOCAL_CREATOR)
-			.build();
+        Member member = Member.builder()
+            .email(requestDto.getEmail())
+            .encodedPassword(passwordEncoder.encode(requestDto.getPassword()))
+            .birth(requestDto.getBirth())
+            .phoneNumber(requestDto.getPhoneNumber())
+            .nickname(null)
+            .gender(Gender.FEMALE)
+            .memberRole(MemberRole.LOCAL_CREATOR)
+            .build();
 
-		memberRepository.save(member);
+        memberRepository.save(member);
 
-		LocalCreator localCreator = LocalCreator.builder()
-			.member(member)
-			.businessName(requestDto.getBusinessName())
-			.businessAddress(requestDto.getBusinessAddress())
-			.build();
+        LocalCreator localCreator = LocalCreator.builder()
+            .member(member)
+            .businessName(requestDto.getBusinessName())
+            .businessAddress(requestDto.getBusinessAddress())
+            .build();
 
-		localCreatorRepository.save(localCreator);
+        localCreatorRepository.save(localCreator);
 
-		if (filePurposes == null || files == null || files.size() != filePurposes.size()) {
-			throw new CustomException(ErrorCode.INVALID_FILE_PURPOSE_MAPPING);
-		}
+        if (filePurposes == null || files == null || files.size() != filePurposes.size()) {
+            throw new CustomException(ErrorCode.INVALID_FILE_PURPOSE_MAPPING);
+        }
 
-		for (int i = 0; i < filePurposes.size(); i++) {
-			FilePurpose purpose = filePurposes.get(i);
+        for (int i = 0; i < filePurposes.size(); i++) {
+            FilePurpose purpose = filePurposes.get(i);
 
-			MultipartFile file = (i < files.size()) ? files.get(i) : null;
+            MultipartFile file = (i < files.size()) ? files.get(i) : null;
 
-			if (purpose == FilePurpose.BANK_ACCOUNT_COPY && (file == null || file.isEmpty())) {
-				throw new CustomException(ErrorCode.MISSING_REQUIRED_FILE);
-			}
+            if (purpose == FilePurpose.BANK_ACCOUNT_COPY && (file == null || file.isEmpty())) {
+                throw new CustomException(ErrorCode.MISSING_REQUIRED_FILE);
+            }
 
-			if (file == null || file.isEmpty()) {
-				continue;
-			}
+            if (file == null || file.isEmpty()) {
+                continue;
+            }
 
-			String storeUrl = s3Uploader.upload(file, "local-creator");
+            String storeUrl = s3Uploader.upload(file, "local-creator");
 
-			File savedFile = fileRepository.save(
-				File.builder()
-					.originalName(file.getOriginalFilename())
-					.storedFileName(storeUrl)
-					.build()
-			);
+            File savedFile = fileRepository.save(
+                File.builder()
+                    .originalName(file.getOriginalFilename())
+                    .storedFileName(storeUrl)
+                    .build()
+            );
 
-			fileMappingRepository.save(FileMapping.builder()
-				.file(savedFile)
-				.fileCategory(FileCategory.LOCAL_CREATOR)
-				.referenceId(member.getId())
-				.filePurpose(purpose)
-				.build());
-		}
+            fileMappingRepository.save(FileMapping.builder()
+                .file(savedFile)
+                .fileCategory(FileCategory.LOCAL_CREATOR)
+                .referenceId(member.getId())
+                .filePurpose(purpose)
+                .build());
+        }
 
-		return new LocalCreatorSignupResponseDto(localCreator.getBusinessName());
-	}
+        return new LocalCreatorSignupResponseDto(localCreator.getBusinessName());
+    }
 
-	public void checkEmailVerifiedOrThrow(String email) {
-		String flag = emailVerifiedRedisTemplate.opsForValue().get("email_verified:" + email);
+    public void checkEmailVerifiedOrThrow(String email) {
+        String flag = emailVerifiedRedisTemplate.opsForValue().get(EMAIL_VERIFIED + email);
 
-		if (!"true".equals(flag)) {
-			throw new CustomException(ErrorCode.EMAIL_NOT_VERIFIED);
-		}
-	}
+        if (!"true".equals(flag)) {
+            throw new CustomException(ErrorCode.EMAIL_NOT_VERIFIED);
+        }
+    }
 
-	public LoginResponseDto login(LoginRequestDto requestDto) {
-		Member member = memberRepository.findByEmail(requestDto.getEmail())
-			.orElseThrow(() -> new CustomException(ErrorCode.INVALID_LOGIN));
+    public LoginResponseDto login(LoginRequestDto requestDto) {
 
-		if (!passwordEncoder.matches(requestDto.getPassword(), member.getPassword())) {
-			throw new CustomException(ErrorCode.INVALID_LOGIN);
-		}
+        String emailVerifiedFlag = emailVerifiedRedisTemplate.opsForValue()
+            .get(EMAIL_VERIFIED + requestDto.getEmail());
 
-		if (member.getMemberRole() == MemberRole.LOCAL_CREATOR) {
-			LocalCreator creator = localCreatorRepository.findByMemberId(member.getId())
-				.orElseThrow(() -> new CustomException(ErrorCode.INVALID_LOGIN));
-			if (!creator.isApproved()) {
-				throw new CustomException(ErrorCode.CREATOR_NOT_APPROVED);
-			}
-		}
+        boolean isEmailVerified = "true".equals(emailVerifiedFlag);
 
-		String accessToken = jwtProvider.generateAccessToken(member.getEmail(),
-			member.getMemberRole().name());
-		String refreshToken = jwtProvider.generateRefreshToken(member.getEmail(),
-			member.getMemberRole().name());
+        Member member = memberRepository.findByEmail(requestDto.getEmail())
+            .orElse(null);
 
-		long accessTokenExpiration = jwtProvider.getExpiration(accessToken);
-		redisUtil.saveAccessToken(member.getId(), accessToken, accessTokenExpiration);
+        if (member == null) {
+            if (isEmailVerified) {
+                throw new CustomException(ErrorCode.SIGNUP_REQUIRED);
+            }
+            throw new CustomException(ErrorCode.INVALID_LOGIN);
+        }
 
-		return LoginResponseDto.builder()
-			.accessToken(accessToken)
-			.refreshToken(refreshToken)
-			.build();
-	}
+        if (member.isDeleted()) {
+            throw new CustomException(ErrorCode.ALREADY_DELETED_MEMBER);
+        }
 
-	@Transactional
-	public void logout(String accessToken) {
+        if (!passwordEncoder.matches(requestDto.getPassword(), member.getPassword())) {
+            throw new CustomException(ErrorCode.INVALID_LOGIN);
+        }
 
-		if (accessToken == null || accessToken.isBlank()) {
-			throw new CustomException(ErrorCode.INVALID_TOKEN);
-		}
+        if (member.getMemberRole() == MemberRole.LOCAL_CREATOR) {
+            LocalCreator creator = localCreatorRepository.findByMemberId(member.getId())
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_LOGIN));
 
-		jwtProvider.validateTokenOrThrow(accessToken);
+            if (!creator.isApproved()) {
+                throw new CustomException(ErrorCode.LOCAL_CREATOR_NOT_APPROVED);
+            }
+        }
 
-		String email = jwtProvider.getUsernameFromToken(accessToken);
+        String accessToken = jwtProvider.generateAccessToken(member.getEmail(),
+            member.getMemberRole().name());
+        String refreshToken = jwtProvider.generateRefreshToken(member.getEmail(),
+            member.getMemberRole().name());
 
-		Member member = memberRepository.findByEmailOrThrow(email);
+        long accessTokenExpiration = jwtProvider.getExpiration(accessToken);
+        redisUtil.saveAccessToken(member.getId(), accessToken, accessTokenExpiration);
 
-		redisUtil.deleteRefreshToken(member.getId());
-		redisUtil.deleteAccessToken(member.getId());
+        return LoginResponseDto.builder()
+            .accessToken(accessToken)
+            .refreshToken(refreshToken)
+            .build();
+    }
 
-		long expiration = jwtProvider.getExpiration(accessToken);
-		blacklistRedisTemplate.opsForValue().set(accessToken, "logout", expiration, TimeUnit.MILLISECONDS);
-	}
+    @Transactional
+    public void logout(String accessToken) {
 
-	public void sendPasswordResetCode(String email) {
-		memberRepository.findByEmailOrThrow(email);
+        if (accessToken == null || accessToken.isBlank()) {
+            throw new CustomException(ErrorCode.INVALID_TOKEN);
+        }
 
-		String code = String.valueOf(new Random().nextInt(900_000) + 100_000);
+        jwtProvider.validateTokenOrThrow(accessToken);
 
-		emailVerifiedRedisTemplate.opsForValue().set("password_code:" + email, code, Duration.ofMinutes(5));
+        String email = jwtProvider.getUsernameFromToken(accessToken);
 
-		emailService.sendPasswordResetCode(email, code);
-	}
+        Member member = memberRepository.findByEmailOrThrow(email);
 
-	@Transactional
-	public void resetPassword(PasswordResetVerifyRequestDto resetVerifyRequestDto) {
-		String key = "password_code:" + resetVerifyRequestDto.getEmail();
-		String savedCode = emailVerifiedRedisTemplate.opsForValue().get(key);
+        redisUtil.deleteRefreshToken(member.getId());
+        redisUtil.deleteAccessToken(member.getId());
 
-		if (savedCode == null) {
-			throw new CustomException(ErrorCode.EMAIL_CODE_EXPIRED);
-		}
-		if (!savedCode.equals(resetVerifyRequestDto.getCode())) {
-			throw new CustomException(ErrorCode.INVALID_EMAIL_CODE);
-		}
+        long expiration = jwtProvider.getExpiration(accessToken);
+        blacklistRedisTemplate.opsForValue().set(TOKEN_BLACKLIST + accessToken, "logout", expiration, TimeUnit.MILLISECONDS);
+    }
 
-		Member member = memberRepository.findByEmailOrThrow(resetVerifyRequestDto.getEmail());
+    public void sendPasswordResetCode(String email) {
+        memberRepository.findByEmailOrThrow(email);
 
-		if (passwordEncoder.matches(resetVerifyRequestDto.getNewPassword(), member.getPassword())) {
-			throw new CustomException(ErrorCode.SAME_AS_OLD_PASSWORD);
-		}
+        String code = String.valueOf(new Random().nextInt(900_000) + 100_000);
 
-		String encodedPassword = passwordEncoder.encode(resetVerifyRequestDto.getNewPassword());
-		member.updatePassword(encodedPassword);
+        emailVerifiedRedisTemplate.opsForValue().set(PASSWORD_RESET_CODE + email, code, Duration.ofMinutes(5));
 
-		emailVerifiedRedisTemplate.delete(key);
-	}
+        emailService.sendPasswordResetCode(email, code);
+    }
+
+    @Transactional
+    public void resetPassword(PasswordResetVerifyRequestDto resetVerifyRequestDto) {
+        String key = PASSWORD_RESET_CODE + resetVerifyRequestDto.getEmail();
+        String savedCode = emailVerifiedRedisTemplate.opsForValue().get(key);
+
+        if (savedCode == null) {
+            throw new CustomException(ErrorCode.EMAIL_CODE_EXPIRED);
+        }
+        if (!savedCode.equals(resetVerifyRequestDto.getCode())) {
+            throw new CustomException(ErrorCode.INVALID_EMAIL_CODE);
+        }
+
+        Member member = memberRepository.findByEmailOrThrow(resetVerifyRequestDto.getEmail());
+
+        if (passwordEncoder.matches(resetVerifyRequestDto.getNewPassword(), member.getPassword())) {
+            throw new CustomException(ErrorCode.SAME_AS_OLD_PASSWORD);
+        }
+
+        String encodedPassword = passwordEncoder.encode(resetVerifyRequestDto.getNewPassword());
+        member.updatePassword(encodedPassword);
+
+        emailVerifiedRedisTemplate.delete(key);
+    }
 }
