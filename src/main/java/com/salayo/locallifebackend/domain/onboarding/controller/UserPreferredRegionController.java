@@ -26,9 +26,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-/**
- * 사용자 선호 지역 관리 Controller 마이페이지 및 선호 지역 조회/수정 기능 제공
- */
 @Slf4j
 @RestController
 @RequestMapping("/preferred-regions")
@@ -44,9 +41,6 @@ public class UserPreferredRegionController {
 		this.onboardingService = onboardingService;
 	}
 
-	/**
-	 * 사용자의 선호 지역 목록 조회 마이페이지에서 현재 선택된 지역들을 확인할 때 사용
-	 */
 	@GetMapping("/details")
 	@Operation(
 		summary = "내 선호 지역 목록 조회",
@@ -63,15 +57,23 @@ public class UserPreferredRegionController {
 		),
 		@ApiResponse(
 			responseCode = "400",
-			description = "온보딩이 완료되지 않음"
+			description = "온보딩이 완료되지 않은 경우 또는 필수 입력값이 누락되었거나 잘못된 요청 값인 경우"
 		),
 		@ApiResponse(
 			responseCode = "401",
-			description = "인증되지 않은 사용자"
+			description = "인증이 필요하거나 토큰이 유효하지 않은 경우"
+		),
+		@ApiResponse(
+			responseCode = "403",
+			description = "접근 권한이 없는 경우"
 		),
 		@ApiResponse(
 			responseCode = "404",
-			description = "온보딩이 시작되지 않았거나 회원을 찾을 수 없음"
+			description = "온보딩이 시작되지 않았거나 회원 정보를 찾을 수 없는 경우"
+		),
+		@ApiResponse(
+			responseCode = "500",
+			description = "서버 내부 오류가 발생한 경우"
 		)
 	})
 	public ResponseEntity<CommonResponseDto<List<String>>> getUserPreferredRegions(
@@ -87,9 +89,6 @@ public class UserPreferredRegionController {
 		return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, regions));
 	}
 
-	/**
-	 * 선호 지역 특징 변경 (재선택) 마이페이지에서 선호 지역을 변경할 때 사용
-	 */
 	@PutMapping("/reselect")
 	@Operation(
 		summary = "선호 지역 변경",
@@ -106,15 +105,23 @@ public class UserPreferredRegionController {
 		),
 		@ApiResponse(
 			responseCode = "400",
-			description = "온보딩이 완료되지 않았거나 유효하지 않은 요청 값"
+			description = "온보딩이 완료되지 않았거나 요청 값이 유효하지 않은 경우 (필수 입력값 누락 포함)"
 		),
 		@ApiResponse(
 			responseCode = "401",
-			description = "인증되지 않은 사용자"
+			description = "인증이 필요하거나 토큰이 유효하지 않은 경우"
+		),
+		@ApiResponse(
+			responseCode = "403",
+			description = "접근 권한이 없는 경우"
 		),
 		@ApiResponse(
 			responseCode = "404",
-			description = "온보딩이 시작되지 않았거나 회원을 찾을 수 없음"
+			description = "온보딩이 시작되지 않았거나 회원 정보를 찾을 수 없는 경우"
+		),
+		@ApiResponse(
+			responseCode = "500",
+			description = "서버 내부 오류가 발생한 경우"
 		)
 	})
 	public ResponseEntity<CommonResponseDto<List<String>>> updateUserPreferredRegions(

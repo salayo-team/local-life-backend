@@ -50,7 +50,7 @@ public class OnboardingController {
 	)
 	@ApiResponses(value = {
 		@ApiResponse(
-			responseCode = "200",
+			responseCode = "201",
 			description = "온보딩 시작 성공",
 			content = @Content(
 				mediaType = "application/json",
@@ -59,11 +59,19 @@ public class OnboardingController {
 		),
 		@ApiResponse(
 			responseCode = "401",
-			description = "인증되지 않은 사용자"
+			description = "인증이 필요하거나 토큰이 유효하지 않은 경우"
+		),
+		@ApiResponse(
+			responseCode = "403",
+			description = "접근 권한이 없거나 차단된 인증으로 요청한 경우"
 		),
 		@ApiResponse(
 			responseCode = "404",
-			description = "회원을 찾을 수 없음"
+			description = "회원 정보를 찾을 수 없는 경우"
+		),
+		@ApiResponse(
+			responseCode = "500",
+			description = "서버 내부 오류가 발생한 경우"
 		)
 	})
 	public ResponseEntity<CommonResponseDto<OnboardingProgressResponseDto>> startOnboarding(
@@ -93,11 +101,19 @@ public class OnboardingController {
 		),
 		@ApiResponse(
 			responseCode = "401",
-			description = "인증되지 않은 사용자"
+			description = "인증이 필요하거나 토큰이 유효하지 않은 경우"
+		),
+		@ApiResponse(
+			responseCode = "403",
+			description = "접근 권한이 없거나 차단된 인증으로 요청한 경우"
 		),
 		@ApiResponse(
 			responseCode = "404",
-			description = "온보딩이 시작되지 않음 또는 회원을 찾을 수 없음"
+			description = "온보딩이 시작되지 않았거나 회원 정보를 찾을 수 없는 경우"
+		),
+		@ApiResponse(
+			responseCode = "500",
+			description = "서버 내부 오류가 발생한 경우"
 		)
 	})
 	public ResponseEntity<CommonResponseDto<OnboardingProgressResponseDto>> getCurrentProgress(
@@ -128,11 +144,19 @@ public class OnboardingController {
 		),
 		@ApiResponse(
 			responseCode = "401",
-			description = "인증되지 않은 사용자"
+			description = "인증이 필요하거나 토큰이 유효하지 않은 경우"
+		),
+		@ApiResponse(
+			responseCode = "403",
+			description = "접근 권한이 없거나 차단된 인증으로 요청한 경우"
 		),
 		@ApiResponse(
 			responseCode = "404",
-			description = "회원을 찾을 수 없음"
+			description = "회원 정보를 찾을 수 없는 경우"
+		),
+		@ApiResponse(
+			responseCode = "500",
+			description = "서버 내부 오류가 발생한 경우"
 		)
 	})
 	public ResponseEntity<CommonResponseDto<OnboardingStatusResponseDto>> getOnboardingStatus(
@@ -161,15 +185,23 @@ public class OnboardingController {
 		),
 		@ApiResponse(
 			responseCode = "400",
-			description = "잘못된 온보딩 단계 또는 유효하지 않은 요청 값"
+			description = "온보딩 단계가 올바르지 않거나 요청 값이 유효하지 않은 경우"
 		),
 		@ApiResponse(
 			responseCode = "401",
-			description = "인증되지 않은 사용자"
+			description = "인증이 필요하거나 토큰이 유효하지 않은 경우"
+		),
+		@ApiResponse(
+			responseCode = "403",
+			description = "접근 권한이 없거나 차단된 인증으로 요청한 경우"
 		),
 		@ApiResponse(
 			responseCode = "404",
-			description = "온보딩이 시작되지 않았거나 회원을 찾을 수 없음"
+			description = "온보딩이 시작되지 않았거나 회원 정보를 찾을 수 없는 경우"
+		),
+		@ApiResponse(
+			responseCode = "500",
+			description = "서버 내부 오류가 발생한 경우"
 		)
 	})
 	public ResponseEntity<CommonResponseDto<OnboardingProgressResponseDto>> selectRegion(
@@ -200,15 +232,23 @@ public class OnboardingController {
 		),
 		@ApiResponse(
 			responseCode = "400",
-			description = "잘못된 온보딩 단계 또는 유효하지 않은 요청 값"
+			description = "온보딩 단계가 올바르지 않거나 요청 값이 유효하지 않은 경우"
 		),
 		@ApiResponse(
 			responseCode = "401",
-			description = "인증되지 않은 사용자"
+			description = "인증이 필요하거나 토큰이 유효하지 않은 경우"
+		),
+		@ApiResponse(
+			responseCode = "403",
+			description = "접근 권한이 없거나 차단된 인증으로 요청한 경우"
 		),
 		@ApiResponse(
 			responseCode = "404",
-			description = "온보딩이 시작되지 않았거나 회원을 찾을 수 없음"
+			description = "온보딩이 시작되지 않았거나 회원 정보를 찾을 수 없는 경우"
+		),
+		@ApiResponse(
+			responseCode = "500",
+			description = "서버 내부 오류가 발생한 경우"
 		)
 	})
 	public ResponseEntity<CommonResponseDto<OnboardingProgressResponseDto>> checkAptitudeKnowledge(
@@ -240,15 +280,23 @@ public class OnboardingController {
 		),
 		@ApiResponse(
 			responseCode = "400",
-			description = "잘못된 온보딩 단계 또는 적성 정보 없음"
+			description = "온보딩 단계가 올바르지 않거나 완료 가능한 단계가 아닌 경우"
 		),
 		@ApiResponse(
 			responseCode = "401",
-			description = "인증되지 않은 사용자"
+			description = "인증이 필요하거나 토큰이 유효하지 않은 경우"
+		),
+		@ApiResponse(
+			responseCode = "403",
+			description = "접근 권한이 없거나 차단된 인증으로 요청한 경우"
 		),
 		@ApiResponse(
 			responseCode = "404",
-			description = "온보딩이 시작되지 않았거나 회원을 찾을 수 없음"
+			description = "온보딩이 시작되지 않았거나 적성 정보 또는 회원 정보를 찾을 수 없는 경우"
+		),
+		@ApiResponse(
+			responseCode = "500",
+			description = "서버 내부 오류가 발생한 경우"
 		)
 	})
 	public ResponseEntity<CommonResponseDto<OnboardingProgressResponseDto>> completeOnboarding(

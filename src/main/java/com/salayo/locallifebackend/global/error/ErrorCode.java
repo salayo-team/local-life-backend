@@ -125,6 +125,7 @@ public enum ErrorCode {
 	MERCHANT_UID_NOT_FOUND_BY_IAMPORT(HttpStatus.NOT_FOUND, "해당 merchant_uid 결제건이 PortOne 서버에 존재하지 않습니다."),
 	RESERVATION_NOT_FOUND_FOR_USER(HttpStatus.NOT_FOUND, "해당 유저의 예약이 아닙니다."),
 	PROGRAM_NOT_FOUND_FOR_USER(HttpStatus.NOT_FOUND, "해당 유저의 체험 프로그램이 아닙니다."),
+	USER_APTITUDE_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자 적성을 찾을 수 없습니다."),
 
     // 408 REQUEST_TIMEOUT
     AI_TIMEOUT(HttpStatus.REQUEST_TIMEOUT, "AI 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요."),
