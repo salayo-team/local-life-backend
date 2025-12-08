@@ -33,7 +33,7 @@ public class AptitudeTestHistoryService {
     // 세션별 이력 조회
     @Transactional(readOnly = true)
     public List<AptitudeTestHistoryResponseDto> getTestHistoryBySession(Long memberId, String sessionId) {
-        Member member = memberRepository.findByIdOrElseThrow(memberId);
+        Member member = memberRepository.findActiveByIdOrThrow(memberId);
         
         List<AptitudeTestHistory> histories = aptitudeTestHistoryRepository
             .findBySessionIdAndMemberOrderByStepAsc(sessionId, member);
@@ -51,7 +51,7 @@ public class AptitudeTestHistoryService {
     // 완료된 테스트 이력 조회
     @Transactional(readOnly = true)
     public List<AptitudeTestHistoryResponseDto> getCompletedTestHistory(Long memberId) {
-        Member member = memberRepository.findByIdOrElseThrow(memberId);
+        Member member = memberRepository.findActiveByIdOrThrow(memberId);
         
         return aptitudeTestHistoryRepository
             .findByMemberAndIsCompletedTrueOrderByCreatedAtDesc(member)

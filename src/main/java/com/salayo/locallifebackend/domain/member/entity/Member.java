@@ -79,4 +79,11 @@ public class Member extends SoftDeletableEntity {
         return this.getDeletedStatus() == DeletedStatus.DELETED;
     }
 
+    public void updateNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
+    public void updatePhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
 }

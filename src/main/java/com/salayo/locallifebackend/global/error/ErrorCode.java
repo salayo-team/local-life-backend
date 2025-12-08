@@ -71,17 +71,22 @@ public enum ErrorCode {
 	PAYMENT_REFUND_REASON_REQUIRED(HttpStatus.BAD_REQUEST, "환불 사유는 필수입니다."),
 	RESERVATION_NOT_CANCELABLE(HttpStatus.BAD_REQUEST, "예약 취소가 불가능합니다."),
 	RESERVATION_NOT_REJECTABLE(HttpStatus.BAD_REQUEST, "예약 거절이 불가능합니다."),
+    MAGAZINE_ALREADY_REGISTERED(HttpStatus.BAD_REQUEST, "이미 등록된 매거진입니다."),
+    MAGAZINE_INVALID_STATUS_FOR_REGISTER(HttpStatus.BAD_REQUEST, "해당 상태에서는 매거진을 등록할 수 없습니다."),
+    SIGNUP_REQUIRED(HttpStatus.BAD_REQUEST, "회원가입을 먼저 완료해주세요."),
 	INVALID_FINAL_PRICE(HttpStatus.BAD_REQUEST, "최종 금액 값이 잘못되었습니다."),
 	INVALID_SEARCH_KEYWORD(HttpStatus.BAD_REQUEST, "검색어가 유효하지 않습니다."),
 	PROGRAM_STATUS_NOT_VIEWABLE(HttpStatus.BAD_REQUEST, "조회할 수 없는 프로그램 상태입니다."),
 
-	// 401 Unauthorized
+    // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
     TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "만료된 토큰입니다."),
     TOKEN_MALFORMED(HttpStatus.UNAUTHORIZED, "잘못된 형식의 토큰입니다."),
     TOKEN_UNSUPPORTED(HttpStatus.UNAUTHORIZED, "지원하지 않는 토큰입니다."),
     TOKEN_ILLEGAL(HttpStatus.UNAUTHORIZED, "토큰이 비어있거나 잘못되었습니다."),
     TOKEN_SIGNATURE_INVALID(HttpStatus.UNAUTHORIZED, "토큰 서명이 유효하지 않습니다."),
+    TOKEN_BLACKLISTED(HttpStatus.UNAUTHORIZED,"유효하지 않은 인증입니다. 다시 로그인해주세요."),
+
 
     // 403 Forbidden
     FORBIDDEN_ACCESS(HttpStatus.FORBIDDEN, "접근이 거부됐습니다."),
@@ -135,6 +140,7 @@ public enum ErrorCode {
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, "이미 존재하는 이메일입니다."),
     DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "이미 존재하는 닉네임입니다."),
     ALREADY_DELETED_MEMBER(HttpStatus.CONFLICT, "이미 탈퇴된 회원입니다."),
+    DUPLICATE_PHONE_NUMBER(HttpStatus.CONFLICT, "이미 존재하는 전화번호입니다."),
 
     // 429 TOO_MANY_REQUESTS
     TOO_MANY_REQUESTS(HttpStatus.TOO_MANY_REQUESTS, "요청 횟수를 초과했습니다."),

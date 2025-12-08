@@ -9,8 +9,10 @@ import com.salayo.locallifebackend.domain.localcreator.entity.LocalCreator;
 import com.salayo.locallifebackend.domain.localcreator.enums.CreatorStatus;
 import com.salayo.locallifebackend.domain.localcreator.repository.LocalCreatorRepository;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineCreateRequestDto;
+import com.salayo.locallifebackend.domain.magazine.dto.MagazineDetailResponseDto;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineDraftDetailResponseDto;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineDraftListResponseDto;
+import com.salayo.locallifebackend.domain.magazine.dto.MagazineListResponseDto;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineUpdateRequestDto;
 import com.salayo.locallifebackend.domain.magazine.entity.Magazine;
 import com.salayo.locallifebackend.domain.magazine.entity.MagazinePreviewToken;
@@ -124,6 +126,11 @@ public class MagazineService {
     }
 
     public PaginationResponseDto<MagazineDraftListResponseDto> getDraftMagazines(int page, int size) {
+
+        if (page < 0 || size < 1) {
+            throw new CustomException(ErrorCode.INVALID_PARAMETER);
+        }
+
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
         Page<Magazine> magazinePage = magazineRepository.findByMagazineStatusInAndDeletedStatus(
@@ -163,7 +170,7 @@ public class MagazineService {
             .id(magazine.getId())
             .title(magazine.getTitle())
             .content(magazine.getContent())
-            .thumnailUrl(magazine.getThumbnailUrl())
+            .thumbnailUrl(magazine.getThumbnailUrl())
             .detailImageUrls(detailImageUrls)
             .regionName(magazine.getRegionCategory().getRegionName())
             .aptitudeName(magazine.getAptitudeCategory().getAptitudeName())
@@ -301,7 +308,10 @@ public class MagazineService {
             .magazine(magazine)
             .content(magazineUpdateRequestDto.getContent())
             .admin(admin)
+            .revisionNumber(0)
             .build();
+
+        magazineRevisionRepository.save(magazineRevision);
     }
 
     @Transactional
@@ -330,7 +340,7 @@ public class MagazineService {
     }
 
     @Transactional
-    public void finalizeCollaboation(Long magazineId) {
+    public void finalizeCollaboration(Long magazineId) {
         Magazine magazine = magazineRepository.findById(magazineId)
             .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_NOT_FOUND));
 
@@ -349,6 +359,99 @@ public class MagazineService {
         magazinePreviewTokenRepository.flush();
 
         log.info("매거진(ID: {}) 협업 마무리 → DRAFT 상태로 복귀", magazineId);
+    }
+
+    @Transactional
+    public void registerMagazine(Long magazineId, Long adminId) {
+        Magazine magazine = magazineRepository.findById(magazineId)
+            .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_NOT_FOUND));
+
+        if (!magazine.getAdmin().getId().equals(adminId)) {
+            throw new CustomException(ErrorCode.MAGAZINE_FORBIDDEN);
+        }
+
+        if (magazine.getDeletedStatus() == DeletedStatus.DELETED) {
+            throw new CustomException(ErrorCode.MAGAZINE_ALREADY_DELETED);
+        }
+
+        if (magazine.getMagazineStatus() == MagazineStatus.REGISTERED) {
+            throw new CustomException(ErrorCode.MAGAZINE_ALREADY_REGISTERED);
+        }
+
+        if (!List.of(
+            MagazineStatus.DRAFT,
+            MagazineStatus.REQUEST_REVISION,
+            MagazineStatus.PENDING_CONFIRMATION
+        ).contains(magazine.getMagazineStatus())) {
+            throw new CustomException(ErrorCode.MAGAZINE_INVALID_STATUS_FOR_REGISTER);
+        }
+
+        magazine.updateStatus(MagazineStatus.REGISTERED);
+        magazine.markAsRegistered();
+
+        magazinePreviewTokenRepository.deleteByMagazineId(magazineId);
+        magazinePreviewTokenRepository.flush();
+
+        log.info("매거진(ID: {})이 최종 등록(REGISTERED)되었습니다.", magazineId);
+    }
+
+    @Transactional(readOnly = true)
+    public PaginationResponseDto<MagazineListResponseDto> getRegisteredMagazines(int page, int size) {
+
+        if (page < 0 || size < 1) {
+            throw new CustomException(ErrorCode.INVALID_PARAMETER);
+        }
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("registeredAt").descending());
+
+        Page<Magazine> magazinePage = magazineRepository.findByMagazineStatusInAndDeletedStatus(
+            List.of(MagazineStatus.REGISTERED),
+            DeletedStatus.DISPLAYED,
+            pageable
+        );
+
+        Page<MagazineListResponseDto> dtoPage = magazinePage.map(m ->
+            MagazineListResponseDto.builder()
+                .id(m.getId())
+                .title(m.getTitle())
+                .thumbnailUrl(m.getThumbnailUrl())
+                .regionName(m.getRegionCategory().getRegionName())
+                .aptitudeName(m.getAptitudeCategory().getAptitudeName())
+                .registeredAt(m.getRegisteredAt())
+                .build()
+        );
+
+        return PaginationResponseDto.of(dtoPage);
+    }
+
+    @Transactional
+    public MagazineDetailResponseDto getRegisteredMagazineDetail(Long magazineId, Member member) {
+        Magazine magazine = magazineRepository.findById(magazineId)
+            .orElseThrow(() -> new CustomException(ErrorCode.MAGAZINE_NOT_FOUND));
+
+        if (magazine.getDeletedStatus() == DeletedStatus.DELETED) {
+            throw new CustomException(ErrorCode.MAGAZINE_NOT_FOUND);
+        }
+
+        if (magazine.getMagazineStatus() != MagazineStatus.REGISTERED) {
+            throw new CustomException(ErrorCode.MAGAZINE_NOT_FOUND);
+        }
+
+        magazine.increaseViews();
+
+        List<String> detailImageUrls = magazineFileService.getDetailImageUrls(magazineId);
+
+        return MagazineDetailResponseDto.builder()
+            .id(magazine.getId())
+            .title(magazine.getTitle())
+            .content(magazine.getContent())
+            .thumbnailUrl(magazine.getThumbnailUrl())
+            .detailImageUrls(detailImageUrls)
+            .regionName(magazine.getRegionCategory().getRegionName())
+            .aptitudeName(magazine.getAptitudeCategory().getAptitudeName())
+            .registeredAt(magazine.getRegisteredAt())
+            .views(magazine.getViews())
+            .build();
     }
 
 }

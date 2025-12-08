@@ -9,9 +9,9 @@ import java.util.Optional;
 
 @Repository
 public interface OnboardingProgressRepository extends JpaRepository<OnboardingProgress, Long> {
-    
-    /**
-     * 회원별 온보딩 진행 상태 조회
-     */
-    Optional<OnboardingProgress> findByMember(Member member);
+
+	/**
+	 * 회원별 온보딩 진행 상태 조회
+	 */
+	Optional<OnboardingProgress> findByMember(Member member);
 }

@@ -66,4 +66,11 @@ public class LocalCreator extends BaseEntity {
         this.rejectedReason = rejectedReason;
     }
 
+    public void requestReapprove(String businessName, String businessAddress) {
+        this.businessName = businessName;
+        this.businessAddress = businessAddress;
+        this.creatorStatus = CreatorStatus.PENDING;
+        this.rejectedReason = null;
+    }
+
 }

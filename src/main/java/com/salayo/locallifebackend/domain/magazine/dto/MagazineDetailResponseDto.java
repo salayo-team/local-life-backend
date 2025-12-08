@@ -7,7 +7,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class MagazineDraftDetailResponseDto {
+public class MagazineDetailResponseDto {
 
     private Long id;
     private String title;
@@ -16,7 +16,7 @@ public class MagazineDraftDetailResponseDto {
     private List<String> detailImageUrls;
     private String regionName;
     private String aptitudeName;
-    private String adminEmail;
-    private LocalDateTime createdAt;
+    private LocalDateTime registeredAt;
+    private Long views;
 
 }
