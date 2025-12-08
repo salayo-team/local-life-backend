@@ -41,75 +41,22 @@ public class UserAptitude extends BaseEntity {
 	@Column(name = "aptitude_code", nullable = false)
 	private AptitudeType aptitudeType;
 
-	@Column(name = "test_step")
-	private Integer testStep;
-
-	@Column(name = "test_count", nullable = false)
-	private Integer testCount;
-
-	@Column(name = "mypage_test_count", nullable = false)
-	private Integer mypageTestCount;
-
-	@Column(name = "is_onboarding_completed", nullable = false)
-	private Boolean isOnboardingCompleted;
-	
-	@Column(name = "last_partial_step")
-	private Integer lastPartialStep; // 마지막 부분 저장 단계
-	
-	@Column(name = "partial_session_id", length = 100)
-	private String partialSessionId; // 부분 저장된 세션 ID
+	@Column(name = "aptitude_test_count", nullable = false)
+	private Integer aptitudeTestCount;
 
 	@Builder
-	public UserAptitude(Member member, AptitudeType aptitudeType, Integer testStep, 
-			Integer testCount, Integer mypageTestCount, Boolean isOnboardingCompleted,
-			Integer lastPartialStep, String partialSessionId) {
+	public UserAptitude(Member member, AptitudeType aptitudeType, Integer aptitudeTestCount) {
 		this.member = member;
 		this.aptitudeType = aptitudeType;
-		this.testStep = testStep;
-		this.testCount = (testCount != null) ? testCount : 0;
-		this.mypageTestCount = (mypageTestCount != null) ? mypageTestCount : 0;
-		this.isOnboardingCompleted = (isOnboardingCompleted != null) ? isOnboardingCompleted : false;
-		this.lastPartialStep = lastPartialStep;
-		this.partialSessionId = partialSessionId;
+		this.aptitudeTestCount = (aptitudeTestCount != null) ? aptitudeTestCount : 0;
 	}
 
-	public static UserAptitude createNew(Member member) {
-		return UserAptitude.builder()
-			.member(member)
-			.aptitudeType(AptitudeType.PENDING)
-			.testStep(0)
-			.testCount(0)
-			.mypageTestCount(0)
-			.isOnboardingCompleted(false)
-			.lastPartialStep(null)
-			.partialSessionId(null)
-			.build();
-	}
-
-	public void updateAptitudeFromOnboarding(AptitudeType aptitudeType) {
+	public void updateAptitudeFromTest(AptitudeType aptitudeType) {
 		this.aptitudeType = aptitudeType;
-		this.isOnboardingCompleted = true;
-		this.testCount++;
+		this.aptitudeTestCount++;
 	}
 
-	public void updateAptitudeFromMypage(AptitudeType aptitudeType) {
+	public void manuallyUpdateAptitude(AptitudeType aptitudeType) {
 		this.aptitudeType = aptitudeType;
-		this.testCount++;
-	}
-
-	public void incrementMypageTestCount() {
-		this.mypageTestCount++;
-	}
-	
-	// 부분 저장 업데이트
-	public void updatePartialProgress(Integer step, String sessionId) {
-		this.lastPartialStep = step;
-		this.partialSessionId = sessionId;
-	}
-	
-	// 부분 저장 초기화
-	public void clearPartialProgress() {
-		this.lastPartialStep = null;
-		this.partialSessionId = null;
 	}
 }

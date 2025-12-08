@@ -258,4 +258,22 @@ public class OnboardingService {
 
 		return false;
 	}
+
+	/**
+	 * [내부용] 적성 검사 완료 후 온보딩 상태를 완료로 변경
+	 * AptitudeService에서 호출
+	 */
+	@Transactional
+	public void completeOnboardingAfterAptitudeTest(Long memberId) {
+		Member member = memberRepository.findActiveByIdOrThrow(memberId);
+		OnboardingProgress progress = getOnboardingProgress(member);
+
+		if (progress.isCompleted()) {
+			return;
+		}
+
+		progress.complete();
+		log.info("적성 검사 완료에 따른 온보딩 상태 업데이트 - memberId: {}", memberId);
+	}
+
 }
