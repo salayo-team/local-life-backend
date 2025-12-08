@@ -45,7 +45,7 @@ public class ProgramRecommendationController {
 	@ApiResponses(value = {
 		@ApiResponse(
 			responseCode = "200",
-			description = "체험 프로그램 추천 목록 조회 성공",
+			description = "체험 프로그램 6개 랜덤 추천 성공",
 			content = @Content(
 				mediaType = "application/json",
 				schema = @Schema(implementation = CommonResponseDto.class)
@@ -53,15 +53,23 @@ public class ProgramRecommendationController {
 		),
 		@ApiResponse(
 			responseCode = "400",
-			description = "온보딩이 완료되지 않음 또는 추천 가능한 프로그램이 없음"
+			description = "필수 입력값이 누락되었거나 잘못된 요청 값인 경우"
 		),
 		@ApiResponse(
 			responseCode = "401",
-			description = "인증되지 않은 사용자"
+			description = "인증이 필요하거나 토큰이 유효하지 않은 경우"
+		),
+		@ApiResponse(
+			responseCode = "403",
+			description = "접근 권한이 없거나 차단된 인증으로 요청한 경우"
 		),
 		@ApiResponse(
 			responseCode = "404",
-			description = "회원을 찾을 수 없음"
+			description = "회원 정보, 적성 정보 또는 카테고리 정보를 찾을 수 없는 경우"
+		),
+		@ApiResponse(
+			responseCode = "500",
+			description = "서버 내부 오류가 발생한 경우"
 		)
 	})
 	public ResponseEntity<CommonResponseDto<List<RecommendedProgramResponseDto>>> getRandomRecommendedPrograms(

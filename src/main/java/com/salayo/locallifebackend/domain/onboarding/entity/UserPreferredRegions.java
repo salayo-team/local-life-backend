@@ -41,10 +41,10 @@ public class UserPreferredRegions extends BaseEntity {
 	private Member member;
 
 	@Column(name = "region_name", nullable = false, length = 20)
-	private String regionName; // 지역명 (ex: "서울", "부산", "강원" 등)
+	private String regionName;
 
 	@Column(name = "is_active", nullable = false)
-	private boolean isActive = true; // 활성화 여부
+	private boolean isActive = true;
 
 	@Builder
 	public UserPreferredRegions(Member member, String regionName, boolean isActive) {
@@ -56,7 +56,7 @@ public class UserPreferredRegions extends BaseEntity {
 	/**
 	 * 선호 지역 활성화/비활성화
 	 */
-	public void updateActiveStatus(boolean isActive) {
+	public void updatePreferredRegionsActiveStatus(boolean isActive) {
 		this.isActive = isActive;
 	}
 }
