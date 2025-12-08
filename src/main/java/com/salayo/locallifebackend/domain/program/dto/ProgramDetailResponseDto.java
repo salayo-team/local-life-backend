@@ -1,6 +1,5 @@
 package com.salayo.locallifebackend.domain.program.dto;
 
-
 import com.salayo.locallifebackend.domain.program.entity.Program;
 import com.salayo.locallifebackend.domain.program.enums.LocalSpecialized;
 import com.salayo.locallifebackend.domain.program.enums.ProgramStatus;
@@ -14,61 +13,85 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class ProgramCreateResponseDto {
+public class ProgramDetailResponseDto {
 
-	private final Long id; //체험 프로그램 고유 식별자
+	private final Long id;
 
-	private final Long providerId; //프로그램 제공자(로컬 크리에이터) 고유 식별자
+	private final Long providerId;
 
-	private final Long aptitudeCategoryId; //적성 카테고리 고유 식별자
+	private final Long aptitudeCategoryId;
 
-	private final Long regionCategoryId; //지역 카테고리 고유 식별자
+	private final Long regionCategoryId;
 
-	private final String businessName; //상호명
+	private final Long originalProgramId;
 
-	private final String title; //프로그램 제목
+	private final Long programGroupId;
 
-	private final String description; //프로그램 설명
+	private final String businessName;
 
-	private final String curriculumDescription; //프로그램 커리큘럼 설명
+	private final String title;
 
-	private final String location; //체험 위치
+	private final String description;
 
-	private final BigDecimal price; //체험 가격
+	private final String curriculumDescription;
 
-	private final BigDecimal percent; //체험 할인률
+	private final String location;
 
-	private final BigDecimal finalPrice; //최종 가격
+	private final BigDecimal price;
 
-	private final Integer maxCapacity; //스케줄 최대 정원
+	private final BigDecimal percent;
 
-	private final Integer minCapacity; //스케줄 최소 정원
+	private final BigDecimal finalPrice;
 
-	private final LocalDate startDate; //체험 프로그램 시작일
+	private final Integer maxCapacity;
 
-	private final LocalDate endDate; //체험 프로그램 종료일
+	private final Integer minCapacity;
 
-	private final Integer count; //조회수
+	private final LocalDate startDate;
 
-	private final LocalSpecialized isLocalSpecialized; //지역특화 여부
+	private final LocalDate endDate;
 
-	private final ProgramStatus programStatus; //프로그램 운영상태
+	private final Integer count;
 
-	private final LocalDateTime createdAt; //프로그램 생성일
+	private final LocalSpecialized isLocalSpecialized;
 
-	private final List<ProgramDayResponseDto> programDays; //운영 요일 리스트
+	private final ProgramStatus programStatus;
 
-	private final List<ProgramScheduleResponseDto> programSchedule; // 프로그램 스케줄
+	private final Integer reviewCount;
 
-	private final List<ProgramScheduleTimeResponseDto> programScheduleTimes; //스케줄 회차별 시간 리스트
+	private final BigDecimal averageRating;
 
-	public static ProgramCreateResponseDto from(Program program) {
+	private final String thumbnailUrl;
 
-		return ProgramCreateResponseDto.builder()
+	private final List<String> detailImageUrls;
+
+	private final LocalDateTime createdAt;
+
+	private final List<ProgramDayResponseDto> programDays;
+
+	private final List<ProgramScheduleResponseDto> programSchedules;
+
+	private final List<ProgramScheduleTimeResponseDto> programScheduleTimes;
+
+	public static ProgramDetailResponseDto from(Program program, String thumbnailUrl, List<String> detailImageUrls) {
+
+		Long originalProgramId = null;
+		if(program.getOriginalProgram() != null){
+			originalProgramId = program.getOriginalProgram().getId();
+		}
+
+		Long programGroupId = null;
+		if(program.getProgramGroup() != null){
+			programGroupId = program.getProgramGroup().getId();
+		}
+
+		return ProgramDetailResponseDto.builder()
 			.id(program.getId())
 			.providerId(program.getMember().getId())
 			.aptitudeCategoryId(program.getAptitudeCategory().getId())
 			.regionCategoryId(program.getRegionCategory().getId())
+			.originalProgramId(originalProgramId)
+			.programGroupId(programGroupId)
 			.businessName(program.getBusinessName())
 			.title(program.getTitle())
 			.description(program.getDescription())
@@ -77,13 +100,17 @@ public class ProgramCreateResponseDto {
 			.price(program.getPrice())
 			.percent(program.getPercent())
 			.finalPrice(program.getFinalPrice())
-			.minCapacity(program.getMinCapacity())
 			.maxCapacity(program.getMaxCapacity())
+			.minCapacity(program.getMinCapacity())
 			.startDate(program.getStartDate())
 			.endDate(program.getEndDate())
 			.count(program.getCount())
 			.isLocalSpecialized(program.getIsLocalSpecialized())
 			.programStatus(program.getProgramStatus())
+			.reviewCount(program.getReviewCount())
+			.averageRating(program.getAverageRating())
+			.thumbnailUrl(thumbnailUrl)
+			.detailImageUrls(detailImageUrls)
 			.createdAt(program.getCreatedAt())
 			.programDays(program.getProgramDays().stream()
 				.map(day -> ProgramDayResponseDto.builder()
@@ -91,7 +118,7 @@ public class ProgramCreateResponseDto {
 					.dayName(day.getDayName())
 					.build())
 				.toList())
-			.programSchedule(program.getProgramSchedules().stream()
+			.programSchedules(program.getProgramSchedules().stream()
 				.map(schedule -> ProgramScheduleResponseDto.builder()
 					.id(schedule.getId())
 					.scheduleDate(schedule.getScheduleDate())
@@ -109,5 +136,4 @@ public class ProgramCreateResponseDto {
 				.toList())
 			.build();
 	}
-
 }

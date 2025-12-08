@@ -20,7 +20,7 @@ public enum ErrorCode {
     INVALID_START_DATE(HttpStatus.BAD_REQUEST, "시작일 값이 잘못되었습니다."),
     INVALID_END_DATE(HttpStatus.BAD_REQUEST, "종료일 값이 잘못되었습니다."),
     INVALID_CAPACITY_RANGE(HttpStatus.BAD_REQUEST, "정원 값이 잘못되었습니다."),
-    INVALID_PRICE_RANGE(HttpStatus.BAD_REQUEST, "가격 값이 잘못되었습니다."),
+    INVALID_PRICE_RANGE(HttpStatus.BAD_REQUEST, "금액 값이 잘못되었습니다."),
     INVALID_TOKEN(HttpStatus.BAD_REQUEST, "유효하지 않은 토큰입니다."),
     FILE_COUNT_EXCEEDED(HttpStatus.BAD_REQUEST, "업로드할 수 있는 파일 개수를 초과했습니다."),
     THUMBNAIL_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "썸네일 이미지는 1개만 등록할 수 있습니다."),
@@ -37,7 +37,7 @@ public enum ErrorCode {
     CANNOT_UPDATE_REVIEW_WITH_REPLY(HttpStatus.BAD_REQUEST, "답글이 달린 리뷰는 수정할 수 없습니다."),
     CANNOT_DELETE_BEFORE_START(HttpStatus.BAD_REQUEST, "시작일 7일 전에는 프로그램을 삭제할 수 없습니다."),
     CANNOT_DELETE_COMPLETED_RESERVATION_EXISTS(HttpStatus.BAD_REQUEST, "체험 완료한 유저가 존재해 삭제할 수 없습니다."),
-    CANNOT_DELETE_ACTIVE_RESERVATION_EXIST(HttpStatus.BAD_REQUEST, "진행중인 예약이 있어 삭제할 수 없습니다."),
+    CANNOT_DELETE_ACTIVE_RESERVATION_EXIST(HttpStatus.BAD_REQUEST, "예약을 삭제할 수 없는 상태입니다."),
     PROGRAM_DELETED(HttpStatus.BAD_REQUEST, "삭제된 체험 프로그램입니다."),
     APTITUDE_TEST_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "마이페이지에서 적성 검사는 최대 5회까지만 가능합니다."),
     FEEDBACK_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "수정 요청은 최대 3회까지 가능합니다. 추가 수정은 고객센터로 문의해주세요."),
@@ -71,6 +71,9 @@ public enum ErrorCode {
 	PAYMENT_REFUND_REASON_REQUIRED(HttpStatus.BAD_REQUEST, "환불 사유는 필수입니다."),
 	RESERVATION_NOT_CANCELABLE(HttpStatus.BAD_REQUEST, "예약 취소가 불가능합니다."),
 	RESERVATION_NOT_REJECTABLE(HttpStatus.BAD_REQUEST, "예약 거절이 불가능합니다."),
+	INVALID_FINAL_PRICE(HttpStatus.BAD_REQUEST, "최종 금액 값이 잘못되었습니다."),
+	INVALID_SEARCH_KEYWORD(HttpStatus.BAD_REQUEST, "검색어가 유효하지 않습니다."),
+	PROGRAM_STATUS_NOT_VIEWABLE(HttpStatus.BAD_REQUEST, "조회할 수 없는 프로그램 상태입니다."),
 
 	// 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),

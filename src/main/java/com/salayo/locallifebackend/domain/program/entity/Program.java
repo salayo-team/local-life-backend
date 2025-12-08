@@ -6,8 +6,7 @@ import com.salayo.locallifebackend.domain.member.entity.Member;
 import com.salayo.locallifebackend.domain.program.enums.LocalSpecialized;
 import com.salayo.locallifebackend.domain.program.enums.ProgramStatus;
 import com.salayo.locallifebackend.domain.programschedule.entity.ProgramSchedule;
-import com.salayo.locallifebackend.global.entity.BaseEntity;
-import com.salayo.locallifebackend.global.enums.DeletedStatus;
+import com.salayo.locallifebackend.global.entity.SoftDeletableEntity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -34,7 +33,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @Entity
 @Table(name = "experience_program")
-public class Program extends BaseEntity {
+public class Program extends SoftDeletableEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -97,7 +96,7 @@ public class Program extends BaseEntity {
 	private LocalDate endDate; //체험 프로그램 종료일
 
 	@Column(nullable = false)
-	private Integer count; //조회수
+	private Integer count = 0; //조회수
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
@@ -106,10 +105,6 @@ public class Program extends BaseEntity {
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 50)
 	private ProgramStatus programStatus; //프로그램 운영 상태
-
-	@Enumerated(EnumType.STRING)
-	@Column(nullable = false, length = 50)
-	private DeletedStatus deletedStatus; //프로그램 삭제 여부
 
 	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = false)
 	@JoinColumn(name = "program_id")
@@ -120,15 +115,22 @@ public class Program extends BaseEntity {
 	private List<ProgramScheduleTime> programScheduleTimes = new ArrayList<ProgramScheduleTime>(); //체험 프로그램 스케줄 시간
 
 	@OneToMany(mappedBy = "program", cascade = CascadeType.ALL, orphanRemoval = false)
-	private List<ProgramSchedule> programSchedules = new ArrayList<ProgramSchedule>();
+	private List<ProgramSchedule> programSchedules = new ArrayList<ProgramSchedule>(); //체험 프로그램 스케줄
+
+	@Column(nullable = false)
+	private Integer reviewCount = 0; //리뷰 개수
+
+	@Column(nullable = false, precision = 2, scale = 1)
+	private BigDecimal averageRating = BigDecimal.ZERO.setScale(1); //리뷰 평균 평점
 
 	@Builder
 	public Program(Member member, AptitudeCategory aptitudeCategory, RegionCategory regionCategory, Program originalProgram,
 		ProgramGroup programGroup,
 		String businessName, String title, String description, String curriculumDescription, String location, BigDecimal price,
 		BigDecimal percent, BigDecimal finalPrice, Integer maxCapacity, Integer minCapacity, LocalDate startDate,
-		LocalDate endDate, Integer count, LocalSpecialized isLocalSpecialized, ProgramStatus programStatus, DeletedStatus deletedStatus,
-		List<ProgramDay> programDays, List<ProgramScheduleTime> programScheduleTimes, List<ProgramSchedule> programSchedules) {
+		LocalDate endDate, Integer count, LocalSpecialized isLocalSpecialized, ProgramStatus programStatus,
+		List<ProgramDay> programDays, List<ProgramScheduleTime> programScheduleTimes, List<ProgramSchedule> programSchedules,
+		Integer reviewCount, BigDecimal averageRating) {
 		this.member = member;
 		this.aptitudeCategory = aptitudeCategory;
 		this.regionCategory = regionCategory;
@@ -146,13 +148,14 @@ public class Program extends BaseEntity {
 		this.minCapacity = minCapacity;
 		this.startDate = startDate;
 		this.endDate = endDate;
-		this.count = count;
+		this.count = count != null ? count : 0;
 		this.isLocalSpecialized = isLocalSpecialized;
 		this.programStatus = programStatus;
-		this.deletedStatus = deletedStatus;
 		this.programDays = programDays != null ? programDays : new ArrayList<ProgramDay>();
 		this.programScheduleTimes = programScheduleTimes != null ? programScheduleTimes : new ArrayList<ProgramScheduleTime>();
 		this.programSchedules = programSchedules != null ? programSchedules : new ArrayList<ProgramSchedule>();
+		this.reviewCount = reviewCount != null ? reviewCount : 0;
+		this.averageRating = averageRating != null ? averageRating : BigDecimal.ZERO.setScale(1);
 	}
 
 	public void addProgramDay(ProgramDay programDay) {
@@ -168,8 +171,34 @@ public class Program extends BaseEntity {
 		programSchedule.connectToProgram(this);
 	}
 
-	public void updateStatus(DeletedStatus deletedStatus) {
-		this.deletedStatus = deletedStatus;
+	/**
+	 * 프로그램 생성
+	 */
+	public static Program createProgram(Member member, AptitudeCategory aptitudeCategory, RegionCategory regionCategory,
+		String businessName, String title, String description, String curriculumDescription, String location, BigDecimal price,
+		BigDecimal percent, BigDecimal finalPrice, Integer maxCapacity, Integer minCapacity, LocalDate startDate,
+		LocalDate endDate) {
+
+		return Program.builder()
+			.member(member)
+			.aptitudeCategory(aptitudeCategory)
+			.regionCategory(regionCategory)
+			.businessName(businessName)
+			.title(title)
+			.description(description)
+			.curriculumDescription(curriculumDescription)
+			.location(location)
+			.price(price)
+			.percent(percent)
+			.finalPrice(finalPrice)
+			.minCapacity(minCapacity)
+			.maxCapacity(maxCapacity)
+			.startDate(startDate)
+			.endDate(endDate)
+			.isLocalSpecialized(LocalSpecialized.GENERAL)
+			.programStatus(ProgramStatus.PENDING)
+			.build();
 	}
+
 
 }
