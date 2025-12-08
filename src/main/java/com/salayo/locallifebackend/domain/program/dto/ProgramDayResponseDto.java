@@ -8,7 +8,7 @@ import lombok.Getter;
 @Getter
 public class ProgramDayResponseDto {
 
-	private Long id; //체험 프로그램 요일 고유 식별자
+	private final Long id; //체험 프로그램 요일 고유 식별자
 
-	private DayName dayName; //요일 이름
+	private final DayName dayName; //요일 이름
 }

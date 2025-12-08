@@ -4,5 +4,6 @@ public enum FileCategory {
 
     LOCAL_CREATOR,
     PROGRAM,
-    MAGAZINE
+    MAGAZINE,
+    INQUIRY
 }

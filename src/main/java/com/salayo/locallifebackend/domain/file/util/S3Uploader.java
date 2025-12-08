@@ -1,10 +1,15 @@
 package com.salayo.locallifebackend.domain.file.util;
 
+import com.amazonaws.HttpMethod;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.salayo.locallifebackend.global.error.ErrorCode;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -71,5 +76,13 @@ public class S3Uploader {
 
     public void delete(String fileName) {
         amazonS3.deleteObject(bucketName, fileName);
+    }
+
+    public String getPresignedUrl(String key, Duration duration) {
+        GeneratePresignedUrlRequest generatePresignedUrlRequest = new GeneratePresignedUrlRequest(bucketName, key)
+            .withMethod(HttpMethod.GET)
+            .withExpiration(Date.from(Instant.now().plus(duration)));
+
+        return amazonS3.generatePresignedUrl(generatePresignedUrlRequest).toString();
     }
 }

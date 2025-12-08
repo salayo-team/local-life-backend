@@ -1,5 +1,10 @@
 package com.salayo.locallifebackend.domain.member.service;
 
+import static com.salayo.locallifebackend.global.util.CacheKeyPrefix.EMAIL_VERIFIED;
+import static com.salayo.locallifebackend.global.util.CacheKeyPrefix.PASSWORD_RESET_CODE;
+import static com.salayo.locallifebackend.global.util.CacheKeyPrefix.TOKEN_BLACKLIST;
+
+import com.salayo.locallifebackend.domain.email.service.EmailService;
 import com.salayo.locallifebackend.domain.file.entity.File;
 import com.salayo.locallifebackend.domain.file.entity.FileMapping;
 import com.salayo.locallifebackend.domain.file.enums.FileCategory;
@@ -13,6 +18,7 @@ import com.salayo.locallifebackend.domain.localcreator.entity.LocalCreator;
 import com.salayo.locallifebackend.domain.localcreator.repository.LocalCreatorRepository;
 import com.salayo.locallifebackend.domain.member.dto.LoginRequestDto;
 import com.salayo.locallifebackend.domain.member.dto.LoginResponseDto;
+import com.salayo.locallifebackend.domain.member.dto.PasswordResetVerifyRequestDto;
 import com.salayo.locallifebackend.domain.member.dto.UserSignupRequestDto;
 import com.salayo.locallifebackend.domain.member.dto.UserSignupResponseDto;
 import com.salayo.locallifebackend.domain.member.entity.Member;
@@ -24,11 +30,13 @@ import com.salayo.locallifebackend.global.error.ErrorCode;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
 import com.salayo.locallifebackend.global.security.jwt.JwtProvider;
 import com.salayo.locallifebackend.global.util.RedisUtil;
+import java.time.Duration;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
-import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.core.parameters.P;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,10 +54,13 @@ public class AuthService {
     private final JwtProvider jwtProvider;
     private final RedisUtil redisUtil;
     private final RedisTemplate<String, String> blacklistRedisTemplate;
+    private final RedisTemplate<String, String> emailVerifiedRedisTemplate;
+    private final EmailService emailService;
 
     public AuthService(MemberRepository memberRepository, PasswordEncoder passwordEncoder, LocalCreatorRepository localCreatorRepository,
         S3Uploader s3Uploader, FileRepository fileRepository, FileMappingRepository fileMappingRepository, JwtProvider jwtProvider,
-        RedisUtil redisUtil, @Qualifier("blacklistRedisTemplate") RedisTemplate<String, String> blacklistRedisTemplate) {
+        RedisUtil redisUtil, @Qualifier("blacklistRedisTemplate") RedisTemplate<String, String> blacklistRedisTemplate,
+        @Qualifier("emailVerifiedRedisTemplate") RedisTemplate<String, String> emailVerifiedRedisTemplate, EmailService emailService) {
         this.memberRepository = memberRepository;
         this.passwordEncoder = passwordEncoder;
         this.localCreatorRepository = localCreatorRepository;
@@ -59,9 +70,12 @@ public class AuthService {
         this.jwtProvider = jwtProvider;
         this.redisUtil = redisUtil;
         this.blacklistRedisTemplate = blacklistRedisTemplate;
+        this.emailVerifiedRedisTemplate = emailVerifiedRedisTemplate;
+        this.emailService = emailService;
     }
 
     public UserSignupResponseDto signupUser(UserSignupRequestDto requestDto) {
+        checkEmailVerifiedOrThrow(requestDto.getEmail());
 
         if (memberRepository.existsByEmail(requestDto.getEmail())) {
             throw new CustomException(ErrorCode.DUPLICATE_EMAIL);
@@ -94,6 +108,7 @@ public class AuthService {
     public LocalCreatorSignupResponseDto signupLocalCreator(
         LocalCreatorSignupRequestDto requestDto, List<MultipartFile> files,
         List<FilePurpose> filePurposes) {
+        checkEmailVerifiedOrThrow(requestDto.getEmail());
 
         if (memberRepository.existsByEmail(requestDto.getEmail())) {
             throw new CustomException(ErrorCode.DUPLICATE_EMAIL);
@@ -156,9 +171,34 @@ public class AuthService {
         return new LocalCreatorSignupResponseDto(localCreator.getBusinessName());
     }
 
+    public void checkEmailVerifiedOrThrow(String email) {
+        String flag = emailVerifiedRedisTemplate.opsForValue().get(EMAIL_VERIFIED + email);
+
+        if (!"true".equals(flag)) {
+            throw new CustomException(ErrorCode.EMAIL_NOT_VERIFIED);
+        }
+    }
+
     public LoginResponseDto login(LoginRequestDto requestDto) {
+
+        String emailVerifiedFlag = emailVerifiedRedisTemplate.opsForValue()
+            .get(EMAIL_VERIFIED + requestDto.getEmail());
+
+        boolean isEmailVerified = "true".equals(emailVerifiedFlag);
+
         Member member = memberRepository.findByEmail(requestDto.getEmail())
-            .orElseThrow(() -> new CustomException(ErrorCode.INVALID_LOGIN));
+            .orElse(null);
+
+        if (member == null) {
+            if (isEmailVerified) {
+                throw new CustomException(ErrorCode.SIGNUP_REQUIRED);
+            }
+            throw new CustomException(ErrorCode.INVALID_LOGIN);
+        }
+
+        if (member.isDeleted()) {
+            throw new CustomException(ErrorCode.ALREADY_DELETED_MEMBER);
+        }
 
         if (!passwordEncoder.matches(requestDto.getPassword(), member.getPassword())) {
             throw new CustomException(ErrorCode.INVALID_LOGIN);
@@ -167,8 +207,9 @@ public class AuthService {
         if (member.getMemberRole() == MemberRole.LOCAL_CREATOR) {
             LocalCreator creator = localCreatorRepository.findByMemberId(member.getId())
                 .orElseThrow(() -> new CustomException(ErrorCode.INVALID_LOGIN));
+
             if (!creator.isApproved()) {
-                throw new CustomException(ErrorCode.CREATOR_NOT_APPROVED);
+                throw new CustomException(ErrorCode.LOCAL_CREATOR_NOT_APPROVED);
             }
         }
 
@@ -176,6 +217,9 @@ public class AuthService {
             member.getMemberRole().name());
         String refreshToken = jwtProvider.generateRefreshToken(member.getEmail(),
             member.getMemberRole().name());
+
+        long accessTokenExpiration = jwtProvider.getExpiration(accessToken);
+        redisUtil.saveAccessToken(member.getId(), accessToken, accessTokenExpiration);
 
         return LoginResponseDto.builder()
             .accessToken(accessToken)
@@ -194,13 +238,46 @@ public class AuthService {
 
         String email = jwtProvider.getUsernameFromToken(accessToken);
 
-        Member member = memberRepository.findByEmail(email)
-            .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+        Member member = memberRepository.findByEmailOrThrow(email);
 
         redisUtil.deleteRefreshToken(member.getId());
         redisUtil.deleteAccessToken(member.getId());
 
         long expiration = jwtProvider.getExpiration(accessToken);
-        blacklistRedisTemplate.opsForValue().set(accessToken, "logout", expiration, TimeUnit.MILLISECONDS);
+        blacklistRedisTemplate.opsForValue().set(TOKEN_BLACKLIST + accessToken, "logout", expiration, TimeUnit.MILLISECONDS);
+    }
+
+    public void sendPasswordResetCode(String email) {
+        memberRepository.findByEmailOrThrow(email);
+
+        String code = String.valueOf(new Random().nextInt(900_000) + 100_000);
+
+        emailVerifiedRedisTemplate.opsForValue().set(PASSWORD_RESET_CODE + email, code, Duration.ofMinutes(5));
+
+        emailService.sendPasswordResetCode(email, code);
+    }
+
+    @Transactional
+    public void resetPassword(PasswordResetVerifyRequestDto resetVerifyRequestDto) {
+        String key = PASSWORD_RESET_CODE + resetVerifyRequestDto.getEmail();
+        String savedCode = emailVerifiedRedisTemplate.opsForValue().get(key);
+
+        if (savedCode == null) {
+            throw new CustomException(ErrorCode.EMAIL_CODE_EXPIRED);
+        }
+        if (!savedCode.equals(resetVerifyRequestDto.getCode())) {
+            throw new CustomException(ErrorCode.INVALID_EMAIL_CODE);
+        }
+
+        Member member = memberRepository.findByEmailOrThrow(resetVerifyRequestDto.getEmail());
+
+        if (passwordEncoder.matches(resetVerifyRequestDto.getNewPassword(), member.getPassword())) {
+            throw new CustomException(ErrorCode.SAME_AS_OLD_PASSWORD);
+        }
+
+        String encodedPassword = passwordEncoder.encode(resetVerifyRequestDto.getNewPassword());
+        member.updatePassword(encodedPassword);
+
+        emailVerifiedRedisTemplate.delete(key);
     }
 }

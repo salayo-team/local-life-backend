@@ -6,10 +6,16 @@ import com.salayo.locallifebackend.global.error.exception.CustomException;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface AptitudeCategoryRepository extends JpaRepository<AptitudeCategory, Long> {
 
 	default AptitudeCategory findByIdOrElseThrow(Long aptitudeCategoryId){
 		return findById(aptitudeCategoryId).orElseThrow(() -> new CustomException(ErrorCode.APTITUDE_NOT_FOUND));
 	};
+
+	boolean existsByAptitudeCode(String aptitudeCode);
+	
+	Optional<AptitudeCategory> findByAptitudeCode(String aptitudeCode);
 }

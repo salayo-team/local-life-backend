@@ -2,8 +2,7 @@ package com.salayo.locallifebackend.domain.programschedule.entity;
 
 import com.salayo.locallifebackend.domain.program.entity.Program;
 import com.salayo.locallifebackend.domain.programschedule.enums.ProgramScheduleStatus;
-import com.salayo.locallifebackend.global.entity.BaseEntity;
-import com.salayo.locallifebackend.global.enums.DeletedStatus;
+import com.salayo.locallifebackend.global.entity.SoftDeletableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -26,7 +25,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @Entity
 @Table(name = "program_schedule")
-public class ProgramSchedule extends BaseEntity {
+public class ProgramSchedule extends SoftDeletableEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -49,19 +48,40 @@ public class ProgramSchedule extends BaseEntity {
 	@Column(nullable = false, length = 50)
 	private ProgramScheduleStatus programScheduleStatus; //스케줄 운영상태
 
-	@Enumerated(EnumType.STRING)
-	@Column(nullable = false, length = 50)
-	private DeletedStatus deletedStatus; //스케줄 삭제 여부
-
 	@Builder
 	public ProgramSchedule(Program program, LocalDate scheduleDate, LocalTime startTime, LocalTime endTime,
-		ProgramScheduleStatus programScheduleStatus, DeletedStatus deletedStatus) {
+		ProgramScheduleStatus programScheduleStatus) {
 		this.program = program;
 		this.scheduleDate = scheduleDate;
 		this.startTime = startTime;
 		this.endTime = endTime;
 		this.programScheduleStatus = programScheduleStatus;
-		this.deletedStatus = deletedStatus;
+	}
+
+	public void connectToProgram(Program program) {
+		this.program = program;
+	}
+
+	/**
+	 * 프로그램 삭제 상태 업데이트
+	 */
+	public void deleteProgramSchedule() {
+		softDelete();
+		this.programScheduleStatus = ProgramScheduleStatus.INACTIVE;
+	}
+
+	/**
+	 * 프로그램 스케줄 생성
+	 */
+	public static ProgramSchedule createProgramSchedule(Program program, LocalDate scheduleDate, LocalTime startTime, LocalTime endTime) {
+
+		return ProgramSchedule.builder()
+			.program(program)
+			.scheduleDate(scheduleDate)
+			.startTime(startTime)
+			.endTime(endTime)
+			.programScheduleStatus(ProgramScheduleStatus.ACTIVE)
+			.build();
 	}
 
 	public void connectToProgram(Program program) {

@@ -3,8 +3,8 @@ POST http://localhost:8080/auth/login
 Content-Type: application/json
 
 {
-  "email": "Admin001@salayo.com",
-  "password": "Adminpass1@"
+  "email": "Admin003@salayo.com",
+  "password": "Adminpass3@"
 }
 
 > {%
@@ -17,7 +17,28 @@ Content-Type: application/json
 GET http://localhost:8080/admin/localcreators
 Authorization: Bearer {{accessToken}}
 
-### 로컬 크리에이터 회원가입 승인
+###로컬 크리에이터 상세조회 - 미리보기
+GET http://localhost:8080/admin/localcreators/3
+Authorization: Bearer {{accessToken}}
+
+### 로컬 크리에이터 승인
+# 로컬 크리에이터 회원가입 승인
+# 로컬 크리에이터 정보 수정 후 재승인
 PATCH http://localhost:8080/admin/localcreators/1/approve
+Authorization: Bearer {{accessToken}}
+
+### 로컬 크리에이터 거절
+# 로컬 크리에이터 회원가입 거절
+# 로컬 크리에이터 정보 수정 확인 후 거절
+PATCH http://localhost:8080/admin/localcreators/2/reject
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "rejectReason": "사업자등록증 미첨부"
+}
+
+### 로컬 크리에이터 이메일로 조회
+GET http://localhost:8080/admin/localcreators/search?email=creator3@example.com
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
