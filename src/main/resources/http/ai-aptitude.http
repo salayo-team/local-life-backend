@@ -530,6 +530,55 @@ Authorization: Bearer {{accessToken}}
 Content-Type: {{contentType}}
 
 ### ========================================
+### 마이페이지 - 내 적성 관리 API
+### ========================================
+
+### 내 적성 조회
+# @name getMyAptitude
+GET {{host}}/my-aptitude/info
+Authorization: Bearer {{accessToken}}
+
+> {%
+  console.log("--- 내 적성 조회 결과 ---");
+  console.log(response.body.data);
+%}
+
+### 내 적성 수정 (NATURE 타입으로)
+# @name updateMyAptitudeToNature
+PUT {{host}}/my-aptitude/settings
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "aptitudeType": "NATURE"
+}
+
+> {%
+  console.log("--- 내 적성 수정 결과 (NATURE) ---");
+  console.log(response.body.data);
+%}
+
+### 내 적성 수정 (COMMUNITY 타입으로)
+# @name updateMyAptitudeToCommunity
+PUT {{host}}/my-aptitude/settings
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "aptitudeType": "COMMUNITY"
+}
+
+> {%
+  console.log("--- 내 적성 수정 결과 (COMMUNITY) ---");
+  console.log(response.body.data);
+%}
+
+### ========================================
+### AI 대화형 적성 검사 - (기존 내용)
+### ========================================
+# ... (기존의 다른 테스트 요청들)
+
+### ========================================
 ### 주의사항 및 테스트 가이드
 ### ========================================
 

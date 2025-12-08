@@ -37,10 +37,8 @@ public class AptitudeAiService extends BaseAiService {
 	 */
 	public AptitudeQuestionResponseDto getNextQuestion(Long memberId, int step) {
 
-		// 대화 히스토리 구성
 		String conversationHistory = buildConversationHistory(memberId, step);
 		
-		// AI에게 다음 질문 생성 요청
 		String systemPrompt = """
 			당신은 사용자의 적성을 파악하는 전문 상담사입니다.
 			사용자와 친근한 반말로 대화하며, 5개의 질문을 통해 다음 5가지 적성 중 가장 적합한 것을 판단해주세요:
@@ -62,7 +60,6 @@ public class AptitudeAiService extends BaseAiService {
 		
 		String userPrompt;
 		if (step == 1) {
-			// 첫 질문
 			userPrompt = """
 				적성 검사를 시작합니다.
 				사용자를 편안하게 만들면서 적성을 파악할 수 있는 첫 질문을 해주세요.
@@ -81,7 +78,6 @@ public class AptitudeAiService extends BaseAiService {
 				}
 				""";
 		} else {
-			// 후속 질문 - 이전 대화 맥락 포함
 			userPrompt = """
 				이전 대화:
 				%s
@@ -107,7 +103,6 @@ public class AptitudeAiService extends BaseAiService {
 		try {
 			String aiResponse = callAi(systemPrompt, userPrompt);
 			
-			// JSON 파싱
 			AiQuestionGenerationDto response = objectMapper.readValue(
 				extractJsonFromResponse(aiResponse), 
 				AiQuestionGenerationDto.class
@@ -115,7 +110,6 @@ public class AptitudeAiService extends BaseAiService {
 			
 			log.info("[AI 질문 생성] Step {}: {}", step, response.getQuestion());
 			
-			// 예시 답변을 List<String>으로 변환
 			List<String> examples = new ArrayList<>();
 			if (response.getExampleAnswers() != null) {
 				for (AiQuestionGenerationDto.ExampleAnswer example : response.getExampleAnswers()) {
@@ -124,7 +118,6 @@ public class AptitudeAiService extends BaseAiService {
 				}
 			}
 			
-			// 질문을 Redis에 저장
 			cacheService.saveQuestion(memberId, step, response.getQuestion());
 			
 			return new AptitudeQuestionResponseDto(step, response.getQuestion(), examples);
@@ -135,12 +128,10 @@ public class AptitudeAiService extends BaseAiService {
 		}
 	}
 
-	// 대화 히스토리 구성
 	private String buildConversationHistory(Long memberId, int currentStep) {
 		StringBuilder history = new StringBuilder();
 		
 		for (int i = 1; i < currentStep; i++) {
-			// Redis에서 이전 답변과 질문 조회
 			String answer = cacheService.getAnswer(memberId, i);
 			String question = cacheService.getQuestion(memberId, i);
 			
@@ -160,10 +151,8 @@ public class AptitudeAiService extends BaseAiService {
 	public AiAptitudeAnalysisResponseDto analyzeResponse(String userResponse, 
 			Long memberId, int step, String currentQuestion) {
 		
-		// 대화 히스토리 포함
 		String conversationHistory = buildConversationHistory(memberId, step);
 		
-		// 프롬프트 매니저에서 기본 프롬프트 가져오기
 		String systemPrompt = promptManager.getPrompt(PromptType.APTITUDE_TEST);
 		
 		String userPrompt = String.format("""
@@ -201,7 +190,6 @@ public class AptitudeAiService extends BaseAiService {
 				AiAnswerValidationDto.class
 			);
 			
-			// JSON 파싱 결과 로그 출력 (테스트용)
 			log.info("[JSON 파싱 테스트] AI 응답 파싱 성공");
 			log.info("[JSON 파싱 테스트] 유효성: {}", validation.isValid());
 			log.info("[JSON 파싱 테스트] 적성 타입: {}", validation.getAptitudeType());
@@ -210,10 +198,9 @@ public class AptitudeAiService extends BaseAiService {
 			log.info("[JSON 파싱 테스트] 핵심 요소: {}", 
 				validation.getKeyFactors() != null ? String.join(", ", validation.getKeyFactors()) : "없음");
 			
-			// 유효하지 않은 답변 처리
 			if (!validation.isValid()) {
 				log.info("무효 답변 감지 - 재질문: {}", validation.getFollowUpQuestion());
-				// 재질문을 다음 질문으로 설정
+
 				if (validation.getFollowUpQuestion() != null) {
 					cacheService.saveFollowUpQuestion(memberId, step, validation.getFollowUpQuestion());
 				}
@@ -232,18 +219,15 @@ public class AptitudeAiService extends BaseAiService {
 		}
 	}
 
-	// 기존 시그니처용 오버로드 메서드 (하위 호환성)
-	public AiAptitudeAnalysisResponseDto analyzeResponse(String userResponse, 
+	public AiAptitudeAnalysisResponseDto analyzeResponse(String userResponse,
 			AptitudeQuestionResponseDto aptitudeQuestionResponseDto) {
-		// 기본값으로 처리 (memberId 없이)
-		return analyzeResponse(userResponse, 0L, 
+
+		return analyzeResponse(userResponse, 0L,
 			aptitudeQuestionResponseDto.getOrder(), 
 			aptitudeQuestionResponseDto.getQuestion());
 	}
 
-	// JSON 추출 헬퍼 메서드
 	private String extractJsonFromResponse(String response) {
-		// AI 응답에서 JSON 부분만 추출
 		int startIdx = response.indexOf("{");
 		int endIdx = response.lastIndexOf("}") + 1;
 		
@@ -253,7 +237,6 @@ public class AptitudeAiService extends BaseAiService {
 		return response;
 	}
 
-	// Fallback 질문 (AI 실패 시)
 	private AptitudeQuestionResponseDto getFallbackQuestion(int step) {
 		String[][] fallbackData = {
 			{"평소에 어떤 활동을 할 때 가장 즐거워?",
@@ -301,7 +284,6 @@ public class AptitudeAiService extends BaseAiService {
 		return new AptitudeQuestionResponseDto(step, question, examples);
 	}
 
-	// Fallback 분석
 	private AiAptitudeAnalysisResponseDto createFallbackAnalysis(String userResponse) {
 		String aptitudeType;
 		String reason;
@@ -346,9 +328,7 @@ public class AptitudeAiService extends BaseAiService {
 			.build();
 	}
 
-	// 최종 적성 계산
 	public AptitudeType calculateFinalAptitude(Map<AptitudeType, Integer> scores) {
-		// 가장 높은 점수를 받은 적성 찾기
 		AptitudeType finalAptitude = AptitudeType.NATURE;
 		int maxScore = 0;
 
@@ -361,7 +341,9 @@ public class AptitudeAiService extends BaseAiService {
 			}
 		}
 
-		// 동점인 경우 우선순위: NATURE > HISTORY_CULTURE > ART_CREATION > COMMUNITY > TECH
+		/**
+		 * 동점인 경우 우선순위: NATURE > HISTORY_CULTURE > ART_CREATION > COMMUNITY > TECH
+		 */
 		if (maxScore == 0) {
 			log.warn("모든 적성 점수가 0입니다. 기본값(NATURE)을 반환합니다.");
 		} else {
