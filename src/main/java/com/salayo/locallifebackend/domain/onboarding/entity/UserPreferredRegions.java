@@ -56,7 +56,7 @@ public class UserPreferredRegions extends BaseEntity {
 	/**
 	 * 선호 지역 활성화/비활성화
 	 */
-	public void updateActiveStatus(boolean isActive) {
+	public void updatePreferredRegionsActiveStatus(boolean isActive) {
 		this.isActive = isActive;
 	}
 }
