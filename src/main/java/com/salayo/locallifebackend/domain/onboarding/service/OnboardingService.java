@@ -56,7 +56,6 @@ public class OnboardingService {
 				return onboardingProgressRepository.save(newProgress);
 			});
 
-		// 온보딩 완료 상태 - 변경 없이 현재 상태 반환
 		if (progress.isCompleted()) {
 			log.info("온보딩 이미 완료 - memberId: {}", memberId);
 			return buildCompletedResponse(member, progress);
@@ -73,9 +72,6 @@ public class OnboardingService {
 		return buildProgressResponse(member, progress);
 	}
 
-	/**
-	 * 세션 ID 생성
-	 */
 	private String generateSessionId(Long memberId) {
 
 		return String.format("ONB-%d-%s", memberId, UUID.randomUUID().toString().substring(0, 8));

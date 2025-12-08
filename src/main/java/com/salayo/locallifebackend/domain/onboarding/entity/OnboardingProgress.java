@@ -43,14 +43,14 @@ public class OnboardingProgress extends BaseEntity {
 	private boolean isCompleted;
 
 	@Column(name = "knows_aptitude")
-	private Boolean knowsAptitude; // 적성 인지 여부
+	private Boolean knowsAptitude;
 
-	@Enumerated(EnumType.STRING) // DB에는 enum의 이름(URBAN, BALANCED, NATURE)이 문자열로 저장
+	@Enumerated(EnumType.STRING)
 	@Column(name = "regionType")
 	private RegionType regionType;
 
 	@Column(name = "session_id")
-	private String sessionId; // 온보딩 세션 ID
+	private String sessionId;
 
 	@Builder
 	public OnboardingProgress(Member member, OnboardingStep currentStep,
@@ -64,9 +64,6 @@ public class OnboardingProgress extends BaseEntity {
 		this.sessionId = sessionId;
 	}
 
-	/**
-	 * 다음 단계로 진행
-	 */
 	public void moveToNextStep(Boolean knowsAptitude) {
 		this.currentStep = this.currentStep.getNextStep(knowsAptitude);
 		if (this.currentStep == OnboardingStep.COMPLETED) {
@@ -74,23 +71,14 @@ public class OnboardingProgress extends BaseEntity {
 		}
 	}
 
-	/**
-	 * 선호 지역 설정
-	 */
 	public void updateRegion(RegionType regionType) {
 		this.regionType = regionType;
 	}
 
-	/**
-	 * 적성 인지 여부 설정
-	 */
 	public void updateKnowsAptitude(Boolean knows) {
 		this.knowsAptitude = knows;
 	}
 
-	/**
-	 * 온보딩 완료 처리
-	 */
 	public void completeOnboardingStep() {
 		this.currentStep = OnboardingStep.COMPLETED;
 		this.isCompleted = true;
