@@ -235,7 +235,6 @@ public class OnboardingService {
 		Member member = memberRepository.findActiveByIdOrThrow(memberId);
 		OnboardingProgress progress = getOnboardingProgress(member);
 
-		// Idempotent: already completed -> return completed DTO
 		if (progress.isCompleted()) {
 			log.info("온보딩 이미 완료 (idempotent) - memberId: {}", memberId);
 			return buildCompletedResponse(member, progress);
@@ -269,41 +268,6 @@ public class OnboardingService {
 				.description("홈 화면으로 이동")
 				.build())
 			.build();
-	}
-
-	/**
-	 * [내부용] 온보딩 완료 여부 검증 완료되지 않았을 경우 예외를 발생 시킴
-	 */
-	@Transactional(readOnly = true)
-	public OnboardingProgress getCompletedOnboardingProgress(Long memberId) {
-		Member member = memberRepository.findActiveByIdOrThrow(memberId);
-		OnboardingProgress progress = onboardingProgressRepository.findByMember(member)
-			.orElseThrow(() -> new CustomException(ErrorCode.ONBOARDING_NOT_STARTED));
-
-		if (!progress.isCompleted()) {
-			throw new CustomException(ErrorCode.ONBOARDING_NOT_COMPLETED);
-		}
-		return progress;
-	}
-
-	/**
-	 * [내부용] 마이페이지에서 선호 지역 변경 시, 온보딩 상태를 확인하고 RegionType을 변경
-	 *
-	 * @return 동일한 RegionType을 선택했는지 여부
-	 */
-	@Transactional
-	public boolean checkAndUpdateRegionTypeForMypage(Long memberId, RegionType newRegionType) {
-
-		OnboardingProgress progress = getCompletedOnboardingProgress(memberId);
-
-		if (progress.getRegionType() == newRegionType) {
-			log.info("동일한 지역 특징 선택 - memberId: {}, regionType: {}", memberId, newRegionType);
-			return true;
-		}
-
-		progress.updateRegion(newRegionType);
-
-		return false;
 	}
 
 	/**
@@ -400,6 +364,41 @@ public class OnboardingService {
 				.description("홈 화면으로 이동")
 				.build();
 		};
+	}
+
+	/**
+	 * [내부용] 온보딩 완료 여부 검증 완료되지 않았을 경우 예외를 발생 시킴
+	 */
+	@Transactional(readOnly = true)
+	public OnboardingProgress getCompletedOnboardingProgress(Long memberId) {
+		Member member = memberRepository.findActiveByIdOrThrow(memberId);
+		OnboardingProgress progress = onboardingProgressRepository.findByMember(member)
+			.orElseThrow(() -> new CustomException(ErrorCode.ONBOARDING_NOT_STARTED));
+
+		if (!progress.isCompleted()) {
+			throw new CustomException(ErrorCode.ONBOARDING_NOT_COMPLETED);
+		}
+		return progress;
+	}
+
+	/**
+	 * [내부용] 마이페이지에서 선호 지역 변경 시, 온보딩 상태를 확인하고 RegionType을 변경
+	 *
+	 * @return 동일한 RegionType을 선택했는지 여부
+	 */
+	@Transactional
+	public boolean checkAndUpdateRegionTypeForMypage(Long memberId, RegionType newRegionType) {
+
+		OnboardingProgress progress = getCompletedOnboardingProgress(memberId);
+
+		if (progress.getRegionType() == newRegionType) {
+			log.info("동일한 지역 특징 선택 - memberId: {}, regionType: {}", memberId, newRegionType);
+			return true;
+		}
+
+		progress.updateRegion(newRegionType);
+
+		return false;
 	}
 
 	/**
