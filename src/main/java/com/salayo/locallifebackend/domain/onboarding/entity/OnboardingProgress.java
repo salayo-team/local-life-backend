@@ -25,74 +25,74 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class OnboardingProgress extends BaseEntity {
-    
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "onboarding_progress_id")
-    private Long id;
-    
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id", nullable = false)
-    private Member member;
-    
-    @Enumerated(EnumType.STRING)
-    @Column(name = "current_step", nullable = false)
-    private OnboardingStep currentStep;
-    
-    @Column(name = "is_completed", nullable = false)
-    private boolean isCompleted;
-    
-    @Column(name = "knows_aptitude")
-    private Boolean knowsAptitude; // 적성 인지 여부
 
-    @Enumerated(EnumType.STRING) // DB에는 enum의 이름(URBAN, BALANCED, NATURE)이 문자열로 저장
-    @Column(name = "regionType")
-    private RegionType regionType;
-    
-    @Column(name = "session_id")
-    private String sessionId; // 온보딩 세션 ID
-    
-    @Builder
-    public OnboardingProgress(Member member, OnboardingStep currentStep, 
-                             boolean isCompleted, Boolean knowsAptitude,
-                             RegionType regionType, String sessionId) {
-        this.member = member;
-        this.currentStep = currentStep != null ? currentStep : OnboardingStep.MEMBER_INFO;
-        this.isCompleted = isCompleted;
-        this.knowsAptitude = knowsAptitude;
-        this.regionType = regionType;
-        this.sessionId = sessionId;
-    }
-    
-    /**
-     * 다음 단계로 진행
-     */
-    public void moveToNextStep(Boolean knowsAptitude) {
-        this.currentStep = this.currentStep.getNextStep(knowsAptitude);
-        if (this.currentStep == OnboardingStep.COMPLETED) {
-            this.isCompleted = true;
-        }
-    }
-    
-    /**
-     * 선호 지역 설정
-     */
-    public void updateRegion(RegionType regionType) {
-        this.regionType = regionType;
-    }
-    
-    /**
-     * 적성 인지 여부 설정
-     */
-    public void updateKnowsAptitude(Boolean knows) {
-        this.knowsAptitude = knows;
-    }
-    
-    /**
-     * 온보딩 완료 처리
-     */
-    public void complete() {
-        this.currentStep = OnboardingStep.COMPLETED;
-        this.isCompleted = true;
-    }
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "onboarding_progress_id")
+	private Long id;
+
+	@OneToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "member_id", nullable = false)
+	private Member member;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "current_step", nullable = false)
+	private OnboardingStep currentStep;
+
+	@Column(name = "is_completed", nullable = false)
+	private boolean isCompleted;
+
+	@Column(name = "knows_aptitude")
+	private Boolean knowsAptitude; // 적성 인지 여부
+
+	@Enumerated(EnumType.STRING) // DB에는 enum의 이름(URBAN, BALANCED, NATURE)이 문자열로 저장
+	@Column(name = "regionType")
+	private RegionType regionType;
+
+	@Column(name = "session_id")
+	private String sessionId; // 온보딩 세션 ID
+
+	@Builder
+	public OnboardingProgress(Member member, OnboardingStep currentStep,
+		boolean isCompleted, Boolean knowsAptitude,
+		RegionType regionType, String sessionId) {
+		this.member = member;
+		this.currentStep = currentStep != null ? currentStep : OnboardingStep.MEMBER_INFO;
+		this.isCompleted = isCompleted;
+		this.knowsAptitude = knowsAptitude;
+		this.regionType = regionType;
+		this.sessionId = sessionId;
+	}
+
+	/**
+	 * 다음 단계로 진행
+	 */
+	public void moveToNextStep(Boolean knowsAptitude) {
+		this.currentStep = this.currentStep.getNextStep(knowsAptitude);
+		if (this.currentStep == OnboardingStep.COMPLETED) {
+			this.isCompleted = true;
+		}
+	}
+
+	/**
+	 * 선호 지역 설정
+	 */
+	public void updateRegion(RegionType regionType) {
+		this.regionType = regionType;
+	}
+
+	/**
+	 * 적성 인지 여부 설정
+	 */
+	public void updateKnowsAptitude(Boolean knows) {
+		this.knowsAptitude = knows;
+	}
+
+	/**
+	 * 온보딩 완료 처리
+	 */
+	public void complete() {
+		this.currentStep = OnboardingStep.COMPLETED;
+		this.isCompleted = true;
+	}
 }
