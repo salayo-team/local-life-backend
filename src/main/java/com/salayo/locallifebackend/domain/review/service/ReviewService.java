@@ -13,7 +13,6 @@ import com.salayo.locallifebackend.domain.review.repository.ReviewReplyRepositor
 import com.salayo.locallifebackend.domain.review.repository.ReviewRepository;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
 import com.salayo.locallifebackend.global.error.ErrorCode;
-import jakarta.persistence.EntityManager;
 import java.time.LocalDate;
 import lombok.extern.slf4j.Slf4j;
 import java.util.List;
@@ -30,19 +29,17 @@ public class ReviewService {
 	private final ProgramRepository programRepository;
 	private final ReservationRepository reservationRepository;
 	private final ReviewCacheService reviewCacheService;
-	private final EntityManager entityManager;
 
 	private static final long CACHE_TTL = 60; // 60분
 
 	public ReviewService(ReviewRepository reviewRepository, ReviewReplyRepository reviewReplyRepository,
 		ProgramRepository programRepository, ReservationRepository reservationRepository,
-		ReviewCacheService reviewCacheService, EntityManager entityManager) {
+		ReviewCacheService reviewCacheService) {
 		this.reviewRepository = reviewRepository;
 		this.reviewReplyRepository = reviewReplyRepository;
 		this.programRepository = programRepository;
 		this.reservationRepository = reservationRepository;
 		this.reviewCacheService = reviewCacheService;
-		this.entityManager = entityManager;
 	}
 
 	@Transactional
@@ -59,9 +56,6 @@ public class ReviewService {
 		// 30일 이내 작성 가능 체크 - 임시로 현재 날짜 기준으로 체크
 		// TODO: ProgramSchedule의 종료일 또는 Program의 종료일 기준으로 변경 필요
 		validateReviewPeriod(LocalDate.now());
-
-		// 글자수 제한 검증 - DTO @Valid로 이미 검증됨
-		// validateContentLength(requestDto.getContent());
 
 		// 중복 리뷰 체크
 		if (reviewRepository.existsByMemberAndProgramAndDeletedStatus(member, program, DeletedStatus.DISPLAYED)) {
@@ -121,9 +115,6 @@ public class ReviewService {
 	@Transactional
 	public ReviewResponseDto updateReview(Long reviewId, ReviewRequestDto requestDto, Member member) {
 		log.info("리뷰 수정 - reviewId: {}, memberId: {}", reviewId, member.getId());
-
-		// 글자수 제한 검증 - DTO @Valid로 이미 검증됨
-		// validateContentLength(requestDto.getContent());
 
 		Review review = reviewRepository.findByIdAndDeletedStatusOrThrow(reviewId, DeletedStatus.DISPLAYED);
 
