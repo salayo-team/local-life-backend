@@ -8,6 +8,7 @@ import com.salayo.locallifebackend.domain.reservation.repository.ReservationRepo
 import com.salayo.locallifebackend.domain.review.dto.ReviewRequestDto;
 import com.salayo.locallifebackend.domain.review.dto.ReviewResponseDto;
 import com.salayo.locallifebackend.domain.review.entity.Review;
+import com.salayo.locallifebackend.global.dto.PaginationResponseDto;
 import com.salayo.locallifebackend.global.enums.DeletedStatus;
 import com.salayo.locallifebackend.domain.review.repository.ReviewReplyRepository;
 import com.salayo.locallifebackend.domain.review.repository.ReviewRepository;
@@ -17,8 +18,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import lombok.extern.slf4j.Slf4j;
-import java.util.List;
-import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -83,38 +84,39 @@ public class ReviewService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<ReviewResponseDto> getMyReviews(Member member) {
-		log.info("내 리뷰 조회 - memberId: {}", member.getId());
+	public PaginationResponseDto<ReviewResponseDto> getMyReviews(Member member, Pageable pageable) {
+		log.info("내 리뷰 페이징 조회 - memberId: {}, page: {}", member.getId(), pageable.getPageNumber());
 
-		List<Review> reviews = reviewRepository.findByMemberAndDeletedStatus(member, DeletedStatus.DISPLAYED);
+		// Repository에서 Page<Review>를 받음
+		Page<Review> reviewPage = reviewRepository.findByMemberAndDeletedStatus(member, DeletedStatus.DISPLAYED, pageable);
 
-		return reviews.stream()
-			.map(ReviewResponseDto::new)
-			.collect(Collectors.toList());
+		// Page<Review>를 Page<ReviewResponseDto>로 변환
+		Page<ReviewResponseDto> dtoPage = reviewPage.map(ReviewResponseDto::new);
+
+		// Page 객체를 사용하여  PaginationResponseDto 생성 후 반환
+		return PaginationResponseDto.of(dtoPage);
 	}
 
 	@Transactional(readOnly = true)
-	public List<ReviewResponseDto> getProgramReviews(Long programId) {
-		log.info("프로그램 리뷰 조회 - programId: {}", programId);
+	public PaginationResponseDto<ReviewResponseDto> getProgramReviews(Long programId, Pageable pageable) {
+		log.info("프로그램 리뷰 페이징 조회 - programId: {}, page: {}", programId, pageable.getPageNumber());
 
 		Program program = programRepository.findByIdOrElseThrow(programId);
 
-		List<Review> reviews = reviewRepository.findByProgramAndDeletedStatus(program, DeletedStatus.DISPLAYED);
+		Page<Review> reviewPage = reviewRepository.findByProgramAndDeletedStatus(program, DeletedStatus.DISPLAYED, pageable);
+		Page<ReviewResponseDto> dtoPage = reviewPage.map(ReviewResponseDto::new);
 
-		return reviews.stream()
-			.map(ReviewResponseDto::new)
-			.collect(Collectors.toList());
+		return PaginationResponseDto.of(dtoPage);
 	}
 
 	@Transactional(readOnly = true)
-	public List<ReviewResponseDto> getAllReviews() {
-		log.info("전체 리뷰 조회");
+	public PaginationResponseDto<ReviewResponseDto> getAllReviews(Pageable pageable) {
+		log.info("전체 리뷰 페이징 조회 - pave: {}", pageable.getPageNumber());
 
-		List<Review> reviews = reviewRepository.findAllByDeletedStatus(DeletedStatus.DISPLAYED);
+		Page<Review> reviewPage = reviewRepository.findAllByDeletedStatus(DeletedStatus.DISPLAYED, pageable);
+		Page<ReviewResponseDto> dtoPage = reviewPage.map(ReviewResponseDto::new);
 
-		return reviews.stream()
-			.map(ReviewResponseDto::new)
-			.collect(Collectors.toList());
+		return PaginationResponseDto.of(dtoPage);
 	}
 
 	@Transactional

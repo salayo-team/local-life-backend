@@ -6,8 +6,9 @@ import com.salayo.locallifebackend.domain.review.entity.Review;
 import com.salayo.locallifebackend.global.enums.DeletedStatus;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
 import com.salayo.locallifebackend.global.error.ErrorCode;
-import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -20,14 +21,16 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
 	boolean existsByMemberAndProgramAndDeletedStatus(Member member, Program program, DeletedStatus deletedStatus);
 
-	@Query("SELECT r FROM Review r WHERE r.member = :member AND r.deletedStatus = :deletedStatus ORDER BY r.createdAt DESC")
-	List<Review> findByMemberAndDeletedStatus(@Param("member") Member member, @Param("deletedStatus") DeletedStatus deletedStatus);
+	@Query("SELECT r FROM Review r WHERE r.member = :member AND r.deletedStatus = :deletedStatus")
+	Page<Review> findByMemberAndDeletedStatus(@Param("member") Member member, @Param("deletedStatus") DeletedStatus deletedStatus,
+		Pageable pageable);
 
-	@Query("SELECT r FROM Review r WHERE r.program = :program AND r.deletedStatus = :deletedStatus ORDER BY r.createdAt DESC")
-	List<Review> findByProgramAndDeletedStatus(@Param("program") Program program, @Param("deletedStatus") DeletedStatus deletedStatus);
+	@Query("SELECT r FROM Review r WHERE r.program = :program AND r.deletedStatus = :deletedStatus")
+	Page<Review> findByProgramAndDeletedStatus(@Param("program") Program program, @Param("deletedStatus") DeletedStatus deletedStatus,
+		Pageable pageable);
 
-	@Query("SELECT r FROM Review r WHERE r.deletedStatus = :deletedStatus ORDER BY r.createdAt DESC")
-	List<Review> findAllByDeletedStatus(@Param("deletedStatus") DeletedStatus deletedStatus);
+	@Query("SELECT r FROM Review r WHERE r.deletedStatus = :deletedStatus")
+	Page<Review> findAllByDeletedStatus(@Param("deletedStatus") DeletedStatus deletedStatus, Pageable pageable);
 
 	default Review findByIdAndDeletedStatusOrThrow(Long reviewId, DeletedStatus deletedStatus) {
 		return findByIdAndDeletedStatus(reviewId, deletedStatus)
