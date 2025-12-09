@@ -147,27 +147,18 @@ public class ReviewService {
 
 	@Transactional
 	public void deleteReview(Long reviewId, Member member) {
-		log.info("리뷰 삭제 - reviewId: {}, memberId: {}", reviewId, member.getId());
+		log.info("리뷰 삭제 시작 - reviewId: {}, memberId: {}", reviewId, member.getId());
 
 		Review review = reviewRepository.findByIdAndDeletedStatusOrThrow(reviewId, DeletedStatus.DISPLAYED);
 
-		// 본인 확인
+		// 삭제 권한 확인
 		if (!review.getMember().getId().equals(member.getId())) {
-			throw new CustomException(ErrorCode.UNAUTHORIZED);
+			throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
 		}
 
 		// Soft delete
-		review.deleteReview();
-
-		// 답글도 함께 soft delete
-		reviewReplyRepository.softDeleteByReview(review);
-
-		/**
-		 * 영속성 컨텍스트를 최신 DB 상태로 동기화
-		 * JPQL UPDATE 쿼리는 영속성 컨텍스트를 거치지 않으므로,
-		 * 같은 트랜잭션에서 review.getReplies()를 다시 사용할 경우를 대비
-		 */
-		entityManager.refresh(review);
+		review.softDelete();
+		log.info("리뷰 및 관련 답글 소프트 삭제 완료 - reviewId: {}", reviewId);
 
 		// 캐시 무효화
 		reviewCacheService.invalidateReviewCacheByPattern(review.getProgram().getId());

@@ -3,12 +3,9 @@ package com.salayo.locallifebackend.domain.review.entity;
 import com.salayo.locallifebackend.domain.member.entity.Member;
 import com.salayo.locallifebackend.domain.program.entity.Program;
 import com.salayo.locallifebackend.domain.reservation.entity.Reservation;
-import com.salayo.locallifebackend.global.entity.BaseEntity;
-import com.salayo.locallifebackend.global.enums.DeletedStatus;
+import com.salayo.locallifebackend.global.entity.SoftDeletableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -17,18 +14,20 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Table(name = "review")
 @Getter
 @NoArgsConstructor
-public class Review extends BaseEntity {
+@SQLRestriction("status = 'DISPLAYED'")
+public class Review extends SoftDeletableEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -50,32 +49,20 @@ public class Review extends BaseEntity {
 	@Column(columnDefinition = "TEXT", nullable = false)
 	private String content;
 
-	@Enumerated(EnumType.STRING)
-	@Column(name = "deleted_status", nullable = false)
-	private DeletedStatus deletedStatus = DeletedStatus.DISPLAYED;
-
-	@Column(name = "deleted_at")
-	private LocalDateTime deletedAt;
-
 	@OneToMany(mappedBy = "review", fetch = FetchType.LAZY)
 	private List<ReviewReply> replies = new ArrayList<>();
 
 	@Builder
-	public Review(Member member, Program program, Reservation reservation, String content) {
+	public Review(Member member, Program program, Reservation reservation, String content, List<ReviewReply> replies) {
 		this.member = member;
 		this.program = program;
 		this.reservation = reservation;
 		this.content = content;
-		this.deletedStatus = DeletedStatus.DISPLAYED;
+		this.replies = replies;
 	}
 
 	public void updateContent(String content) {
 		this.content = content;
-	}
-
-	public void deleteReview() {
-		this.deletedStatus = DeletedStatus.DELETED;
-		this.deletedAt = LocalDateTime.now();
 	}
 
 	public boolean isModified() {
@@ -94,5 +81,16 @@ public class Review extends BaseEntity {
 		// 이는 DB 동기화 지연이나 Auditing 초기화로 인한 미세한 시간 차이를 무시하기 위함
 		return !getModifiedAt().isEqual(getCreatedAt()) &&
 			getModifiedAt().isAfter(getCreatedAt().plusSeconds(2));
+	}
+
+	/**
+	 * 리뷰와 연관된 답글까지 함께 Soft Delete
+	 */
+	@Override
+	public void softDelete() {
+		super.softDelete();
+
+		Optional.ofNullable(this.replies)
+			.ifPresent(theReplies -> theReplies.forEach(ReviewReply::softDelete));
 	}
 }

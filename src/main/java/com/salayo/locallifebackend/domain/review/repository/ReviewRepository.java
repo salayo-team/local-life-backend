@@ -29,10 +29,6 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 	@Query("SELECT r FROM Review r WHERE r.deletedStatus = :deletedStatus ORDER BY r.createdAt DESC")
 	List<Review> findAllByDeletedStatus(@Param("deletedStatus") DeletedStatus deletedStatus);
 
-	@Query("SELECT r FROM Review r LEFT JOIN FETCH r.replies WHERE r.id = :reviewId AND r.deletedStatus = :deletedStatus")
-	Optional<Review> findByIdAndDeletedStatusWithReplies(@Param("reviewId") Long reviewId,
-		@Param("deletedStatus") DeletedStatus deletedStatus);
-
 	default Review findByIdAndDeletedStatusOrThrow(Long reviewId, DeletedStatus deletedStatus) {
 		return findByIdAndDeletedStatus(reviewId, deletedStatus)
 			.orElseThrow(() -> new CustomException(ErrorCode.REVIEW_NOT_FOUND));
