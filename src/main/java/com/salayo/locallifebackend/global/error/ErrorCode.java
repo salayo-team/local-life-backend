@@ -74,6 +74,9 @@ public enum ErrorCode {
     MAGAZINE_ALREADY_REGISTERED(HttpStatus.BAD_REQUEST, "이미 등록된 매거진입니다."),
     MAGAZINE_INVALID_STATUS_FOR_REGISTER(HttpStatus.BAD_REQUEST, "해당 상태에서는 매거진을 등록할 수 없습니다."),
     SIGNUP_REQUIRED(HttpStatus.BAD_REQUEST, "회원가입을 먼저 완료해주세요."),
+	RATING_CANNOT_BE_NULL(HttpStatus.BAD_REQUEST, "별점은 필수 입력 항목입니다."),
+	INVALID_RATING_RANGE(HttpStatus.BAD_REQUEST,"별점은 0.0에서 5.0 사이의 값이어야 합니다."),
+	INVALID_RATING_UNIT(HttpStatus.BAD_REQUEST,"별점은 0.5 단위로만 입력할 수 있습니다."),
 
     // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),

@@ -4,6 +4,8 @@ import com.salayo.locallifebackend.domain.member.entity.Member;
 import com.salayo.locallifebackend.domain.program.entity.Program;
 import com.salayo.locallifebackend.domain.reservation.entity.Reservation;
 import com.salayo.locallifebackend.global.entity.SoftDeletableEntity;
+import com.salayo.locallifebackend.global.error.ErrorCode;
+import com.salayo.locallifebackend.global.error.exception.CustomException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -14,6 +16,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -46,23 +49,48 @@ public class Review extends SoftDeletableEntity {
 	@JoinColumn(name = "reservation_id", nullable = false)
 	private Reservation reservation;
 
-	@Column(columnDefinition = "TEXT", nullable = false)
-	private String content;
-
 	@OneToMany(mappedBy = "review", fetch = FetchType.LAZY)
 	private List<ReviewReply> replies = new ArrayList<>();
 
+	@Column(name = "content", nullable = false)
+	private String content;
+
+	@Column(name = "review_rating", nullable = false, precision = 2, scale = 1)
+	private BigDecimal reviewRating;
+
 	@Builder
-	public Review(Member member, Program program, Reservation reservation, String content, List<ReviewReply> replies) {
+	public Review(Member member, Program program, Reservation reservation,
+		List<ReviewReply> replies, String content, BigDecimal rating) {
+
+		validateRating(rating);
+
 		this.member = member;
 		this.program = program;
 		this.reservation = reservation;
-		this.content = content;
 		this.replies = replies;
+		this.content = content;
+		this.reviewRating = rating;
 	}
 
 	public void updateContent(String content) {
 		this.content = content;
+	}
+
+	public void updateRating(BigDecimal newRating) {
+		validateRating(newRating);
+		this.reviewRating = newRating;
+	}
+
+	public void validateRating(BigDecimal reviewRating) {
+		if (reviewRating == null) {
+			throw new CustomException(ErrorCode.RATING_CANNOT_BE_NULL);
+		}
+		if (reviewRating.compareTo(BigDecimal.ZERO) < 0 || reviewRating.compareTo(new BigDecimal("5.0")) > 0) {
+			throw new CustomException(ErrorCode.INVALID_RATING_RANGE);
+		}
+		if (reviewRating.multiply(new BigDecimal("2")).stripTrailingZeros().scale() > 0) {
+			throw new CustomException(ErrorCode.INVALID_RATING_UNIT);
+		}
 	}
 
 	/**

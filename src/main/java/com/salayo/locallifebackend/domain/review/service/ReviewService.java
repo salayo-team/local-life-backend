@@ -13,6 +13,8 @@ import com.salayo.locallifebackend.domain.review.repository.ReviewReplyRepositor
 import com.salayo.locallifebackend.domain.review.repository.ReviewRepository;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
 import com.salayo.locallifebackend.global.error.ErrorCode;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import lombok.extern.slf4j.Slf4j;
 import java.util.List;
@@ -61,15 +63,18 @@ public class ReviewService {
 		if (reviewRepository.existsByMemberAndProgramAndDeletedStatus(member, program, DeletedStatus.DISPLAYED)) {
 			throw new CustomException(ErrorCode.DUPLICATE_REVIEW);
 		}
-
 		Review review = Review.builder()
 			.member(member)
 			.program(program)
 			.reservation(reservation)
 			.content(requestDto.getContent())
+			.rating(requestDto.getReviewRating())
 			.build();
 
 		Review savedReview = reviewRepository.save(review);
+
+//		updateProgramRatingOnCreate(program, savedReview.getReviewRating());
+//		log.info("리뷰 생성 완료 및 프로그램 평점 업데이트 - reviewId: {}, programId: {}", savedReview.getId(), programId);
 
 		// 캐시 무효화
 		reviewCacheService.invalidateReviewCacheByPattern(programId);
@@ -116,18 +121,18 @@ public class ReviewService {
 	public ReviewResponseDto updateReview(Long reviewId, ReviewRequestDto requestDto, Member member) {
 		log.info("리뷰 수정 - reviewId: {}, memberId: {}", reviewId, member.getId());
 
-		Review review = reviewRepository.findByIdAndDeletedStatusOrThrow(reviewId, DeletedStatus.DISPLAYED);
+		Review review = reviewRepository.findById(reviewId)
+			.orElseThrow(() -> new CustomException(ErrorCode.REVIEW_NOT_FOUND));
 
 		// 본인 확인
 		if (!review.getMember().getId().equals(member.getId())) {
-			throw new CustomException(ErrorCode.UNAUTHORIZED);
+			throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
 		}
 
 		// 답글 존재 여부 확인
 		if (reviewReplyRepository.existsByReviewAndDeletedStatus(review, DeletedStatus.DISPLAYED)) {
 			throw new CustomException(ErrorCode.CANNOT_UPDATE_REVIEW_WITH_REPLY);
 		}
-
 		review.updateContent(requestDto.getContent());
 
 		// 캐시 무효화
@@ -140,16 +145,22 @@ public class ReviewService {
 	public void deleteReview(Long reviewId, Member member) {
 		log.info("리뷰 삭제 시작 - reviewId: {}, memberId: {}", reviewId, member.getId());
 
-		Review review = reviewRepository.findByIdAndDeletedStatusOrThrow(reviewId, DeletedStatus.DISPLAYED);
+		Review review = reviewRepository.findById(reviewId)
+			.orElseThrow(() -> new CustomException(ErrorCode.REVIEW_NOT_FOUND));
 
 		// 삭제 권한 확인
 		if (!review.getMember().getId().equals(member.getId())) {
 			throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
 		}
+		BigDecimal deletedRating = review.getReviewRating();
+		Program program = review.getProgram();
 
 		// Soft delete
 		review.softDelete();
 		log.info("리뷰 및 관련 답글 소프트 삭제 완료 - reviewId: {}", reviewId);
+
+//		updateProgramRatingOnDelete(program, deletedRating);
+//		log.info("프로그램 평점 업데이트 완료 - programId: {}", program.getId());
 
 		// 캐시 무효화
 		reviewCacheService.invalidateReviewCacheByPattern(review.getProgram().getId());
@@ -180,4 +191,42 @@ public class ReviewService {
 		//     throw new CustomException(ErrorCode.REVIEW_PERIOD_EXPIRED);
 		// }
 	}
+
+//	/**
+//	 * 새로운 리뷰가 추가되었을 때 Program의 평균 평점을 업데이트
+//	 * @param program 평점을 업데이트할 프로그램
+//	 * @param newRating 새로 추가된 리뷰의 별점
+//	 */
+//	private void updateProgramRatingOnCreate(Program program, BigDecimal newRating) {
+//		// Program 엔티티에 reviewCount와 averageRating 필드가 있다고 가정한 상태로 작성됨
+//		int currentReviewCount = program.getReviewCount();
+//		BigDecimal currentAverageRating = program.getAverageRating();
+//
+//		BigDecimal totalRating = currentAverageRating.multiply(new BigDecimal(currentReviewCount));
+//		int newReviewCount = currentReviewCount + 1;
+//		BigDecimal newAverageRating = totalRating.add(newRating)
+//			.divide(new BigDecimal(newReviewCount), 1, RoundingMode.HALF_UP);
+//	}
+//
+//	/**
+//	 * 리뷰가 삭제되었을 때 Program의 평균 평점을 업데이트
+//	 * @param program 평점을 업데이트할 프로그램
+//	 * @param deletedRating 삭제된 리뷰의 별점
+//	 */
+//	private void updateProgramRatingOnDelete(Program program, BigDecimal deletedRating) {
+//		int currentReviewCount = program.getReviewCount();
+//		BigDecimal currentAverageRating = program.getAverageRating();
+//
+//		BigDecimal totalRating = currentAverageRating.multiply(new BigDecimal(currentReviewCount));
+//		int newReviewCount = currentReviewCount - 1;
+//
+//		BigDecimal newAverageRating;
+//		if (newReviewCount > 0) {
+//			newAverageRating = totalRating.subtract(deletedRating)
+//				.divide(new BigDecimal(newReviewCount), 1, RoundingMode.HALF_UP);
+//		} else {
+//			// 마지막 리뷰가 삭제된 경우 0으로 초기화
+//			newAverageRating = BigDecimal.ZERO.setScale(1);
+//		}
+//	}
 }
