@@ -9,18 +9,25 @@ import com.salayo.locallifebackend.domain.reservation.enums.ReservationStatus;
 import com.salayo.locallifebackend.domain.reservation.repository.ReservationRepository;
 import com.salayo.locallifebackend.domain.review.dto.ReviewRequestDto;
 import com.salayo.locallifebackend.domain.review.dto.ReviewResponseDto;
+import com.salayo.locallifebackend.domain.review.dto.ReviewSearchRequestDto;
+import com.salayo.locallifebackend.domain.review.dto.ReviewTagResponseDto;
 import com.salayo.locallifebackend.domain.review.entity.Review;
 import com.salayo.locallifebackend.domain.review.entity.ReviewLike;
-import com.salayo.locallifebackend.global.dto.PaginationResponseDto;
-import com.salayo.locallifebackend.global.enums.DeletedStatus;
+import com.salayo.locallifebackend.domain.review.entity.ReviewTag;
+import com.salayo.locallifebackend.domain.review.entity.ReviewTagMapping;
 import com.salayo.locallifebackend.domain.review.repository.ReviewLikeRepository;
 import com.salayo.locallifebackend.domain.review.repository.ReviewReplyRepository;
 import com.salayo.locallifebackend.domain.review.repository.ReviewRepository;
-import com.salayo.locallifebackend.global.error.exception.CustomException;
+import com.salayo.locallifebackend.domain.review.repository.ReviewTagMappingRepository;
+import com.salayo.locallifebackend.domain.review.repository.ReviewTagRepository;
+import com.salayo.locallifebackend.global.dto.PaginationResponseDto;
+import com.salayo.locallifebackend.global.enums.DeletedStatus;
 import com.salayo.locallifebackend.global.error.ErrorCode;
+import com.salayo.locallifebackend.global.error.exception.CustomException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -34,6 +41,8 @@ public class ReviewService {
 	private final ReviewRepository reviewRepository;
 	private final ReviewReplyRepository reviewReplyRepository;
 	private final ReviewLikeRepository reviewLikeRepository;
+	private final ReviewTagRepository reviewTagRepository;
+	private final ReviewTagMappingRepository reviewTagMappingRepository;
 	private final ProgramRepository programRepository;
 	private final ReservationRepository reservationRepository;
 	private final ReviewCacheService reviewCacheService;
@@ -41,11 +50,14 @@ public class ReviewService {
 	private static final long CACHE_TTL = 60; // 60분
 
 	public ReviewService(ReviewRepository reviewRepository, ReviewReplyRepository reviewReplyRepository,
-		ReviewLikeRepository reviewLikeRepository, ProgramRepository programRepository,
+		ReviewLikeRepository reviewLikeRepository, ReviewTagRepository reviewTagRepository,
+		ReviewTagMappingRepository reviewTagMappingRepository, ProgramRepository programRepository,
 		ReservationRepository reservationRepository, ReviewCacheService reviewCacheService) {
 		this.reviewRepository = reviewRepository;
 		this.reviewReplyRepository = reviewReplyRepository;
 		this.reviewLikeRepository = reviewLikeRepository;
+		this.reviewTagRepository = reviewTagRepository;
+		this.reviewTagMappingRepository = reviewTagMappingRepository;
 		this.programRepository = programRepository;
 		this.reservationRepository = reservationRepository;
 		this.reviewCacheService = reviewCacheService;
@@ -89,6 +101,7 @@ public class ReviewService {
 			.build();
 
 		Review savedReview = reviewRepository.save(review);
+		saveReviewTags(savedReview, requestDto.getTagIds());
 
 //		updateProgramRatingOnCreate(program, savedReview.getReviewRating());
 //		log.info("리뷰 생성 완료 및 프로그램 평점 업데이트 - reviewId: {}, programId: {}", savedReview.getId(), programId);
@@ -118,7 +131,6 @@ public class ReviewService {
 		log.info("프로그램 리뷰 페이징 조회 - programId: {}, page: {}", programId, pageable.getPageNumber());
 
 		Program program = programRepository.findByIdOrElseThrow(programId);
-
 		Page<Review> reviewPage = reviewRepository.findByProgramAndDeletedStatus(program, DeletedStatus.DISPLAYED, pageable);
 		Page<ReviewResponseDto> dtoPage = reviewPage.map(ReviewResponseDto::new);
 
@@ -127,7 +139,7 @@ public class ReviewService {
 
 	@Transactional(readOnly = true)
 	public PaginationResponseDto<ReviewResponseDto> getAllReviews(Pageable pageable) {
-		log.info("전체 리뷰 페이징 조회 - pave: {}", pageable.getPageNumber());
+		log.info("전체 리뷰 페이징 조회 - page: {}", pageable.getPageNumber());
 
 		Page<Review> reviewPage = reviewRepository.findAllByDeletedStatus(DeletedStatus.DISPLAYED, pageable);
 		Page<ReviewResponseDto> dtoPage = reviewPage.map(ReviewResponseDto::new);
@@ -151,8 +163,10 @@ public class ReviewService {
 		if (reviewReplyRepository.existsByReviewAndDeletedStatus(review, DeletedStatus.DISPLAYED)) {
 			throw new CustomException(ErrorCode.CANNOT_UPDATE_REVIEW_WITH_REPLY);
 		}
+
 		review.updateContent(requestDto.getContent());
 		review.updateRating(requestDto.getReviewRating());
+		updateReviewTags(review, requestDto.getTagIds());
 
 		//		updateProgramRatingOnCreate(program, savedReview.getReviewRating());
 //		log.info("리뷰 생성 완료 및 프로그램 평점 업데이트 - reviewId: {}, programId: {}", savedReview.getId(), programId);
@@ -228,6 +242,48 @@ public class ReviewService {
 
 		reviewLikeRepository.delete(reviewLike);
 		review.decrementLikeCount();
+	}
+
+	@Transactional(readOnly = true)
+	public List<ReviewTagResponseDto> getAllTags() {
+		log.info("전체 리뷰 태그 조회");
+
+		return reviewTagRepository.findByIsActiveTrueOrderByDisplayOrderAsc().stream()
+			.map(ReviewTagResponseDto::new)
+			.toList();
+	}
+
+	@Transactional(readOnly = true)
+	public PaginationResponseDto<ReviewResponseDto> searchReviews(ReviewSearchRequestDto requestDto) {
+		log.info("리뷰 필터링 검색 - tagIds: {}, keyword: {}", requestDto.getTagIds(), requestDto.getKeyword());
+
+		Page<Review> reviewPage = reviewRepository.searchReviews(requestDto);
+		Page<ReviewResponseDto> dtoPage = reviewPage.map(ReviewResponseDto::new);
+
+		return PaginationResponseDto.of(dtoPage);
+	}
+
+	private void saveReviewTags(Review review, List<Long> tagIds) {
+		if (tagIds == null || tagIds.isEmpty()) {
+			return;
+		}
+
+		List<ReviewTag> tags = reviewTagRepository.findByIdIn(tagIds);
+		for (ReviewTag tag : tags) {
+			ReviewTagMapping mapping = ReviewTagMapping.builder()
+				.review(review)
+				.reviewTag(tag)
+				.build();
+			reviewTagMappingRepository.save(mapping);
+		}
+	}
+
+	private void updateReviewTags(Review review, List<Long> tagIds) {
+		reviewTagMappingRepository.deleteByReview(review);
+
+		if (tagIds != null && !tagIds.isEmpty()) {
+			saveReviewTags(review, tagIds);
+		}
 	}
 
 	/**

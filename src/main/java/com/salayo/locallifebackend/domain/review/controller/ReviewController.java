@@ -2,12 +2,15 @@ package com.salayo.locallifebackend.domain.review.controller;
 
 import com.salayo.locallifebackend.domain.review.dto.ReviewRequestDto;
 import com.salayo.locallifebackend.domain.review.dto.ReviewResponseDto;
+import com.salayo.locallifebackend.domain.review.dto.ReviewSearchRequestDto;
+import com.salayo.locallifebackend.domain.review.dto.ReviewTagResponseDto;
 import com.salayo.locallifebackend.domain.review.service.ReviewService;
 import com.salayo.locallifebackend.global.dto.CommonResponseDto;
 import com.salayo.locallifebackend.global.dto.PaginationResponseDto;
 import com.salayo.locallifebackend.global.security.MemberDetails;
 import com.salayo.locallifebackend.global.success.SuccessCode;
 import jakarta.validation.Valid;
+import java.util.List;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -15,6 +18,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -98,6 +102,23 @@ public class ReviewController {
 		reviewService.unlikeReview(reviewId, memberDetails.getMember());
 
 		return CommonResponseDto.success(SuccessCode.DELETE_SUCCESS, null);
+	}
+
+	@GetMapping("/reviews/tags")
+	public CommonResponseDto<List<ReviewTagResponseDto>> getAllTags() {
+
+		List<ReviewTagResponseDto> tags = reviewService.getAllTags();
+
+		return CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, tags);
+	}
+
+	@GetMapping("/reviews/search")
+	public CommonResponseDto<PaginationResponseDto<ReviewResponseDto>> searchReviews(
+		@ModelAttribute ReviewSearchRequestDto requestDto) {
+
+		PaginationResponseDto<ReviewResponseDto> responsePage = reviewService.searchReviews(requestDto);
+
+		return CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, responsePage);
 	}
 
 	@GetMapping("/admin/reviews")

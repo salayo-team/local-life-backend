@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
+import java.util.List;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -17,4 +18,6 @@ public class ReviewRequestDto {
 
 	@NotNull(message = "별점은 필수입니다.")
 	private BigDecimal reviewRating;
+
+	private List<Long> tagIds;
 }
