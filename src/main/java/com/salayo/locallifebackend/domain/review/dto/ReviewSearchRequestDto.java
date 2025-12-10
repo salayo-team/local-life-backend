@@ -2,25 +2,37 @@ package com.salayo.locallifebackend.domain.review.dto;
 
 import com.salayo.locallifebackend.domain.review.enums.ReviewSortType;
 import java.util.List;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Getter
-@Setter
-@NoArgsConstructor
 public class ReviewSearchRequestDto {
 
 	public static final int DEFAULT_SIZE = 10;
 
-	private List<Long> tagIds;
-	private List<Long> aptitudeIds;
-	private List<Long> regionIds;
-	private Long programGroupId;
-	private String keyword;
-	private ReviewSortType sort;
-	private Integer page;
-	private Integer size;
+	private final List<Long> tagIds;
+	private final List<Long> aptitudeIds;
+	private final List<Long> regionIds;
+	private final Long programGroupId;
+	private final String keyword;
+	private final ReviewSortType sort;
+	private final Integer page;
+	private final Integer size;
+
+	@Builder
+	public ReviewSearchRequestDto(List<Long> tagIds, List<Long> aptitudeIds,
+		List<Long> regionIds, Long programGroupId, String keyword,
+		ReviewSortType sort, Integer page, Integer size) {
+		this.tagIds = tagIds;
+		this.aptitudeIds = aptitudeIds;
+		this.regionIds = regionIds;
+		this.programGroupId = programGroupId;
+		this.keyword = keyword;
+		this.sort = sort;
+		this.page = page;
+		this.size = size;
+	}
 
 	public int getPage() {
 		return (page == null || page < 0) ? 0 : page;
