@@ -54,6 +54,10 @@ public class Review extends SoftDeletableEntity {
 	@BatchSize(size = 100)
 	private List<ReviewReply> replies = new ArrayList<>();
 
+	@OneToMany(mappedBy = "review", fetch = FetchType.LAZY)
+	@BatchSize(size = 100)
+	private List<ReviewTagMapping> tagMappings = new ArrayList<>();
+
 	@Column(name = "content", nullable = false)
 	private String content;
 
