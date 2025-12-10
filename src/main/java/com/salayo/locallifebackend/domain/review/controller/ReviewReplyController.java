@@ -27,7 +27,7 @@ public class ReviewReplyController {
 	@PreAuthorize("hasRole('LOCAL_CREATOR')")
 	public CommonResponseDto<ReviewReplyResponseDto> createReviewReply(
 		@PathVariable Long reviewId,
-		@RequestBody ReviewReplyRequestDto requestDto,
+		@Valid @RequestBody ReviewReplyRequestDto requestDto,
 		@AuthenticationPrincipal MemberDetails memberDetails) {
 
 		ReviewReplyResponseDto responseDto = reviewReplyService.createReviewReply(
