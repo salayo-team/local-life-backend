@@ -77,6 +77,8 @@ public enum ErrorCode {
 	RATING_CANNOT_BE_NULL(HttpStatus.BAD_REQUEST, "별점은 필수 입력 항목입니다."),
 	INVALID_RATING_RANGE(HttpStatus.BAD_REQUEST,"별점은 0.0에서 5.0 사이의 값이어야 합니다."),
 	INVALID_RATING_UNIT(HttpStatus.BAD_REQUEST,"별점은 0.5 단위로만 입력할 수 있습니다."),
+	INVALID_REQUEST(HttpStatus.BAD_REQUEST,"잘못된 요청입니다."),
+	REVIEW_NOT_ALLOWED(HttpStatus.BAD_REQUEST,"리뷰를 작성할 수 없는 상태입니다."),
 
     // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
@@ -86,7 +88,6 @@ public enum ErrorCode {
     TOKEN_ILLEGAL(HttpStatus.UNAUTHORIZED, "토큰이 비어있거나 잘못되었습니다."),
     TOKEN_SIGNATURE_INVALID(HttpStatus.UNAUTHORIZED, "토큰 서명이 유효하지 않습니다."),
     TOKEN_BLACKLISTED(HttpStatus.UNAUTHORIZED,"유효하지 않은 인증입니다. 다시 로그인해주세요."),
-
 
     // 403 Forbidden
     FORBIDDEN_ACCESS(HttpStatus.FORBIDDEN, "접근이 거부됐습니다."),

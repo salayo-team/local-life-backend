@@ -3,7 +3,9 @@ package com.salayo.locallifebackend.domain.review.service;
 import com.salayo.locallifebackend.domain.member.entity.Member;
 import com.salayo.locallifebackend.domain.program.entity.Program;
 import com.salayo.locallifebackend.domain.program.repository.ProgramRepository;
+import com.salayo.locallifebackend.domain.programschedule.entity.ProgramSchedule;
 import com.salayo.locallifebackend.domain.reservation.entity.Reservation;
+import com.salayo.locallifebackend.domain.reservation.enums.ReservationStatus;
 import com.salayo.locallifebackend.domain.reservation.repository.ReservationRepository;
 import com.salayo.locallifebackend.domain.review.dto.ReviewRequestDto;
 import com.salayo.locallifebackend.domain.review.dto.ReviewResponseDto;
@@ -53,12 +55,22 @@ public class ReviewService {
 		Program program = programRepository.findByIdOrElseThrow(programId);
 		Reservation reservation = reservationRepository.findByIdOrElseThrow(reservationId);
 
+		// 트랜잭션 내에서 ProgramSchedule getter를 명시적으로 호출하여 지연 로딩을 강제로 실행
+		// JPA가 추가 쿼리를 날려 ProgramSchedule 데이터를 가져옴
+		ProgramSchedule programSchedule = reservation.getProgramSchedule();
+
+		// 가져온 programSchedule이 null이 아닌지 확인하여 데이터 무결성을 보장
+		if (programSchedule == null) {
+			// 이 경우는 DB에 reservation 데이터는 있지만 program_schedule_id가 null인 경우
+			throw new CustomException(ErrorCode.INVALID_REQUEST, "예약에 연결된 스케줄 정보가 없습니다.");
+		}
+		// 프로그램과 예약의 연관관계 검증
+		validateReservationAssociation(program, reservation);
 		// 체험 완료 확인
 		validateCompletedReservation(reservation, member);
 
-		// 30일 이내 작성 가능 체크 - 임시로 현재 날짜 기준으로 체크
-		// TODO: ProgramSchedule의 종료일 또는 Program의 종료일 기준으로 변경 필요
-		validateReviewPeriod(LocalDate.now());
+		// 실제 체험 종료일 기준 30일 이내 작성 가능으로 리뷰 작성 기간 검증
+		validateReviewPeriod(program.getEndDate());
 
 		// 중복 리뷰 체크
 		if (reviewRepository.existsByMemberAndProgramAndDeletedStatus(member, program, DeletedStatus.DISPLAYED)) {
@@ -136,6 +148,10 @@ public class ReviewService {
 			throw new CustomException(ErrorCode.CANNOT_UPDATE_REVIEW_WITH_REPLY);
 		}
 		review.updateContent(requestDto.getContent());
+		review.updateRating(requestDto.getReviewRating());
+
+		//		updateProgramRatingOnCreate(program, savedReview.getReviewRating());
+//		log.info("리뷰 생성 완료 및 프로그램 평점 업데이트 - reviewId: {}, programId: {}", savedReview.getId(), programId);
 
 		// 캐시 무효화
 		reviewCacheService.invalidateReviewCacheByPattern(review.getProgram().getId());
@@ -168,30 +184,36 @@ public class ReviewService {
 		reviewCacheService.invalidateReviewCacheByPattern(review.getProgram().getId());
 	}
 
+	/**
+	 * 예약이 해당 프로그램에 속해 있는지 검증하는 메서드
+	 */
+	private void validateReservationAssociation(Program program, Reservation reservation) {
+		// Reservation -> ProgramSchedule -> Program 경로를 통해 ID를 비교
+		if (!reservation.getProgramSchedule().getProgram().getId().equals(program.getId())) {
+			throw new CustomException(ErrorCode.INVALID_REQUEST, "해당 프로그램에 대한 예약 정보가 아닙니다.");
+		}
+	}
+
 	private void validateCompletedReservation(Reservation reservation, Member member) {
 		if (!reservation.getMember().getId().equals(member.getId())) {
-			throw new CustomException(ErrorCode.UNAUTHORIZED);
+			throw new CustomException(ErrorCode.FORBIDDEN_ACCESS, "자신의 예약에 대해서만 리뷰를 작성할 수 있습니다.");
 		}
 
-		// TODO: 예약 완료 상태 확인 로직 - 현재는 COMPLETED 상태로 가정
-		// 실제로는 아래 주석 해제하여 사용
-		// if (reservation.getReservationStatus() != ReservationStatus.COMPLETED) {
-		//     throw new CustomException(ErrorCode.REVIEW_NOT_ALLOWED);
-		// }
-
-		// 임시로 모든 예약을 완료 상태로 가정
-		log.info("예약 상태 확인 - 임시로 COMPLETED 상태로 가정");
+		// 예약 완료 상태 확인 로직
+		if (reservation.getReservationStatus() != ReservationStatus.COMPLETED) {
+			throw new CustomException(ErrorCode.REVIEW_NOT_ALLOWED, "체험이 완료된 예약에 대해서만 리뷰를 작성할 수 있습니다.");
+		}
 	}
 
 	private void validateReviewPeriod(LocalDate experienceEndDate) {
-		// TODO: 실제 체험 종료일 기준으로 변경 필요
-		// 현재는 오늘 날짜 기준으로 30일 이내 항상 통과하도록 설정
-		log.info("리뷰 작성 기간 확인 - 임시로 항상 통과");
 
-		// 원래 로직 (나중에 활성화)
-		// if (experienceEndDate.plusDays(30).isBefore(LocalDate.now())) {
-		//     throw new CustomException(ErrorCode.REVIEW_PERIOD_EXPIRED);
-		// }
+		// TODO: 리뷰 작성 기간 정책(예: 30일)이 확정되면 주석 해제
+		 if (LocalDate.now().isAfter(experienceEndDate.plusDays(30))) {
+		     throw new CustomException(ErrorCode.REVIEW_PERIOD_EXPIRED);
+		 }
+
+		// 현재는 오늘 날짜 기준으로 30일 이내 항상 통과하도록 설정
+//		log.info("리뷰 작성 기간 확인 - 임시로 항상 통과. 실제 종료일: {}", experienceEndDate);
 	}
 
 //	/**

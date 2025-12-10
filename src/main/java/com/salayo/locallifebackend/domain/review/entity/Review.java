@@ -30,7 +30,7 @@ import org.hibernate.annotations.SQLRestriction;
 @Table(name = "review")
 @Getter
 @NoArgsConstructor
-@SQLRestriction("status = 'DISPLAYED'")
+@SQLRestriction("deleted_status = 'DISPLAYED'")
 public class Review extends SoftDeletableEntity {
 
 	@Id
@@ -62,14 +62,13 @@ public class Review extends SoftDeletableEntity {
 
 	@Builder
 	public Review(Member member, Program program, Reservation reservation,
-		List<ReviewReply> replies, String content, BigDecimal rating) {
+		String content, BigDecimal rating) {
 
 		validateRating(rating);
 
 		this.member = member;
 		this.program = program;
 		this.reservation = reservation;
-		this.replies = replies;
 		this.content = content;
 		this.reviewRating = rating;
 	}

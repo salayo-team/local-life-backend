@@ -20,7 +20,7 @@ import org.hibernate.annotations.SQLRestriction;
 @Table(name = "review_replies")
 @Getter
 @NoArgsConstructor
-@SQLRestriction("status = 'DISPLAYED'")
+@SQLRestriction("deleted_status = 'DISPLAYED'")
 public class ReviewReply extends SoftDeletableEntity {
 
 	@Id

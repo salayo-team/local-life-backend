@@ -1,16 +1,17 @@
 ### 리뷰 작성
-POST http://localhost:8080/programs/1/reviews?reservationId=1
+POST http://localhost:8080/programs/25/reviews?reservationId=17
 Content-Type: application/json
-Authorization: Bearer {{authToken}}
+Authorization: Bearer {{accessToken}}
 
 {
-  "content": "정말 좋은 체험이었습니다!"
+  "content": "정말 좋은 체험이었습니다!",
+  "reviewRating": 4.5
 }
 
 ### 리뷰 답글 작성
-POST http://localhost:8080/reviews/1/replies
+POST http://localhost:8080/reviews/2/replies
 Content-Type: application/json
-Authorization: Bearer {{authToken}}
+Authorization: Bearer {{accessToken}}
 
 {
   "content": "소중한 후기 감사합니다!"
@@ -19,24 +20,26 @@ Authorization: Bearer {{authToken}}
 ### 내 리뷰 조회
 # page: 0부터 시작, size: 페이지당 개수, sort: 정렬할 필드,정렬방향(asc/desc)
 GET http://localhost:8080/my/reviews?page=0&size=5&sort=createdAt,desc
-Authorization: Bearer {{authToken}}
+Authorization: Bearer {{accessToken}}
 
 ### 프로그램 리뷰 조회
-GET http://localhost:8080/programs/1/reviews?page=0&size=10&sort=reviewRating,desc
+GET http://localhost:8080/programs/25/reviews?page=0&size=10&sort=reviewRating,desc
+Authorization: Bearer {{accessToken}}
 
 ### 관리자 전체 리뷰 조회
 GET http://localhost:8080/admin/reviews?page=1&size=20
-Authorization: Bearer {{authToken}}
+Authorization: Bearer {{accessToken}}
 
 ### 리뷰 수정
-PUT http://localhost:8080/reviews/1
+PUT http://localhost:8080/reviews/3
 Content-Type: application/json
-Authorization: Bearer {{authToken}}
+Authorization: Bearer {{accessToken}}
 
 {
-  "content": "정말 좋은 체험이었습니다! 다시 참여하고 싶어요."
+  "content": "정말 좋은 체험이었습니다! 다시 참여하고 싶어요.",
+  "reviewRating": 5.0
 }
 
 ### 리뷰 삭제
-DELETE http://localhost:8080/reviews/1
-Authorization: Bearer {{authToken}}
+DELETE http://localhost:8080/reviews/2
+Authorization: Bearer {{accessToken}}
