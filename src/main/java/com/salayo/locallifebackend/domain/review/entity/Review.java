@@ -23,6 +23,7 @@ import java.util.Optional;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.SQLRestriction;
 
 @Entity
@@ -50,6 +51,7 @@ public class Review extends SoftDeletableEntity {
 	private Reservation reservation;
 
 	@OneToMany(mappedBy = "review", fetch = FetchType.LAZY)
+	@BatchSize(size = 100)
 	private List<ReviewReply> replies = new ArrayList<>();
 
 	@Column(name = "content", nullable = false)
