@@ -22,6 +22,8 @@ public enum SuccessCode {
 
     VERIFICATION_SUCCESS(HttpStatus.OK, "검증이 완료되었습니다."),
     REFUND_SUCCESS(HttpStatus.OK, "결제 환불이 완료되었습니다."),
+    RESERVATION_CANCEL_AND_REFUND_SUCCESS(HttpStatus.OK, "예약 취소와 결제 환불이 완료되었습니다."),
+    RESERVATION_REJECT_AND_REFUND_SUCCESS(HttpStatus.OK, "예약 거절과 결제 환불이 완료되었습니다."),
 
     ONBOARDING_START_SUCCESS(HttpStatus.CREATED, "온보딩이 시작되었습니다."),
     SELECT_SUCCESS(HttpStatus.OK, "선택이 완료되었습니다."),

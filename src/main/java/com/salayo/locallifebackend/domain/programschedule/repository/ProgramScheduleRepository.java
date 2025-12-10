@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -31,10 +32,10 @@ public interface ProgramScheduleRepository extends JpaRepository<ProgramSchedule
 			and ps.scheduleDate between :startDate and :endDate
 		""")
 	List<ProgramSchedule> findActiveSchedulesByMemberAndDateRange(
-		Long memberId,
-		DeletedStatus deletedStatus,
-		ProgramScheduleStatus programScheduleStatus,
-		LocalDate startDate,
-		LocalDate endDate
+		@Param("memberId") Long memberId,
+		@Param("deletedStatus") DeletedStatus deletedStatus,
+		@Param("programScheduleStatus") ProgramScheduleStatus programScheduleStatus,
+		@Param("startDate") LocalDate startDate,
+		@Param("endDate") LocalDate endDate
 	);
 }
