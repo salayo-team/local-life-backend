@@ -199,6 +199,4 @@ public class Program extends SoftDeletableEntity {
 			.programStatus(ProgramStatus.PENDING)
 			.build();
 	}
-
-
 }

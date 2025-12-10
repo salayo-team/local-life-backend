@@ -77,6 +77,7 @@ public enum ErrorCode {
 	INVALID_FINAL_PRICE(HttpStatus.BAD_REQUEST, "최종 금액 값이 잘못되었습니다."),
 	INVALID_SEARCH_KEYWORD(HttpStatus.BAD_REQUEST, "검색어가 유효하지 않습니다."),
 	PROGRAM_STATUS_NOT_VIEWABLE(HttpStatus.BAD_REQUEST, "조회할 수 없는 프로그램 상태입니다."),
+	SCHEDULE_TIME_CANNOT_CROSS_DAY(HttpStatus.BAD_REQUEST, "스케줄 종료 시간이 다음날로 넘어갈 수 없습니다."),
 
     // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
@@ -142,6 +143,7 @@ public enum ErrorCode {
     DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "이미 존재하는 닉네임입니다."),
     ALREADY_DELETED_MEMBER(HttpStatus.CONFLICT, "이미 탈퇴된 회원입니다."),
     DUPLICATE_PHONE_NUMBER(HttpStatus.CONFLICT, "이미 존재하는 전화번호입니다."),
+	DUPLICATE_PROGRAM_SCHEDULE_TIME_FOR_MEMBER(HttpStatus.CONFLICT, "중복되는 프로그램 스케줄 시간입니다."),
 
     // 429 TOO_MANY_REQUESTS
     TOO_MANY_REQUESTS(HttpStatus.TOO_MANY_REQUESTS, "요청 횟수를 초과했습니다."),

@@ -83,8 +83,4 @@ public class ProgramSchedule extends SoftDeletableEntity {
 			.programScheduleStatus(ProgramScheduleStatus.ACTIVE)
 			.build();
 	}
-
-	public void connectToProgram(Program program) {
-		this.program = program;
-	}
 }
