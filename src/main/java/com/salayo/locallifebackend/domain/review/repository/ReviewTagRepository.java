@@ -11,4 +11,6 @@ public interface ReviewTagRepository extends JpaRepository<ReviewTag, Long> {
 	List<ReviewTag> findByIsActiveTrueOrderByDisplayOrderAsc();
 
 	List<ReviewTag> findByIdIn(List<Long> ids);
+
+	boolean existsByName(String name);
 }
