@@ -46,7 +46,6 @@ public class UserPreferredRegionService {
 
 			return new ArrayList<>();
 		}
-
 		return preferredRegions.stream()
 			.map(UserPreferredRegions::getRegionName)
 			.toList();
@@ -104,7 +103,6 @@ public class UserPreferredRegionService {
 				.build();
 			userPreferredRegionsRepository.save(preferredRegion);
 		}
-
 		log.info("온보딩 선호 지역 설정 완료 - memberId: {}, regionType: {}, 매핑된 지역 수: {}",
 			member.getId(), regionType, regions.size());
 	}
