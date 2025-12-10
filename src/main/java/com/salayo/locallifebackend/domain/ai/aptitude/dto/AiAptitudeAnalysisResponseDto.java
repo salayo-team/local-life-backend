@@ -50,7 +50,10 @@ public class AiAptitudeAnalysisResponseDto {
         this.aptitudeType = aptitudeType;
         this.confidenceScore = confidenceScore;
         this.reason = reason;
-        // 외부에서 전달받은 객체의 참조를 그대로 사용하지 않고, 새로운 복사본을 만들어 사용 (Defensive Copy)
+
+        /**
+         * 외부에서 전달받은 객체의 참조를 그대로 사용하지 않고, 새로운 복사본을 만들어 사용 (Defensive Copy)
+         */
         this.keyFactors = keyFactors != null ? new ArrayList<>(keyFactors) : new ArrayList<>();
     }
 }

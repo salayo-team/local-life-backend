@@ -105,5 +105,3 @@ Authorization: Bearer {{accessToken}}
 GET http://localhost:8080/programs/1
 Accept: application/json
 Authorization: Bearer {{accessToken}}
-
-

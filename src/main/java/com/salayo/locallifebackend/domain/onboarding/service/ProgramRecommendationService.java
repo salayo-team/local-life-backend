@@ -70,6 +70,7 @@ public class ProgramRecommendationService {
 
 		if (preferredRegions.isEmpty()) {
 			log.warn("사용자의 선호 지역이 없습니다. memberId: {}", memberId);
+
 			return Collections.emptyList();
 		}
 
@@ -86,6 +87,7 @@ public class ProgramRecommendationService {
 
 		if (regionCategories.isEmpty()) {
 			log.warn("매칭되는 지역 카테고리가 없습니다. regionNames: {}", regionNames);
+
 			return Collections.emptyList();
 		}
 
@@ -100,6 +102,7 @@ public class ProgramRecommendationService {
 		if (programs.isEmpty()) {
 			log.info("추천 조건에 맞는 프로그램이 없습니다. memberId: {}, aptitude: {}, regions: {}",
 				memberId, userAptitude.getAptitudeType(), regionNames);
+
 			return Collections.emptyList();
 		}
 

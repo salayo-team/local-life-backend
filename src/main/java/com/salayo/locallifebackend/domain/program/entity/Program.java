@@ -199,4 +199,10 @@ public class Program extends SoftDeletableEntity {
 			.programStatus(ProgramStatus.PENDING)
 			.build();
 	}
+
+	public void updateReviewStatus(int reviewCount, BigDecimal averageRating) {
+		this.reviewCount = reviewCount;
+		this.averageRating = averageRating;
+	}
+
 }

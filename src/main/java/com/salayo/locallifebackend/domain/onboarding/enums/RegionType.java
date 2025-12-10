@@ -4,10 +4,6 @@ import java.util.Arrays;
 import java.util.List;
 import lombok.Getter;
 
-
-/**
- * 선호 지역 특징
- */
 @Getter
 public enum RegionType {
 	URBAN("도시형", Arrays.asList("서울", "부산", "인천", "대구", "광주", "대전", "울산")),

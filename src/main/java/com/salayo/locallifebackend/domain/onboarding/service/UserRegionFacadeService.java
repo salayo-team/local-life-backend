@@ -26,7 +26,6 @@ public class UserRegionFacadeService {
 		this.memberRepository = memberRepository;
 	}
 
-
 	@Transactional
 	public List<String> getUserPreferredRegions(Long memberId) {
 
