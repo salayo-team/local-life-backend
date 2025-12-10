@@ -3,7 +3,6 @@ package com.salayo.locallifebackend.domain.localcreator.dto;
 import com.salayo.locallifebackend.global.util.ValidationPatterns;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
