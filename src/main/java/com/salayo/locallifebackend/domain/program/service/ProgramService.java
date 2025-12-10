@@ -16,21 +16,19 @@ import com.salayo.locallifebackend.domain.localcreator.entity.LocalCreator;
 import com.salayo.locallifebackend.domain.localcreator.enums.CreatorStatus;
 import com.salayo.locallifebackend.domain.localcreator.repository.LocalCreatorRepository;
 import com.salayo.locallifebackend.domain.member.entity.Member;
-import com.salayo.locallifebackend.domain.member.enums.MemberRole;
 import com.salayo.locallifebackend.domain.member.repository.MemberRepository;
 import com.salayo.locallifebackend.domain.program.dto.ProgramCreateRequestDto;
 import com.salayo.locallifebackend.domain.program.dto.ProgramCreateResponseDto;
+import com.salayo.locallifebackend.domain.program.dto.ProgramDetailResponseDto;
+import com.salayo.locallifebackend.domain.program.dto.ProgramListResponseDto;
 import com.salayo.locallifebackend.domain.program.dto.ProgramSearchRequestDto;
 import com.salayo.locallifebackend.domain.program.entity.Program;
 import com.salayo.locallifebackend.domain.program.entity.ProgramDay;
 import com.salayo.locallifebackend.domain.program.entity.ProgramScheduleTime;
 import com.salayo.locallifebackend.domain.program.enums.DayName;
-import com.salayo.locallifebackend.domain.program.enums.LocalSpecialized;
 import com.salayo.locallifebackend.domain.program.enums.ProgramStatus;
 import com.salayo.locallifebackend.domain.program.repository.ProgramRepository;
 import com.salayo.locallifebackend.domain.programschedule.entity.ProgramSchedule;
-import com.salayo.locallifebackend.domain.programschedule.enums.ProgramScheduleStatus;
-import com.salayo.locallifebackend.domain.reservation.entity.Reservation;
 import com.salayo.locallifebackend.domain.reservation.enums.ReservationStatus;
 import com.salayo.locallifebackend.domain.reservation.repository.ReservationRepository;
 import com.salayo.locallifebackend.global.dto.PaginationResponseDto;
@@ -39,10 +37,17 @@ import com.salayo.locallifebackend.global.error.ErrorCode;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -85,12 +90,11 @@ public class ProgramService {
 	public ProgramCreateResponseDto createProgram(long memberId, @Valid ProgramCreateRequestDto requestDto, List<MultipartFile> files,
 		List<FilePurpose> filePurposes) {
 
-		Member member = memberRepository.findByIdOrElseThrow(memberId);
+		Member member = memberRepository.findActiveByIdOrThrow(memberId);
 
 		LocalCreator localCreator = localCreatorRepository
 			.findByMemberIdAndCreatorStatus(member.getId(), CreatorStatus.APPROVED)
 			.orElseThrow(() -> new CustomException(ErrorCode.LOCAL_CREATOR_NOT_APPROVED));
-
 		String businessName = localCreator.getBusinessName();
 
 		Long aptitudeCategoryId = requestDto.getAptitudeCategoryId();
@@ -101,22 +105,20 @@ public class ProgramService {
 
 		BigDecimal price = requestDto.getPrice();
 		BigDecimal percent = requestDto.getPercent();
-
-		if (price.compareTo(BigDecimal.ONE) < 0 || price.compareTo(new BigDecimal("5000000")) > 0) {
-			throw new CustomException(ErrorCode.INVALID_PRICE_RANGE);
-		}
-
 		BigDecimal finalPrice = price;
+		if (percent != null && percent.compareTo(BigDecimal.ZERO) > 0) {
+			BigDecimal discountAmount = price.multiply(percent)
+				.divide(BigDecimal.valueOf(100), 0, RoundingMode.HALF_UP);
 
-		if (percent != null) {
-			BigDecimal discountRate = BigDecimal.ONE.subtract(percent.divide(BigDecimal.valueOf(100)));
-			finalPrice = price.multiply(discountRate);
+			finalPrice = price.subtract(discountAmount);
+			if (finalPrice.compareTo(BigDecimal.ONE) < 0) {
+				throw new CustomException(ErrorCode.INVALID_FINAL_PRICE);
+			}
 		}
 
 		Integer minCapacity = requestDto.getMinCapacity();
 		Integer maxCapacity = requestDto.getMaxCapacity();
-
-		if (minCapacity < 1 || maxCapacity > 100 || minCapacity > maxCapacity) {
+		if (minCapacity > maxCapacity) {
 			throw new CustomException(ErrorCode.INVALID_CAPACITY_RANGE);
 		}
 
@@ -126,32 +128,26 @@ public class ProgramService {
 		LocalDate endDate = requestDto.getEndDate();
 		validateEndDate(startDate, endDate);
 
-		Program program = Program.builder()
-			.member(member)
-			.aptitudeCategory(aptitudeCategory)
-			.regionCategory(regionCategory)
-			.businessName(businessName)
-			.title(requestDto.getTitle())
-			.description(requestDto.getDescription())
-			.curriculumDescription(requestDto.getCurriculumDescription())
-			.location(requestDto.getLocation())
-			.price(price)
-			.percent(percent)
-			.finalPrice(finalPrice)
-			.minCapacity(minCapacity)
-			.maxCapacity(maxCapacity)
-			.startDate(startDate)
-			.endDate(endDate)
-			.count(0)
-			.isLocalSpecialized(LocalSpecialized.GENERAL)
-			.programStatus(ProgramStatus.PENDING)
-			.deletedStatus(DeletedStatus.DISPLAYED)
-			.build();
+		Program program = Program.createProgram(
+			member,
+			aptitudeCategory,
+			regionCategory,
+			businessName,
+			requestDto.getTitle(),
+			requestDto.getDescription(),
+			requestDto.getCurriculumDescription(),
+			requestDto.getLocation(),
+			price,
+			percent,
+			finalPrice,
+			minCapacity,
+			maxCapacity,
+			startDate,
+			endDate
+		);
 
 		requestDto.getProgramDays().forEach(dayName -> {
-			ProgramDay programDay = ProgramDay.builder()
-				.dayName(dayName)
-				.build();
+			ProgramDay programDay = ProgramDay.createProgramDay(dayName);
 			program.addProgramDay(programDay);
 		});
 
@@ -160,42 +156,19 @@ public class ProgramService {
 			LocalTime startTime = scheduleDto.getStartTime();
 			LocalTime endTime = startTime.plusHours(scheduleDurationHours);
 
-			ProgramScheduleTime scheduleTime = ProgramScheduleTime.builder()
-				.scheduleCount(scheduleDto.getScheduleCount())
-				.scheduleDuration(scheduleDurationHours)
-				.startTime(startTime)
-				.endTime(endTime)
-				.build();
+			ProgramScheduleTime scheduleTime = ProgramScheduleTime.createProgramScheduleTime(
+				scheduleDto.getScheduleCount(),
+				scheduleDurationHours,
+				startTime,
+				endTime
+			);
 			program.addProgramScheduleTime(scheduleTime);
 		});
 
-		createProgramSchedule(program);
+		createProgramSchedulesForProgram(program);
 		programRepository.save(program);
 
-		validateFileInputAndPurposes(files, filePurposes);
-
-		for (int i = 0; i < files.size(); i++) {
-			MultipartFile multipartFile = files.get(i);
-			FilePurpose filePurpose = filePurposes.get(i);
-
-			String storedFileUrl = s3Uploader.upload(multipartFile, "programs");
-
-			File fileEntity = File.builder()
-				.originalName(multipartFile.getOriginalFilename())
-				.storedFileName(storedFileUrl)
-				.build();
-
-			fileRepository.save(fileEntity);
-
-			FileMapping fileMapping = FileMapping.builder()
-				.file(fileEntity)
-				.fileCategory(FileCategory.PROGRAM)
-				.referenceId(program.getId())
-				.filePurpose(filePurpose)
-				.build();
-
-			fileMappingRepository.save(fileMapping);
-		}
+		saveProgramFiles(program, files, filePurposes);
 
 		return ProgramCreateResponseDto.from(program);
 	}
@@ -233,6 +206,7 @@ public class ProgramService {
 	 * - 파일 타입, 파일 개수, 파일 목적, 썸네일 개수 검증
 	 */
 	private void validateFileInputAndPurposes(List<MultipartFile> files, List<FilePurpose> filePurposes) {
+
 		if (files == null || files.isEmpty() || filePurposes == null || files.size() != filePurposes.size()) {
 			throw new CustomException(ErrorCode.INVALID_FILE_PURPOSE_MAPPING);
 		}
@@ -269,8 +243,10 @@ public class ProgramService {
 	/**
 	 * 스케줄 생성 로직
 	 * - 프로그램 시작일 ~ 종료일까지 사용자가 선택한 요일에 해당하는 날짜에 스케줄 생성
+	 * - 회차에 따라 하루 스케줄 개수 결정
 	 */
-	private void createProgramSchedule(Program program) {
+	private void createProgramSchedulesForProgram(Program program) {
+
 		LocalDate currentDate = program.getStartDate();
 		LocalDate endDate = program.getEndDate();
 
@@ -284,15 +260,12 @@ public class ProgramService {
 			if (programDays.contains(currentDay)) {
 
 				for (ProgramScheduleTime programScheduleTime : program.getProgramScheduleTimes()) {
-					ProgramSchedule programSchedule = ProgramSchedule.builder()
-						.program(program)
-						.scheduleDate(currentDate)
-						.startTime(programScheduleTime.getStartTime())
-						.endTime(programScheduleTime.getEndTime())
-						.programScheduleStatus(ProgramScheduleStatus.ACTIVE)
-						.deletedStatus(DeletedStatus.DISPLAYED)
-						.build();
-
+					ProgramSchedule programSchedule = ProgramSchedule.createProgramSchedule(
+						program,
+						currentDate,
+						programScheduleTime.getStartTime(),
+						programScheduleTime.getEndTime()
+					);
 					program.addProgramSchedule(programSchedule);
 				}
 			}
@@ -302,21 +275,83 @@ public class ProgramService {
 	}
 
 	/**
-	 * 체험 프로그램 조회 메서드
+	 * S3 업로드 & 파일 생성 메서드
 	 */
-	public PaginationResponseDto<ProgramCreateResponseDto> searchProgram(ProgramSearchRequestDto requestDto, Long memberId) {
+	private void saveProgramFiles(Program program, List<MultipartFile> files, List<FilePurpose> filePurposes) {
 
-		Member member = memberRepository.findByIdOrElseThrow(memberId);
-		if (member.getMemberRole() != MemberRole.USER) {
-			throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
+		validateFileInputAndPurposes(files, filePurposes);
+
+		for (int i = 0; i < files.size(); i++) {
+			MultipartFile multipartFile = files.get(i);
+			FilePurpose filePurpose = filePurposes.get(i);
+
+			String storedFileUrl = s3Uploader.upload(multipartFile, "program");
+
+			File fileEntity = File.builder()
+				.originalName(multipartFile.getOriginalFilename())
+				.storedFileName(storedFileUrl)
+				.build();
+			fileRepository.save(fileEntity);
+
+			FileMapping fileMapping = FileMapping.builder()
+				.file(fileEntity)
+				.fileCategory(FileCategory.PROGRAM)
+				.referenceId(program.getId())
+				.filePurpose(filePurpose)
+				.build();
+			fileMappingRepository.save(fileMapping);
 		}
+	}
+
+	/**
+	 * 체험 프로그램 검색 메서드
+	 * - 멤버가 체험 프로그램 정렬 조건을 설정하여 검색
+	 */
+	@Transactional(readOnly = true)
+	public PaginationResponseDto<ProgramListResponseDto> searchProgram(ProgramSearchRequestDto requestDto) {
+
+		BigDecimal minPrice = requestDto.getMinPrice();
+		BigDecimal maxPrice = requestDto.getMaxPrice();
+
+		if (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) > 0) {
+			throw new CustomException(ErrorCode.INVALID_PRICE_RANGE);
+		}
+
+		String normalizedKeyword = normalizationKeyword(requestDto.getKeyword());
+		if(normalizedKeyword == null){
+			throw new CustomException(ErrorCode.INVALID_SEARCH_KEYWORD);
+		}
+		requestDto.setKeyword(normalizedKeyword);
 
 		Page<Program> programPage = programRepository.searchPrograms(requestDto);
 
-		Page<ProgramCreateResponseDto> programContent = programPage
-			.map(ProgramCreateResponseDto::from);
+		Page<ProgramListResponseDto> programContent = programPage
+			.map(program -> {
+				String thumbnailUrl = getProgramThumbnailUrl(program.getId());
+				return ProgramListResponseDto.from(program, thumbnailUrl);
+			});
 
 		return PaginationResponseDto.of(programContent);
+	}
+
+	/**
+	 * 이모지, 특수문자, 공백 정리 메서드
+	 */
+	private String normalizationKeyword(String keyword) {
+
+		if (keyword == null) {
+			return null;
+		}
+
+		String removeEmoji = keyword.replaceAll("[\\p{So}\\p{Cn}]", " ");
+		String removeSpecialCharacters = removeEmoji.replaceAll("[^가-힣a-zA-Z0-9\\s]", " ");
+		String normalized = removeSpecialCharacters.trim().replaceAll("\\s{2,}", " ");
+
+		if (normalized.isEmpty()) {
+			return null;
+		}
+
+		return normalized;
 	}
 
 	/**
@@ -325,14 +360,10 @@ public class ProgramService {
 	@Transactional
 	public void deleteProgram(Long programId, Long memberId) {
 
-		Member member = memberRepository.findByIdOrElseThrow(memberId);
-		if (member.getMemberRole() != MemberRole.LOCAL_CREATOR) {
-			throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
-		}
-
 		Program program = programRepository.findByIdOrElseThrow(programId);
-		if (program.getDeletedStatus().equals(DeletedStatus.DELETED)) {
-			throw new CustomException(ErrorCode.PROGRAM_DELETED);
+		Long programOwner = program.getMember().getId();
+		if (!programOwner.equals(memberId)) {
+			throw new CustomException(ErrorCode.PROGRAM_NOT_FOUND_FOR_USER);
 		}
 
 		LocalDate today = LocalDate.now();
@@ -344,23 +375,96 @@ public class ProgramService {
 			.map(ProgramSchedule::getId)
 			.toList();
 
-		boolean hasCompletedReservation = reservationRepository.existsByProgramSchedule_IdInAndReservationStatus(
-			scheduleIds, ReservationStatus.COMPLETED);
-		if (hasCompletedReservation) {
-			throw new CustomException(ErrorCode.CANNOT_DELETE_COMPLETED_RESERVATION_EXISTS);
-		}
-
-		boolean hasActiveReservation = reservationRepository.existsByProgramSchedule_IdInAndReservationStatusNotIn(
-			scheduleIds, List.of(
-				ReservationStatus.REJECTED,
-				ReservationStatus.CANCELED,
-				ReservationStatus.EXPIRED));
-		if (hasActiveReservation) {
+		Set<ReservationStatus> inactiveReservationStatuses = ReservationStatus.inactiveReservationStatusSet();
+		boolean existsActiveReservation =
+			reservationRepository.existsByProgramSchedule_IdInAndReservationStatusNotIn(
+				scheduleIds,
+				inactiveReservationStatuses
+			);
+		if (existsActiveReservation) {
 			throw new CustomException(ErrorCode.CANNOT_DELETE_ACTIVE_RESERVATION_EXIST);
 		}
 
-		program.getProgramSchedules().forEach(schedule -> schedule.updateStatus(DeletedStatus.DELETED, ProgramScheduleStatus.INACTIVE));
-
-		program.updateStatus(DeletedStatus.DELETED);
+		program.getProgramSchedules().forEach(ProgramSchedule::deleteProgramSchedule);
+		program.softDelete();
 	}
+
+	/**
+	 * 로컬 크리에이터 체험 프로그램 전체 리스트 조회 메서드
+	 * - 로컬 크리에이터가 생성한 체험 프로그램 전체 리스트 조회
+	 */
+	@Transactional(readOnly = true)
+	public PaginationResponseDto<ProgramListResponseDto> getProgramForLocalCreator(Long memberId, int page, int size) {
+
+		Member member = memberRepository.findActiveByIdOrThrow(memberId);
+
+		Pageable pageable = PageRequest.of(page, size, Sort.by(Direction.DESC, "id"));
+		Page<Program> programPage = programRepository.findByMemberIdAndDeletedStatus(
+			member.getId(),
+			DeletedStatus.DISPLAYED,
+			pageable
+		);
+		Page<ProgramListResponseDto> programContent = programPage
+			.map(program -> {
+				String thumbnailUrl = getProgramThumbnailUrl(program.getId());
+				return ProgramListResponseDto.from(program, thumbnailUrl);
+			});
+
+		return PaginationResponseDto.of(programContent);
+	}
+
+	/**
+	 * 체험 프로그램 단건 상세 조회 메서드
+	 * - 멤버가 체험 프로그램 상세 조회
+	 */
+	@Transactional(readOnly = true)
+	public ProgramDetailResponseDto getProgramDetail(Long programId) {
+
+		Program program = programRepository.findByIdOrElseThrow(programId);
+		if (program.getDeletedStatus() == DeletedStatus.DELETED) {
+			throw new CustomException(ErrorCode.PROGRAM_NOT_FOUND);
+		}
+		if (program.getProgramStatus() != ProgramStatus.REGISTERED) {
+			throw new CustomException(ErrorCode.PROGRAM_STATUS_NOT_VIEWABLE);
+		}
+
+		String thumbnailUrl = getProgramThumbnailUrl(program.getId());
+		List<String> detailImageUrls = getProgramDetailImageUrls(program.getId());
+
+		return ProgramDetailResponseDto.from(program, thumbnailUrl, detailImageUrls);
+	}
+
+	/**
+	 * 프로그램 썸네일 url 조회 메서드
+	 */
+	private String getProgramThumbnailUrl(Long programId) {
+
+		String thumbnailUrl = fileMappingRepository.findAllByFileCategoryAndReferenceIdAndFilePurpose(
+				FileCategory.PROGRAM,
+				programId,
+				FilePurpose.THUMBNAIL
+			).stream()
+			.findFirst()
+			.map(mapping -> mapping.getFile().getStoredFileName())
+			.orElse(null);
+
+		return thumbnailUrl;
+	}
+
+	/**
+	 * 프로그램 이미지 url 리스트 조회 메서드
+	 */
+	private List<String> getProgramDetailImageUrls(Long programId) {
+
+		List<FileMapping> fileMappings = fileMappingRepository.findAllByFileCategoryAndReferenceIdAndFilePurpose(
+			FileCategory.PROGRAM,
+			programId,
+			FilePurpose.DETAIL_IMAGE
+		);
+
+		return fileMappings.stream()
+			.map(mapping -> mapping.getFile().getStoredFileName())
+			.collect(Collectors.toList());
+	}
+
 }

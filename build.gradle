@@ -87,6 +87,10 @@ dependencies {
     //PortOne
     implementation 'com.github.iamport:iamport-rest-client-java:0.2.23'
 
+    //flyway
+    implementation 'org.flywaydb:flyway-core'
+    implementation 'org.flywaydb:flyway-mysql'
+
 }
 
 def generated = 'src/main/generated'
