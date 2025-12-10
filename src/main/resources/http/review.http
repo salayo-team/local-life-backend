@@ -8,6 +8,17 @@ Authorization: Bearer {{accessToken}}
   "reviewRating": 4.5
 }
 
+### 리뷰 상세 조회 (조회수 증가)
+GET http://localhost:8080/reviews/1
+
+### 리뷰 좋아요
+POST http://localhost:8080/reviews/1/like
+Authorization: Bearer {{accessToken}}
+
+### 리뷰 좋아요 취소
+DELETE http://localhost:8080/reviews/1/like
+Authorization: Bearer {{accessToken}}
+
 ### 리뷰 답글 작성
 POST http://localhost:8080/reviews/2/replies
 Content-Type: application/json

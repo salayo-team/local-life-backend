@@ -10,8 +10,10 @@ import com.salayo.locallifebackend.domain.reservation.repository.ReservationRepo
 import com.salayo.locallifebackend.domain.review.dto.ReviewRequestDto;
 import com.salayo.locallifebackend.domain.review.dto.ReviewResponseDto;
 import com.salayo.locallifebackend.domain.review.entity.Review;
+import com.salayo.locallifebackend.domain.review.entity.ReviewLike;
 import com.salayo.locallifebackend.global.dto.PaginationResponseDto;
 import com.salayo.locallifebackend.global.enums.DeletedStatus;
+import com.salayo.locallifebackend.domain.review.repository.ReviewLikeRepository;
 import com.salayo.locallifebackend.domain.review.repository.ReviewReplyRepository;
 import com.salayo.locallifebackend.domain.review.repository.ReviewRepository;
 import com.salayo.locallifebackend.global.error.exception.CustomException;
@@ -31,6 +33,7 @@ public class ReviewService {
 
 	private final ReviewRepository reviewRepository;
 	private final ReviewReplyRepository reviewReplyRepository;
+	private final ReviewLikeRepository reviewLikeRepository;
 	private final ProgramRepository programRepository;
 	private final ReservationRepository reservationRepository;
 	private final ReviewCacheService reviewCacheService;
@@ -38,10 +41,11 @@ public class ReviewService {
 	private static final long CACHE_TTL = 60; // 60분
 
 	public ReviewService(ReviewRepository reviewRepository, ReviewReplyRepository reviewReplyRepository,
-		ProgramRepository programRepository, ReservationRepository reservationRepository,
-		ReviewCacheService reviewCacheService) {
+		ReviewLikeRepository reviewLikeRepository, ProgramRepository programRepository,
+		ReservationRepository reservationRepository, ReviewCacheService reviewCacheService) {
 		this.reviewRepository = reviewRepository;
 		this.reviewReplyRepository = reviewReplyRepository;
+		this.reviewLikeRepository = reviewLikeRepository;
 		this.programRepository = programRepository;
 		this.reservationRepository = reservationRepository;
 		this.reviewCacheService = reviewCacheService;
@@ -182,6 +186,48 @@ public class ReviewService {
 
 		// 캐시 무효화
 		reviewCacheService.invalidateReviewCacheByPattern(review.getProgram().getId());
+	}
+
+	@Transactional
+	public ReviewResponseDto getReviewDetail(Long reviewId) {
+		log.info("리뷰 상세 조회 - reviewId: {}", reviewId);
+
+		Review review = reviewRepository.findByIdAndDeletedStatusOrThrow(reviewId, DeletedStatus.DISPLAYED);
+		review.incrementViewCount();
+
+		return new ReviewResponseDto(review);
+	}
+
+	@Transactional
+	public void likeReview(Long reviewId, Member member) {
+		log.info("리뷰 좋아요 - reviewId: {}, memberId: {}", reviewId, member.getId());
+
+		Review review = reviewRepository.findByIdAndDeletedStatusOrThrow(reviewId, DeletedStatus.DISPLAYED);
+
+		if (reviewLikeRepository.existsByReviewAndMember(review, member)) {
+			throw new CustomException(ErrorCode.ALREADY_LIKED_REVIEW);
+		}
+
+		ReviewLike reviewLike = ReviewLike.builder()
+			.review(review)
+			.member(member)
+			.build();
+
+		reviewLikeRepository.save(reviewLike);
+		review.incrementLikeCount();
+	}
+
+	@Transactional
+	public void unlikeReview(Long reviewId, Member member) {
+		log.info("리뷰 좋아요 취소 - reviewId: {}, memberId: {}", reviewId, member.getId());
+
+		Review review = reviewRepository.findByIdAndDeletedStatusOrThrow(reviewId, DeletedStatus.DISPLAYED);
+
+		ReviewLike reviewLike = reviewLikeRepository.findByReviewAndMember(review, member)
+			.orElseThrow(() -> new CustomException(ErrorCode.NOT_LIKED_REVIEW));
+
+		reviewLikeRepository.delete(reviewLike);
+		review.decrementLikeCount();
 	}
 
 	/**

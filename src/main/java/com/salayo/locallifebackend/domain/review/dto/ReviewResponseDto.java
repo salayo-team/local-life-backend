@@ -18,6 +18,8 @@ public class ReviewResponseDto {
 	private final String content;
 	private final boolean isModified;
 	private final LocalDateTime createdAt;
+	private final int viewCount;
+	private final int likeCount;
 	private final List<ReviewReplyResponseDto> replies;
 
 	@Builder
@@ -29,6 +31,8 @@ public class ReviewResponseDto {
 		this.content = review.getContent();
 		this.isModified = review.getModifiedAt().isAfter(review.getCreatedAt());
 		this.createdAt = review.getCreatedAt();
+		this.viewCount = review.getViewCount();
+		this.likeCount = review.getLikeCount();
 		this.replies = review.getReplies().stream()
 			.map(ReviewReplyResponseDto::new)
 			.collect(Collectors.toList());

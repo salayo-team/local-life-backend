@@ -60,6 +60,12 @@ public class Review extends SoftDeletableEntity {
 	@Column(name = "review_rating", nullable = false, precision = 2, scale = 1)
 	private BigDecimal reviewRating;
 
+	@Column(name = "view_count", nullable = false)
+	private int viewCount = 0;
+
+	@Column(name = "like_count", nullable = false)
+	private int likeCount = 0;
+
 	@Builder
 	public Review(Member member, Program program, Reservation reservation,
 		String content, BigDecimal rating) {
@@ -91,6 +97,20 @@ public class Review extends SoftDeletableEntity {
 		}
 		if (reviewRating.multiply(new BigDecimal("2")).stripTrailingZeros().scale() > 0) {
 			throw new CustomException(ErrorCode.INVALID_RATING_UNIT);
+		}
+	}
+
+	public void incrementViewCount() {
+		this.viewCount++;
+	}
+
+	public void incrementLikeCount() {
+		this.likeCount++;
+	}
+
+	public void decrementLikeCount() {
+		if (this.likeCount > 0) {
+			this.likeCount--;
 		}
 	}
 

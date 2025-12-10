@@ -8,7 +8,6 @@ import com.salayo.locallifebackend.global.dto.PaginationResponseDto;
 import com.salayo.locallifebackend.global.security.MemberDetails;
 import com.salayo.locallifebackend.global.success.SuccessCode;
 import jakarta.validation.Valid;
-import java.util.List;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -69,6 +68,36 @@ public class ReviewController {
 		PaginationResponseDto<ReviewResponseDto> responsePage = reviewService.getProgramReviews(programId, pageable);
 
 		return CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, responsePage);
+	}
+
+	@GetMapping("/reviews/{reviewId}")
+	public CommonResponseDto<ReviewResponseDto> getReviewDetail(@PathVariable Long reviewId) {
+
+		ReviewResponseDto responseDto = reviewService.getReviewDetail(reviewId);
+
+		return CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, responseDto);
+	}
+
+	@PostMapping("/reviews/{reviewId}/like")
+	@PreAuthorize("hasRole('USER')")
+	public CommonResponseDto<Void> likeReview(
+		@PathVariable Long reviewId,
+		@AuthenticationPrincipal MemberDetails memberDetails) {
+
+		reviewService.likeReview(reviewId, memberDetails.getMember());
+
+		return CommonResponseDto.success(SuccessCode.CREATE_SUCCESS, null);
+	}
+
+	@DeleteMapping("/reviews/{reviewId}/like")
+	@PreAuthorize("hasRole('USER')")
+	public CommonResponseDto<Void> unlikeReview(
+		@PathVariable Long reviewId,
+		@AuthenticationPrincipal MemberDetails memberDetails) {
+
+		reviewService.unlikeReview(reviewId, memberDetails.getMember());
+
+		return CommonResponseDto.success(SuccessCode.DELETE_SUCCESS, null);
 	}
 
 	@GetMapping("/admin/reviews")
