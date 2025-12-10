@@ -8,13 +8,13 @@ import lombok.Getter;
 @Getter
 public class ProgramScheduleTimeResponseDto {
 	
-	private Long id; //체험 프로그램 스케줄 시간 고유 식별자
+	private final Long id; //체험 프로그램 스케줄 시간 고유 식별자
 
-	private Integer scheduleCount; //스케줄 회차
+	private final Integer scheduleCount; //스케줄 회차
 
-	private Integer scheduleDuration; //스케줄 소요 시간
+	private final Integer scheduleDuration; //스케줄 소요 시간
 
-	private LocalTime startTime; //스케줄 시작시간
+	private final LocalTime startTime; //스케줄 시작시간
 
-	private LocalTime endTime; //스케줄 종료시간
+	private final LocalTime endTime; //스케줄 종료시간
 }

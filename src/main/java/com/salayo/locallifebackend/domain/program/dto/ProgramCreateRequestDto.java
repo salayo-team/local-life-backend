@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.salayo.locallifebackend.domain.program.enums.DayName;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -37,11 +38,15 @@ public class ProgramCreateRequestDto {
 	@NotBlank(message = "체험 프로그램 위치는 필수값입니다.")
 	private String location; //체험 위치
 
-	@NotNull(message = "체험 프로그램 가격은 필수값입니다.")
-	@DecimalMin(value = "1.0", message = "체험 프로그램 가격 {value}원 이상이여야 합니다.")
-	@DecimalMax(value = "5000000.0", message = "체험 프로그램 가격은 {value}원 이하여야 합니다.")
+	@NotNull(message = "체험 프로그램 금액은 필수값입니다.")
+	@DecimalMin(value = "1.0", message = "체험 프로그램 금액은 {value}원 이상이여야 합니다.")
+	@DecimalMax(value = "5000000.0", message = "체험 프로그램 금액은 {value}원 이하여야 합니다.")
+	@Digits(integer = 7, fraction = 0, message = "체험 금액은 정수만 입력 가능합니다.")
 	private BigDecimal price; //체험 가격
 
+	@DecimalMin(value = "0.0", message = "할인율은 0 이상이어야 합니다.")
+	@DecimalMax(value = "100.0", message = "할인율은 100 이하여야 합니다.")
+	@Digits(integer = 3, fraction = 0, message = "할인율은 정수만 입력 가능합니다.")
 	private BigDecimal percent; //체험 할인율
 
 	@NotNull(message = "최대 정원은 필수값입니다.")

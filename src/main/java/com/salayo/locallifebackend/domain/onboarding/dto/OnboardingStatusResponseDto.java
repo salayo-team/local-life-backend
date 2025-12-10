@@ -1,38 +1,28 @@
 package com.salayo.locallifebackend.domain.onboarding.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.salayo.locallifebackend.domain.ai.aptitude.enums.AptitudeType;
 import com.salayo.locallifebackend.domain.onboarding.enums.OnboardingStep;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 
 @Getter
-@JsonInclude(JsonInclude.Include.NON_NULL) // null인 필드는 JSON 응답에서 제외
+@Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@Schema(description = "온보딩 진행 상태 조회 응답 DTO")
 public class OnboardingStatusResponseDto {
 
+	@Schema(description = "온보딩 완료 여부", example = "false")
 	private final boolean isCompleted;
+
+	@Schema(description = "현재 온보딩 단계", example = "REGION_SELECT")
 	private final OnboardingStep currentStep;
+
+	@Schema(description = "온보딩 세션 ID", example = "ONB-1-ab12cd34")
 	private final String sessionId;
 
-	@Builder
-	public OnboardingStatusResponseDto(boolean isCompleted, OnboardingStep currentStep, String sessionId) {
-		this.isCompleted = isCompleted;
-		this.currentStep = currentStep;
-		this.sessionId = sessionId;
-	}
-
-	// 온보딩이 완료된 경우를 위한 정적 팩토리 메서드
-	public static OnboardingStatusResponseDto complete() {
-		return OnboardingStatusResponseDto.builder()
-			.isCompleted(true)
-			.build();
-	}
-
-	// 온보딩 진행 중인 경우를 위한 정적 팩토리 메서드
-	public static OnboardingStatusResponseDto inProgress(OnboardingStep currentStep, String sessionId) {
-		return OnboardingStatusResponseDto.builder()
-			.isCompleted(false)
-			.currentStep(currentStep)
-			.sessionId(sessionId)
-			.build();
-	}
+	@Schema(description = "사용자의 적성 타입 (온보딩 미완료 시 PENDING)",
+		example = "NATURE")
+	private final AptitudeType aptitudeType;
 }

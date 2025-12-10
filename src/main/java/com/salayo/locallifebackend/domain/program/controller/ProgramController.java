@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.salayo.locallifebackend.domain.file.enums.FilePurpose;
 import com.salayo.locallifebackend.domain.program.dto.ProgramCreateRequestDto;
 import com.salayo.locallifebackend.domain.program.dto.ProgramCreateResponseDto;
+import com.salayo.locallifebackend.domain.program.dto.ProgramDetailResponseDto;
+import com.salayo.locallifebackend.domain.program.dto.ProgramListResponseDto;
 import com.salayo.locallifebackend.domain.program.dto.ProgramSearchRequestDto;
 import com.salayo.locallifebackend.domain.program.service.ProgramService;
 import com.salayo.locallifebackend.global.dto.CommonResponseDto;
@@ -34,7 +36,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
-@Tag(name = "Program", description = "체험 프로그램 관련 API")
+@Tag(name = "Program", description = "체험 프로그램 도메인 API")
 @RestController
 public class ProgramController {
 
@@ -51,8 +53,8 @@ public class ProgramController {
 	 * 체험 프로그램 생성 API
 	 */
 	@Operation(
-		summary = "체험 프로그램 생성",
-		description = "로컬 크리에이터 유저가 체험 프로그램을 생성합니다."
+		summary = "체험 프로그램 생성 API",
+		description = "로컬 크리에이터가 체험 프로그램을 생성합니다."
 	)
 	@PreAuthorize("hasRole('LOCAL_CREATOR')")
 	@PostMapping(value = "/localcreator/programs", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -63,7 +65,6 @@ public class ProgramController {
 		@AuthenticationPrincipal MemberDetails memberDetails) {
 
 		ProgramCreateRequestDto requestDto;
-
 		try {
 			requestDto = objectMapper.readValue(requestDtoString, ProgramCreateRequestDto.class);
 		} catch (Exception e) {
@@ -81,20 +82,18 @@ public class ProgramController {
 	}
 
 	/**
-	 * 체험 프로그램 전체 조회 API
+	 * 체험 프로그램 검색 API
 	 */
 	@Operation(
-		summary = "체험 프로그램 조회",
-		description = "유저가 정렬 조건을 설정하여 체험 프로그램을 조회 할 수 있습니다."
+		summary = "체험 프로그램 검색 API",
+		description = "멤버가 정렬 조건을 설정하여 체험 프로그램을 검색합니다. (조건 & 정렬 설정, 제목 & 사업자명 검색 가능)"
 	)
+	@PreAuthorize("hasRole('USER')")
 	@GetMapping(value = "/programs/search")
-	public ResponseEntity<CommonResponseDto<PaginationResponseDto<ProgramCreateResponseDto>>> searchProgram(
-		@Valid @ModelAttribute ProgramSearchRequestDto requestDto,
-		@AuthenticationPrincipal MemberDetails memberDetails) {
+	public ResponseEntity<CommonResponseDto<PaginationResponseDto<ProgramListResponseDto>>> searchProgram(
+		@Valid @ModelAttribute ProgramSearchRequestDto requestDto) {
 
-		Long memberId = memberDetails.getMember().getId();
-
-		PaginationResponseDto<ProgramCreateResponseDto> responsePage = programService.searchProgram(requestDto, memberId);
+		PaginationResponseDto<ProgramListResponseDto> responsePage = programService.searchProgram(requestDto);
 
 		return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, responsePage));
 	}
@@ -103,8 +102,8 @@ public class ProgramController {
 	 * 체험 프로그램 삭제 API
 	 */
 	@Operation(
-		summary = "체험 프로그램 삭제",
-		description = "로컬 크리에이터 유저가 체험 프로그램을 삭제 할 수 있습니다."
+		summary = "체험 프로그램 삭제 API",
+		description = "로컬 크리에이터가 체험 프로그램을 삭제합니다."
 	)
 	@PreAuthorize("hasRole('LOCAL_CREATOR')")
 	@PatchMapping("/programs/{programId}")
@@ -113,10 +112,48 @@ public class ProgramController {
 		@AuthenticationPrincipal MemberDetails memberDetails) {
 
 		Long memberId = memberDetails.getMember().getId();
-
 		programService.deleteProgram(programId, memberId);
 
 		return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.DELETE_SUCCESS, programId));
 	}
+
+	/**
+	 * 로컬 크리에이터 체험 프로그램 전체 조회 API
+	 * - 로컬 크리에이터가 생성한 체험 프로그램 전체 조회
+	 */
+	@Operation(
+		summary = "로컬 크리에이터 체험 프로그램 전체 조회 API",
+		description = "로컬 크리에이터가 생성한 체험 프로그램을 전체 조회합니다."
+	)
+	@PreAuthorize("hasRole('LOCAL_CREATOR')")
+	@GetMapping("/localcreator/programs")
+	public ResponseEntity<CommonResponseDto<PaginationResponseDto<ProgramListResponseDto>>> getProgramForLocalCreator(
+		@RequestParam(name = "page", defaultValue = "0") int page,
+		@RequestParam(name = "size", defaultValue = "10") int size,
+		@AuthenticationPrincipal MemberDetails memberDetails) {
+
+		Long memberId = memberDetails.getMember().getId();
+		PaginationResponseDto<ProgramListResponseDto> responsePage = programService.getProgramForLocalCreator(memberId, page, size);
+
+		return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, responsePage));
+	}
+
+	/**
+	 * 체험 프로그램 단건 상세 조회 API
+	 */
+	@Operation(
+		summary = "체험 프로그램 단건 상세 조회 API",
+		description = "멤버가 체험 프로그램을 단건 상세 조회합니다."
+	)
+	@PreAuthorize("hasRole('USER')")
+	@GetMapping(value = "/programs/{programId}")
+	public ResponseEntity<CommonResponseDto<ProgramDetailResponseDto>> getProgramDetail(
+		@PathVariable("programId") Long programId) {
+
+		ProgramDetailResponseDto responseDto = programService.getProgramDetail(programId);
+
+		return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, responseDto));
+	}
+
 
 }

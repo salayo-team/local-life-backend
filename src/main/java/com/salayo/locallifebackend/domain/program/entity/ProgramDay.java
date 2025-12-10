@@ -34,4 +34,13 @@ public class ProgramDay {
 
 	}
 
+	/**
+	 * 요일 생성
+	 */
+	public static ProgramDay createProgramDay(DayName dayName){
+		return ProgramDay.builder()
+			.dayName(dayName)
+			.build();
+	}
+
 }

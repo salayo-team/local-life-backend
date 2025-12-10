@@ -2,9 +2,6 @@ package com.salayo.locallifebackend.domain.onboarding.enums;
 
 import lombok.Getter;
 
-/**
- * 온보딩 진행 단계
- */
 @Getter
 public enum OnboardingStep {
 	MEMBER_INFO("회원 정보 입력"),
@@ -20,9 +17,6 @@ public enum OnboardingStep {
 		this.description = description;
 	}
 
-	/**
-	 * 다음 단계 결정
-	 */
 	public OnboardingStep getNextStep(boolean knowsAptitude) {
 		return switch (this) {
 			case MEMBER_INFO -> REGION_SELECT;
