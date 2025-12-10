@@ -66,8 +66,8 @@ Authorization: Bearer {{accessToken}}
   ]
 }
 
-### 체험 프로그램 전체 조회 API
-GET http://localhost:8080/program/search?sort=LATEST
+### 체험 프로그램 검색 API
+GET http://localhost:8080/programs/search?keyword=
 Accept: application/json
 Authorization: Bearer {{accessToken}}
 
@@ -76,10 +76,32 @@ Authorization: Bearer {{accessToken}}
 ?aptitudeIds=1
 &regionIds=1
 &sort=LATEST
+	PRICE_ASC
+	PRICE_DESC
+	REVIEW_COUNT_DESC
+	RATING_DESC
 &page=0
 &size=10
+?isLocalSpecialized=LOCAL
+?keyword=
+?minPrice=45000&maxPrice=58000
 
 ### 체험 프로그램 삭제 API - (soft-delete)
 PATCH http://localhost:8080/programs/3
 Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+### 로컬 크리에이터가 생성한 체험 프로그램 전체 리스트 조회 API
+GET http://localhost:8080/localcreator/programs
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+# 요청 파라미터 (생략 시 기본값 적용)
+# 예시
+?page=0
+&size=10
+
+### 체험 프로그램 단건 상세 조회 API
+GET http://localhost:8080/programs/1
+Accept: application/json
 Authorization: Bearer {{accessToken}}

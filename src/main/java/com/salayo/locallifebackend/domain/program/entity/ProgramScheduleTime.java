@@ -42,4 +42,17 @@ public class ProgramScheduleTime {
 		this.endTime = endTime;
 	}
 
+	/**
+	 * 프로그램 스케줄 시간 생성
+	 */
+	public static ProgramScheduleTime createProgramScheduleTime(Integer scheduleCount, Integer scheduleDuration,
+		LocalTime startTime, LocalTime endTime) {
+		return ProgramScheduleTime.builder()
+			.scheduleCount(scheduleCount)
+			.scheduleDuration(scheduleDuration)
+			.startTime(startTime)
+			.endTime(endTime)
+			.build();
+	}
+
 }

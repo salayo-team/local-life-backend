@@ -18,9 +18,10 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 		return findById(reservationId).orElseThrow(() -> new CustomException(ErrorCode.RESERVATION_NOT_FOUND));
 	}
 
-	boolean existsByProgramSchedule_IdInAndReservationStatus(List<Long> scheduleIds, ReservationStatus completed);
-
-	boolean existsByProgramSchedule_IdInAndReservationStatusNotIn(List<Long> scheduleIds, List<ReservationStatus> excludedStatuses);
+	boolean existsByProgramSchedule_IdInAndReservationStatusNotIn(
+		List<Long> scheduleIds,
+		Set<ReservationStatus> inactiveReservationStatuses
+	);
 
 	boolean existsByProgramScheduleIdAndReservationStatusNotIn(
 		Long scheduleId,
