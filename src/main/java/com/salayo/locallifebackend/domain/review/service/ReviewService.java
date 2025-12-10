@@ -103,8 +103,8 @@ public class ReviewService {
 		Review savedReview = reviewRepository.save(review);
 		saveReviewTags(savedReview, requestDto.getTagIds());
 
-//		updateProgramRatingOnCreate(program, savedReview.getReviewRating());
-//		log.info("리뷰 생성 완료 및 프로그램 평점 업데이트 - reviewId: {}, programId: {}", savedReview.getId(), programId);
+		updateReviewCountAndAverageRatingOnCreate(program, savedReview.getReviewRating());
+		log.info("리뷰 생성 완료 및 리뷰 평균 평점 업데이트 - reviewId: {}, programId: {}", savedReview.getId(), programId);
 
 		// 캐시 무효화
 		reviewCacheService.invalidateReviewCacheByPattern(programId);
@@ -163,13 +163,14 @@ public class ReviewService {
 		if (reviewReplyRepository.existsByReviewAndDeletedStatus(review, DeletedStatus.DISPLAYED)) {
 			throw new CustomException(ErrorCode.CANNOT_UPDATE_REVIEW_WITH_REPLY);
 		}
+		BigDecimal oldRating = review.getReviewRating();
 
 		review.updateContent(requestDto.getContent());
 		review.updateRating(requestDto.getReviewRating());
 		updateReviewTags(review, requestDto.getTagIds());
 
-		//		updateProgramRatingOnCreate(program, savedReview.getReviewRating());
-//		log.info("리뷰 생성 완료 및 프로그램 평점 업데이트 - reviewId: {}, programId: {}", savedReview.getId(), programId);
+		updateReviewCountAndAverageRatingOnUpdate(review.getProgram(), oldRating, requestDto.getReviewRating());
+
 
 		// 캐시 무효화
 		reviewCacheService.invalidateReviewCacheByPattern(review.getProgram().getId());
@@ -195,8 +196,8 @@ public class ReviewService {
 		review.softDelete();
 		log.info("리뷰 및 관련 답글 소프트 삭제 완료 - reviewId: {}", reviewId);
 
-//		updateProgramRatingOnDelete(program, deletedRating);
-//		log.info("프로그램 평점 업데이트 완료 - programId: {}", program.getId());
+		updateReviewCountAndAverageRatingOnDelete(program, deletedRating);
+		log.info("리뷰 평균 평점 업데이트 완료 - programId: {}", program.getId());
 
 		// 캐시 무효화
 		reviewCacheService.invalidateReviewCacheByPattern(review.getProgram().getId());
@@ -269,13 +270,15 @@ public class ReviewService {
 		}
 
 		List<ReviewTag> tags = reviewTagRepository.findByIdIn(tagIds);
-		for (ReviewTag tag : tags) {
-			ReviewTagMapping mapping = ReviewTagMapping.builder()
+
+		List<ReviewTagMapping> mappings = tags.stream()
+			.map(tag -> ReviewTagMapping.builder()
 				.review(review)
 				.reviewTag(tag)
-				.build();
-			reviewTagMappingRepository.save(mapping);
-		}
+				.build())
+			.toList();
+
+		reviewTagMappingRepository.saveAll(mappings);
 	}
 
 	private void updateReviewTags(Review review, List<Long> tagIds) {
@@ -318,41 +321,69 @@ public class ReviewService {
 //		log.info("리뷰 작성 기간 확인 - 임시로 항상 통과. 실제 종료일: {}", experienceEndDate);
 	}
 
-//	/**
-//	 * 새로운 리뷰가 추가되었을 때 Program의 평균 평점을 업데이트
-//	 * @param program 평점을 업데이트할 프로그램
-//	 * @param newRating 새로 추가된 리뷰의 별점
-//	 */
-//	private void updateProgramRatingOnCreate(Program program, BigDecimal newRating) {
-//		// Program 엔티티에 reviewCount와 averageRating 필드가 있다고 가정한 상태로 작성됨
-//		int currentReviewCount = program.getReviewCount();
-//		BigDecimal currentAverageRating = program.getAverageRating();
-//
-//		BigDecimal totalRating = currentAverageRating.multiply(new BigDecimal(currentReviewCount));
-//		int newReviewCount = currentReviewCount + 1;
-//		BigDecimal newAverageRating = totalRating.add(newRating)
-//			.divide(new BigDecimal(newReviewCount), 1, RoundingMode.HALF_UP);
-//	}
-//
-//	/**
-//	 * 리뷰가 삭제되었을 때 Program의 평균 평점을 업데이트
-//	 * @param program 평점을 업데이트할 프로그램
-//	 * @param deletedRating 삭제된 리뷰의 별점
-//	 */
-//	private void updateProgramRatingOnDelete(Program program, BigDecimal deletedRating) {
-//		int currentReviewCount = program.getReviewCount();
-//		BigDecimal currentAverageRating = program.getAverageRating();
-//
-//		BigDecimal totalRating = currentAverageRating.multiply(new BigDecimal(currentReviewCount));
-//		int newReviewCount = currentReviewCount - 1;
-//
-//		BigDecimal newAverageRating;
-//		if (newReviewCount > 0) {
-//			newAverageRating = totalRating.subtract(deletedRating)
-//				.divide(new BigDecimal(newReviewCount), 1, RoundingMode.HALF_UP);
-//		} else {
-//			// 마지막 리뷰가 삭제된 경우 0으로 초기화
-//			newAverageRating = BigDecimal.ZERO.setScale(1);
-//		}
-//	}
+	/**
+	 * 새로운 리뷰가 추가되었을 때 Program의 리뷰 개수와 리뷰 평균 평점을 업데이트
+	 * @param program 평점을 업데이트할 프로그램
+	 * @param newRating 새로 추가된 리뷰의 별점
+	 */
+	private void updateReviewCountAndAverageRatingOnCreate(Program program, BigDecimal newRating) {
+		// Program 엔티티에 reviewCount와 averageRating 필드가 있다고 가정한 상태로 작성됨
+		int currentReviewCount = program.getReviewCount();
+		BigDecimal currentAverageRating = program.getAverageRating();
+
+		BigDecimal totalRating = currentAverageRating.multiply(new BigDecimal(currentReviewCount));
+		int newReviewCount = currentReviewCount + 1;
+		BigDecimal newAverageRating = totalRating.add(newRating)
+			.divide(new BigDecimal(newReviewCount), 1, RoundingMode.HALF_UP);
+
+		program.updateReviewStatus(newReviewCount, newAverageRating);
+	}
+
+	/**
+	 * 리뷰 수정 시 Program의 리뷰 평균 평점을 업데이트하는 메서드
+	 * @param program 평점을 업데이트할 프로그램
+	 * @param oldRating 수정 전 별점
+	 * @param newRating 수정 후 별점
+	 */
+	private void updateReviewCountAndAverageRatingOnUpdate(Program program, BigDecimal oldRating, BigDecimal newRating) {
+		// 별점 변경이 없으면 연산하지 않음
+		if (oldRating.compareTo(newRating) == 0) {
+			return;
+		}
+
+		int reviewCount = program.getReviewCount();
+		if (reviewCount <= 0) return;
+
+		BigDecimal totalRating = program.getAverageRating().multiply(new BigDecimal(reviewCount));
+		// 총점에서 이전 평점을 빼고 새 평점을 더함
+		BigDecimal newAverageRating = totalRating.subtract(oldRating).add(newRating)
+			.divide(new BigDecimal(reviewCount), 1, RoundingMode.HALF_UP);
+
+		// 리뷰 개수는 변하지 않으므로, 평균 평점만 업데이트하는 메서드 호출
+		program.updateReviewStatus(reviewCount, newAverageRating);
+	}
+
+	/**
+	 * 리뷰가 삭제되었을 때 Program의 리뷰 개수와 리뷰 평균 평점을 업데이트
+	 * @param program 평점을 업데이트할 프로그램
+	 * @param deletedRating 삭제된 리뷰의 별점
+	 */
+	private void updateReviewCountAndAverageRatingOnDelete(Program program, BigDecimal deletedRating) {
+		int currentReviewCount = program.getReviewCount();
+		BigDecimal currentAverageRating = program.getAverageRating();
+
+		BigDecimal totalRating = currentAverageRating.multiply(new BigDecimal(currentReviewCount));
+		int newReviewCount = currentReviewCount - 1;
+
+		BigDecimal newAverageRating;
+		if (newReviewCount > 0) {
+			newAverageRating = totalRating.subtract(deletedRating)
+				.divide(new BigDecimal(newReviewCount), 1, RoundingMode.HALF_UP);
+		} else {
+			// 마지막 리뷰가 삭제된 경우 0으로 초기화
+			newAverageRating = BigDecimal.ZERO.setScale(1);
+		}
+
+		program.updateReviewStatus(newReviewCount, newAverageRating);
+	}
 }
