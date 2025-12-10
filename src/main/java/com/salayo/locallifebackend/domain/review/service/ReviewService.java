@@ -137,72 +137,6 @@ public class ReviewService {
 		return PaginationResponseDto.of(dtoPage);
 	}
 
-	@Transactional(readOnly = true)
-	public PaginationResponseDto<ReviewResponseDto> getAllReviews(Pageable pageable) {
-		log.info("전체 리뷰 페이징 조회 - page: {}", pageable.getPageNumber());
-
-		Page<Review> reviewPage = reviewRepository.findAllByDeletedStatus(DeletedStatus.DISPLAYED, pageable);
-		Page<ReviewResponseDto> dtoPage = reviewPage.map(ReviewResponseDto::new);
-
-		return PaginationResponseDto.of(dtoPage);
-	}
-
-	@Transactional
-	public ReviewResponseDto updateReview(Long reviewId, ReviewRequestDto requestDto, Member member) {
-		log.info("리뷰 수정 - reviewId: {}, memberId: {}", reviewId, member.getId());
-
-		Review review = reviewRepository.findById(reviewId)
-			.orElseThrow(() -> new CustomException(ErrorCode.REVIEW_NOT_FOUND));
-
-		// 본인 확인
-		if (!review.getMember().getId().equals(member.getId())) {
-			throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
-		}
-
-		// 답글 존재 여부 확인
-		if (reviewReplyRepository.existsByReviewAndDeletedStatus(review, DeletedStatus.DISPLAYED)) {
-			throw new CustomException(ErrorCode.CANNOT_UPDATE_REVIEW_WITH_REPLY);
-		}
-		BigDecimal oldRating = review.getReviewRating();
-
-		review.updateContent(requestDto.getContent());
-		review.updateRating(requestDto.getReviewRating());
-		updateReviewTags(review, requestDto.getTagIds());
-
-		updateReviewCountAndAverageRatingOnUpdate(review.getProgram(), oldRating, requestDto.getReviewRating());
-
-
-		// 캐시 무효화
-		reviewCacheService.invalidateReviewCacheByPattern(review.getProgram().getId());
-
-		return new ReviewResponseDto(review);
-	}
-
-	@Transactional
-	public void deleteReview(Long reviewId, Member member) {
-		log.info("리뷰 삭제 시작 - reviewId: {}, memberId: {}", reviewId, member.getId());
-
-		Review review = reviewRepository.findById(reviewId)
-			.orElseThrow(() -> new CustomException(ErrorCode.REVIEW_NOT_FOUND));
-
-		// 삭제 권한 확인
-		if (!review.getMember().getId().equals(member.getId())) {
-			throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
-		}
-		BigDecimal deletedRating = review.getReviewRating();
-		Program program = review.getProgram();
-
-		// Soft delete
-		review.softDelete();
-		log.info("리뷰 및 관련 답글 소프트 삭제 완료 - reviewId: {}", reviewId);
-
-		updateReviewCountAndAverageRatingOnDelete(program, deletedRating);
-		log.info("리뷰 평균 평점 업데이트 완료 - programId: {}", program.getId());
-
-		// 캐시 무효화
-		reviewCacheService.invalidateReviewCacheByPattern(review.getProgram().getId());
-	}
-
 	@Transactional
 	public ReviewResponseDto getReviewDetail(Long reviewId) {
 		log.info("리뷰 상세 조회 - reviewId: {}", reviewId);
@@ -264,6 +198,72 @@ public class ReviewService {
 		return PaginationResponseDto.of(dtoPage);
 	}
 
+	@Transactional(readOnly = true)
+	public PaginationResponseDto<ReviewResponseDto> getAllReviews(Pageable pageable) {
+		log.info("전체 리뷰 페이징 조회 - page: {}", pageable.getPageNumber());
+
+		Page<Review> reviewPage = reviewRepository.findAllByDeletedStatus(DeletedStatus.DISPLAYED, pageable);
+		Page<ReviewResponseDto> dtoPage = reviewPage.map(ReviewResponseDto::new);
+
+		return PaginationResponseDto.of(dtoPage);
+	}
+
+	@Transactional
+	public ReviewResponseDto updateReview(Long reviewId, ReviewRequestDto requestDto, Member member) {
+		log.info("리뷰 수정 - reviewId: {}, memberId: {}", reviewId, member.getId());
+
+		Review review = reviewRepository.findById(reviewId)
+			.orElseThrow(() -> new CustomException(ErrorCode.REVIEW_NOT_FOUND));
+
+		// 본인 확인
+		if (!review.getMember().getId().equals(member.getId())) {
+			throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
+		}
+
+		// 답글 존재 여부 확인
+		if (reviewReplyRepository.existsByReviewAndDeletedStatus(review, DeletedStatus.DISPLAYED)) {
+			throw new CustomException(ErrorCode.CANNOT_UPDATE_REVIEW_WITH_REPLY);
+		}
+		BigDecimal oldRating = review.getReviewRating();
+
+		review.updateContent(requestDto.getContent());
+		review.updateRating(requestDto.getReviewRating());
+		updateReviewTags(review, requestDto.getTagIds());
+
+		updateReviewCountAndAverageRatingOnUpdate(review.getProgram(),
+			oldRating, requestDto.getReviewRating());
+
+		// 캐시 무효화
+		reviewCacheService.invalidateReviewCacheByPattern(review.getProgram().getId());
+
+		return new ReviewResponseDto(review);
+	}
+
+	@Transactional
+	public void deleteReview(Long reviewId, Member member) {
+		log.info("리뷰 삭제 시작 - reviewId: {}, memberId: {}", reviewId, member.getId());
+
+		Review review = reviewRepository.findById(reviewId)
+			.orElseThrow(() -> new CustomException(ErrorCode.REVIEW_NOT_FOUND));
+
+		// 삭제 권한 확인
+		if (!review.getMember().getId().equals(member.getId())) {
+			throw new CustomException(ErrorCode.FORBIDDEN_ACCESS);
+		}
+		BigDecimal deletedRating = review.getReviewRating();
+		Program program = review.getProgram();
+
+		// Soft delete
+		review.softDelete();
+		log.info("리뷰 및 관련 답글 소프트 삭제 완료 - reviewId: {}", reviewId);
+
+		updateReviewCountAndAverageRatingOnDelete(program, deletedRating);
+		log.info("리뷰 평균 평점 업데이트 완료 - programId: {}", program.getId());
+
+		// 캐시 무효화
+		reviewCacheService.invalidateReviewCacheByPattern(review.getProgram().getId());
+	}
+
 	private void saveReviewTags(Review review, List<Long> tagIds) {
 		if (tagIds == null || tagIds.isEmpty()) {
 			return;
@@ -283,6 +283,7 @@ public class ReviewService {
 
 	private void updateReviewTags(Review review, List<Long> tagIds) {
 		reviewTagMappingRepository.deleteByReview(review);
+		reviewTagMappingRepository.flush();
 
 		if (tagIds != null && !tagIds.isEmpty()) {
 			saveReviewTags(review, tagIds);
@@ -313,9 +314,9 @@ public class ReviewService {
 	private void validateReviewPeriod(LocalDate experienceEndDate) {
 
 		// TODO: 리뷰 작성 기간 정책(예: 30일)이 확정되면 주석 해제
-		 if (LocalDate.now().isAfter(experienceEndDate.plusDays(30))) {
-		     throw new CustomException(ErrorCode.REVIEW_PERIOD_EXPIRED);
-		 }
+		if (LocalDate.now().isAfter(experienceEndDate.plusDays(30))) {
+			throw new CustomException(ErrorCode.REVIEW_PERIOD_EXPIRED);
+		}
 
 		// 현재는 오늘 날짜 기준으로 30일 이내 항상 통과하도록 설정
 //		log.info("리뷰 작성 기간 확인 - 임시로 항상 통과. 실제 종료일: {}", experienceEndDate);
@@ -323,7 +324,8 @@ public class ReviewService {
 
 	/**
 	 * 새로운 리뷰가 추가되었을 때 Program의 리뷰 개수와 리뷰 평균 평점을 업데이트
-	 * @param program 평점을 업데이트할 프로그램
+	 *
+	 * @param program   평점을 업데이트할 프로그램
 	 * @param newRating 새로 추가된 리뷰의 별점
 	 */
 	private void updateReviewCountAndAverageRatingOnCreate(Program program, BigDecimal newRating) {
@@ -341,7 +343,8 @@ public class ReviewService {
 
 	/**
 	 * 리뷰 수정 시 Program의 리뷰 평균 평점을 업데이트하는 메서드
-	 * @param program 평점을 업데이트할 프로그램
+	 *
+	 * @param program   평점을 업데이트할 프로그램
 	 * @param oldRating 수정 전 별점
 	 * @param newRating 수정 후 별점
 	 */
@@ -352,7 +355,9 @@ public class ReviewService {
 		}
 
 		int reviewCount = program.getReviewCount();
-		if (reviewCount <= 0) return;
+		if (reviewCount <= 0) {
+			return;
+		}
 
 		BigDecimal totalRating = program.getAverageRating().multiply(new BigDecimal(reviewCount));
 		// 총점에서 이전 평점을 빼고 새 평점을 더함
@@ -365,7 +370,8 @@ public class ReviewService {
 
 	/**
 	 * 리뷰가 삭제되었을 때 Program의 리뷰 개수와 리뷰 평균 평점을 업데이트
-	 * @param program 평점을 업데이트할 프로그램
+	 *
+	 * @param program       평점을 업데이트할 프로그램
 	 * @param deletedRating 삭제된 리뷰의 별점
 	 */
 	private void updateReviewCountAndAverageRatingOnDelete(Program program, BigDecimal deletedRating) {
