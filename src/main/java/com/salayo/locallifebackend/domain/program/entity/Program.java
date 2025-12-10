@@ -200,5 +200,9 @@ public class Program extends SoftDeletableEntity {
 			.build();
 	}
 
+	private void updateReviewStatus(int reviewCount, BigDecimal averageRating) {
+		this.reviewCount = reviewCount;
+		this.averageRating = averageRating;
+	}
 
 }
