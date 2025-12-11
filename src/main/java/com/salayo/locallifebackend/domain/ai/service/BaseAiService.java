@@ -53,7 +53,8 @@ public abstract class BaseAiService {
 
 	/**
 	 * AI 응답을 JSON으로 파싱하여 지정된 타입으로 변환
-	 * @param response AI 응답 문자열
+	 *
+	 * @param response     AI 응답 문자열
 	 * @param responseType 변환할 타입 클래스
 	 * @return 파싱된 응답 객체
 	 */
@@ -62,8 +63,10 @@ public abstract class BaseAiService {
 			throw new CustomException(ErrorCode.AI_RESPONSE_INVALID_FORMAT, "AI 응답이 비어있습니다.");
 		}
 
+		/**
+		 * JSON 블록 추출 (```json ... ``` 형태 처리)
+		 */
 		try {
-			// JSON 블록 추출 (```json ... ``` 형태 처리)
 			String jsonContent = extractJsonContent(response);
 			return objectMapper.readValue(jsonContent, responseType);
 		} catch (JsonProcessingException e) {
@@ -74,13 +77,16 @@ public abstract class BaseAiService {
 
 	/**
 	 * AI 응답에서 JSON 내용만 추출
+	 *
 	 * @param response 원본 응답
 	 * @return JSON 문자열
 	 */
 	private String extractJsonContent(String response) {
 		String trimmed = response.trim();
 
-		// ```json 블록 처리
+		/**
+		 * ```json 블록 처리
+		 */
 		if (trimmed.contains("```json")) {
 			int startIdx = trimmed.indexOf("```json") + 7;
 			int endIdx = trimmed.lastIndexOf("```");
@@ -89,13 +95,17 @@ public abstract class BaseAiService {
 			}
 		}
 
-		// {} 또는 [] 로 시작하는 순수 JSON
+		/**
+		 * {} 또는 [] 로 시작하는 순수 JSON
+		 */
 		if ((trimmed.startsWith("{") && trimmed.endsWith("}")) ||
 			(trimmed.startsWith("[") && trimmed.endsWith("]"))) {
 			return trimmed;
 		}
 
-		// JSON 블록 찾기
+		/**
+		 * JSON 블록 찾기
+		 */
 		int jsonStart = Math.max(trimmed.indexOf("{"), trimmed.indexOf("["));
 		int jsonEnd = Math.max(trimmed.lastIndexOf("}"), trimmed.lastIndexOf("]"));
 

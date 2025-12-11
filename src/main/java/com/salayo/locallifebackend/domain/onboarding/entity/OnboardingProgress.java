@@ -46,7 +46,7 @@ public class OnboardingProgress extends BaseEntity {
 	private Boolean knowsAptitude;
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "regionType")
+	@Column(name = "region_type")
 	private RegionType regionType;
 
 	@Column(name = "session_id")

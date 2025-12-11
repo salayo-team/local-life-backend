@@ -13,41 +13,41 @@ import org.springframework.stereotype.Component;
 @Component
 public class RedisUtil {
 
-    private final StringRedisTemplate redisTemplate;
+	private final StringRedisTemplate redisTemplate;
 
-    public void saveRefreshToken(Long memberId, String token, long expirationMillis) {
-        String key = REFRESH_TOKEN + memberId;
-        redisTemplate.opsForValue().set(key, token, expirationMillis, TimeUnit.MILLISECONDS);
-    }
+	public void saveRefreshToken(Long memberId, String token, long expirationMillis) {
+		String key = REFRESH_TOKEN + memberId;
+		redisTemplate.opsForValue().set(key, token, expirationMillis, TimeUnit.MILLISECONDS);
+	}
 
-    public String getRefreshToken(Long memberId) {
-        String key = REFRESH_TOKEN + memberId;
-        return redisTemplate.opsForValue().get(key);
-    }
+	public String getRefreshToken(Long memberId) {
+		String key = REFRESH_TOKEN + memberId;
+		return redisTemplate.opsForValue().get(key);
+	}
 
-    public void deleteRefreshToken(Long memberId) {
-        String key = REFRESH_TOKEN + memberId;
-        redisTemplate.delete(key);
-    }
+	public void deleteRefreshToken(Long memberId) {
+		String key = REFRESH_TOKEN + memberId;
+		redisTemplate.delete(key);
+	}
 
-    public void saveAccessToken(Long memberId, String token, long expirationMillis) {
-        String key = ACCESS_TOKEN + memberId;
-        redisTemplate.opsForValue().set(key, token, expirationMillis, TimeUnit.MILLISECONDS);
-    }
+	public void saveAccessToken(Long memberId, String token, long expirationMillis) {
+		String key = ACCESS_TOKEN + memberId;
+		redisTemplate.opsForValue().set(key, token, expirationMillis, TimeUnit.MILLISECONDS);
+	}
 
-    public String getAccessToken(Long memberId) {
-        String key = ACCESS_TOKEN + memberId;
-        return redisTemplate.opsForValue().get(key);
-    }
+	public String getAccessToken(Long memberId) {
+		String key = ACCESS_TOKEN + memberId;
+		return redisTemplate.opsForValue().get(key);
+	}
 
-    public void deleteAccessToken(Long memberId) {
-        String key = ACCESS_TOKEN + memberId;
-        redisTemplate.delete(key);
-    }
+	public void deleteAccessToken(Long memberId) {
+		String key = ACCESS_TOKEN + memberId;
+		redisTemplate.delete(key);
+	}
 
-    public String getBlacklistedToken(String token) {
-        String key = TOKEN_BLACKLIST + token;
-        return redisTemplate.opsForValue().get(key);
-    }
+	public String getBlacklistedToken(String token) {
+		String key = TOKEN_BLACKLIST + token;
+		return redisTemplate.opsForValue().get(key);
+	}
 
 }
