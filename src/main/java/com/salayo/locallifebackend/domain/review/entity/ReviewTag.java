@@ -22,19 +22,19 @@ public class ReviewTag extends BaseEntity {
 	@Column(name = "review_tag_id")
 	private Long id;
 
-	@Column(name = "name", nullable = false, unique = true, length = 50)
-	private String name;
+	@Column(name = "review_tag_name", nullable = false, unique = true, length = 50)
+	private String tagName;
 
 	@Column(name = "display_order", nullable = false)
 	private int displayOrder;
 
-	@Column(name = "is_active", nullable = false)
-	private boolean isActive = true;
+	@Column(name = "tag_is_active", nullable = false)
+	private boolean tagIsActive = true;
 
 	@Builder
-	public ReviewTag(String name, int displayOrder, boolean isActive) {
-		this.name = name;
+	public ReviewTag(String tagName, int displayOrder, boolean isActive) {
+		this.tagName = tagName;
 		this.displayOrder = displayOrder;
-		this.isActive = isActive;
+		this.tagIsActive = isActive;
 	}
 }

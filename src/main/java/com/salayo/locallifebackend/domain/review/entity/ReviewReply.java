@@ -36,7 +36,7 @@ public class ReviewReply extends SoftDeletableEntity {
 	@JoinColumn(name = "local_creator_id", nullable = false)
 	private Member member;
 
-	@Column(columnDefinition = "TEXT", nullable = false)
+	@Column(name = "reply_content", nullable = false)
 	private String content;
 
 	@Builder
