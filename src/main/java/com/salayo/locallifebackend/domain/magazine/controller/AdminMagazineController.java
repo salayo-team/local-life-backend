@@ -5,13 +5,20 @@ import com.salayo.locallifebackend.domain.magazine.dto.MagazineCreateRequestDto;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineDraftDetailResponseDto;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineDraftListResponseDto;
 import com.salayo.locallifebackend.domain.magazine.dto.MagazineFileUploadResponseDto;
+import com.salayo.locallifebackend.domain.magazine.dto.MagazineRevisionResponseDto;
+import com.salayo.locallifebackend.domain.magazine.dto.MagazineUpdateRequestDto;
 import com.salayo.locallifebackend.domain.magazine.service.MagazineFileService;
+import com.salayo.locallifebackend.domain.magazine.service.MagazineRevisionService;
 import com.salayo.locallifebackend.domain.magazine.service.MagazineService;
 import com.salayo.locallifebackend.global.dto.CommonResponseDto;
 import com.salayo.locallifebackend.global.dto.PaginationResponseDto;
 import com.salayo.locallifebackend.global.security.MemberDetails;
 import com.salayo.locallifebackend.global.success.SuccessCode;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -21,9 +28,11 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -32,20 +41,23 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-@RequestMapping("/admin/magazines")
+@RequestMapping("/magazines")
 @Tag(name = "Magazine | Admin", description = "관리자 매거진 관리 API")
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminMagazineController {
 
     private final MagazineService magazineService;
     private final MagazineFileService magazineFileService;
+    private final MagazineRevisionService magazineRevisionService;
 
-    public AdminMagazineController(MagazineService magazineService, MagazineFileService magazineFileService) {
+    public AdminMagazineController(MagazineService magazineService, MagazineFileService magazineFileService,
+        MagazineRevisionService magazineRevisionService) {
         this.magazineService = magazineService;
         this.magazineFileService = magazineFileService;
+        this.magazineRevisionService = magazineRevisionService;
     }
 
     @Operation(summary = "매거진 임시 저장 - 로컬 크리에이터 확인용", description = "관리자가 로컬 크리에이터를 인터뷰한 매거진을 임시 상태로 저장")
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<CommonResponseDto<Void>> createMagazine(
         @RequestBody @Valid MagazineCreateRequestDto createRequestDto,
@@ -57,7 +69,6 @@ public class AdminMagazineController {
     }
 
     @Operation(summary = "매거진 파일 업로드", description = "매거진 썸네일/상세이미지 업로드(purpose=THUMBNAIL/DETAIL_IMAGE)")
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping(value = "/files/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CommonResponseDto<List<MagazineFileUploadResponseDto>>> uploadFiles(
         @RequestPart("files") @NotNull List<MultipartFile> files,
@@ -69,7 +80,6 @@ public class AdminMagazineController {
     }
 
     @Operation(summary = "1차등록(임시등록) 매거진 목록 조회", description = "관리자가 1차등록 매거진 목록을 조회")
-    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<CommonResponseDto<PaginationResponseDto<MagazineDraftListResponseDto>>> getDraftMagazines(
         @RequestParam(defaultValue = "0") int page,
@@ -80,7 +90,6 @@ public class AdminMagazineController {
     }
 
     @Operation(summary = "1차등록(임시등록) 매거진 상세 조회", description = "관리자가 1차등록 매거진의 상세 글을 조회")
-    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{magazineId}")
     public ResponseEntity<CommonResponseDto<MagazineDraftDetailResponseDto>> getDraftMagazineDetail(@PathVariable Long magazineId) {
         MagazineDraftDetailResponseDto draftDetail = magazineService.getDraftMagazineDetail(magazineId);
@@ -89,11 +98,88 @@ public class AdminMagazineController {
     }
 
     @Operation(summary = "매거진 초안 확인 링크 전송", description = "로컬크리에이터에게 매거진 초안 확인용 링크를 이메일로 전송합니다.")
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{magazineId}/preview/send")
     public ResponseEntity<CommonResponseDto<Void>> sendMagazinePreviewLink(@PathVariable Long magazineId) {
         magazineService.sendPreviewLink(magazineId);
 
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.EMAIL_SEND_SUCCESS, null));
+    }
+
+    @Operation(summary = "피드백 기반 매거진 수정(최대 3회)", description = "관리자가 로컬크리에이터의 피드백에 따라 매거진 본문을 수정하며, 수정은 최대 3회, 수정 기록도 최대 3회 저장됩니다.")
+    @PutMapping("/{magazineId}/feedback")
+    public ResponseEntity<CommonResponseDto<Void>> updateMagazineFromFeedback(
+        @PathVariable Long magazineId,
+        @RequestBody @Valid MagazineUpdateRequestDto magazineUpdateRequestDto,
+        @AuthenticationPrincipal MemberDetails memberDetails) {
+        magazineService.updateMagazineFromFeedback(magazineId, magazineUpdateRequestDto, memberDetails.getMember());
+
+        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.UPDATE_SUCCESS, null));
+    }
+
+    @Operation(summary = "매거진 수정 이력 조회", description = "관리자가 특정 매거진의 수정 이력 전체를 조회합니다.")
+    @GetMapping("/{magazineId}/revisions")
+    public ResponseEntity<CommonResponseDto<List<MagazineRevisionResponseDto>>> getMagazineRevisions(
+        @PathVariable Long magazineId
+    ) {
+        List<MagazineRevisionResponseDto> revisions = magazineRevisionService.getRevisions(magazineId);
+        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.FETCH_SUCCESS, revisions));
+    }
+
+    @Operation(summary = "매거진 수정본 확인 링크 전송", description = "로컬크리에이터에게 매거진 수정본 확인용 링크를 이메일로 전송합니다.")
+    @PostMapping("/{magazineId}/revision/send")
+    public ResponseEntity<CommonResponseDto<Void>> sendMagazineRevisionLink(@PathVariable Long magazineId) {
+        magazineService.sendRevisionLink(magazineId);
+
+        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.EMAIL_SEND_SUCCESS, null));
+    }
+
+    @Operation(summary = "매거진 관리자 전용 수정", description = "관리자가 매거진 본문을 수정합니다. (피드백과 무관 -> 오타나 실수가 있었을 경우)")
+    @PutMapping("/{magazineId}")
+    public ResponseEntity<CommonResponseDto<Void>> updateMagazine(@PathVariable Long magazineId,
+        @RequestBody @Valid MagazineUpdateRequestDto magazineUpdateRequestDto,
+        @AuthenticationPrincipal MemberDetails memberDetails) {
+        magazineService.updateMagazine(magazineId, magazineUpdateRequestDto, memberDetails.getMember());
+
+        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.UPDATE_SUCCESS, null));
+    }
+
+    @Operation(summary = "임시 매거진 삭제", description = "관리자가 DRAFT 상태의 매거진을 Soft Delete 처리합니다.")
+    @DeleteMapping("/{magazineId}")
+    public ResponseEntity<CommonResponseDto<Void>> deleteDraftMagazine(
+        @PathVariable Long magazineId,
+        @AuthenticationPrincipal MemberDetails memberDetails) {
+        magazineService.deleteDraftMagazine(magazineId, memberDetails.getMember().getId());
+
+        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.DELETE_SUCCESS, null));
+    }
+
+    @Operation(summary = "매거진 협업 종료 (최종 확인 또는 불발 시)", description = "로컬 크리에이터가 최종 확인을 눌렀거나 협업이 중단된 경우, 매거진 상태를 DRAFT로 되돌립니다.")
+    @PostMapping("/{magazineId}/finalize")
+    public ResponseEntity<CommonResponseDto<Void>> finalizeCollaboration(@PathVariable Long magazineId) {
+        magazineService.finalizeCollaboration(magazineId);
+
+        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.UPDATE_SUCCESS, null));
+    }
+
+    @Operation(
+        summary = "매거진 최종 등록",
+        description = "관리자가 매거진을 최종 등록(REGISTERED) 상태로 변경합니다."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "등록 성공",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = CommonResponseDto.class))),
+        @ApiResponse(responseCode = "401", description = "인증 실패"),
+        @ApiResponse(responseCode = "403", description = "권한 없음"),
+        @ApiResponse(responseCode = "404", description = "매거진 찾을 수 없음")
+    })
+    @PostMapping("/{magazineId}/register")
+    public ResponseEntity<CommonResponseDto<Void>> registerMagazine(
+        @PathVariable Long magazineId,
+        @AuthenticationPrincipal MemberDetails memberDetails
+    ) {
+        magazineService.registerMagazine(magazineId, memberDetails.getMember().getId());
+
+        return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.UPDATE_SUCCESS, null));
     }
 }

@@ -2,6 +2,7 @@ package com.salayo.locallifebackend.global.util;
 
 import static com.salayo.locallifebackend.global.util.CacheKeyPrefix.ACCESS_TOKEN;
 import static com.salayo.locallifebackend.global.util.CacheKeyPrefix.REFRESH_TOKEN;
+import static com.salayo.locallifebackend.global.util.CacheKeyPrefix.TOKEN_BLACKLIST;
 
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +43,11 @@ public class RedisUtil {
     public void deleteAccessToken(Long memberId) {
         String key = ACCESS_TOKEN + memberId;
         redisTemplate.delete(key);
+    }
+
+    public String getBlacklistedToken(String token) {
+        String key = TOKEN_BLACKLIST + token;
+        return redisTemplate.opsForValue().get(key);
     }
 
 }

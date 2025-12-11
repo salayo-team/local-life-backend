@@ -5,5 +5,6 @@ public enum SortType {
 	LATEST,
 	PRICE_ASC,
 	PRICE_DESC,
-	REVIEW
+	REVIEW_COUNT_DESC,
+	RATING_DESC
 }

@@ -14,13 +14,16 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "user_aptitudes")
+@Table(name = "user_aptitudes", uniqueConstraints = {
+	@UniqueConstraint(name = "UK_user_aptitude_member_id", columnNames = "member_id")
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserAptitude extends BaseEntity {
@@ -38,26 +41,22 @@ public class UserAptitude extends BaseEntity {
 	@Column(name = "aptitude_code", nullable = false)
 	private AptitudeType aptitudeType;
 
-	@Column(name = "test_step")
-	private Integer testStep;
-
-	@Column(name = "test_count", nullable = false)
-	private Integer testCount;
+	@Column(name = "aptitude_test_count", nullable = false)
+	private Integer aptitudeTestCount;
 
 	@Builder
-	public UserAptitude(Member member, AptitudeType aptitudeType, Integer testStep, Integer testCount) {
+	public UserAptitude(Member member, AptitudeType aptitudeType, Integer aptitudeTestCount) {
 		this.member = member;
 		this.aptitudeType = aptitudeType;
-		this.testStep = testStep;
-		this.testCount = (testCount != null) ? testCount : 0;
+		this.aptitudeTestCount = (aptitudeTestCount != null) ? aptitudeTestCount : 0;
 	}
 
-	public void updateAptitude(AptitudeType aptitudeType) {
+	public void updateAptitudeFromTest(AptitudeType aptitudeType) {
 		this.aptitudeType = aptitudeType;
-		this.testCount++;
+		this.aptitudeTestCount++;
 	}
 
-	public void updateTestStep(Integer testStep) {
-		this.testStep = testStep;
+	public void manuallyUpdateAptitude(AptitudeType aptitudeType) {
+		this.aptitudeType = aptitudeType;
 	}
 }

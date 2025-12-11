@@ -6,6 +6,8 @@ import com.salayo.locallifebackend.global.error.exception.CustomException;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface AptitudeCategoryRepository extends JpaRepository<AptitudeCategory, Long> {
 
@@ -14,4 +16,6 @@ public interface AptitudeCategoryRepository extends JpaRepository<AptitudeCatego
 	};
 
 	boolean existsByAptitudeCode(String aptitudeCode);
+	
+	Optional<AptitudeCategory> findByAptitudeCode(String aptitudeCode);
 }
