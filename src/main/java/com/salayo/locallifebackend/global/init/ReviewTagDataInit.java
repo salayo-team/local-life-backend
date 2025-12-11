@@ -35,11 +35,11 @@ public class ReviewTagDataInit {
 			};
 
 			for (int i = 0; i < tagNames.length; i++) {
-				String name = tagNames[i];
-				if (!reviewTagRepository.existsByName(name)) {
+				String tagName = tagNames[i];
+				if (!reviewTagRepository.existsByTagName(tagName)) {
 					reviewTagRepository.save(
 						ReviewTag.builder()
-							.name(name)
+							.tagName(tagName)
 							.displayOrder(i + 1)
 							.isActive(true)
 							.build()

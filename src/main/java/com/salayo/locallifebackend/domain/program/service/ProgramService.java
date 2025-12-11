@@ -29,6 +29,8 @@ import com.salayo.locallifebackend.domain.program.enums.DayName;
 import com.salayo.locallifebackend.domain.program.enums.ProgramStatus;
 import com.salayo.locallifebackend.domain.program.repository.ProgramRepository;
 import com.salayo.locallifebackend.domain.programschedule.entity.ProgramSchedule;
+import com.salayo.locallifebackend.domain.programschedule.enums.ProgramScheduleStatus;
+import com.salayo.locallifebackend.domain.programschedule.repository.ProgramScheduleRepository;
 import com.salayo.locallifebackend.domain.reservation.enums.ReservationStatus;
 import com.salayo.locallifebackend.domain.reservation.repository.ReservationRepository;
 import com.salayo.locallifebackend.global.dto.PaginationResponseDto;
@@ -40,6 +42,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -65,11 +68,12 @@ public class ProgramService {
 	private final S3Uploader s3Uploader;
 	private final FileMappingRepository fileMappingRepository;
 	private final ReservationRepository reservationRepository;
+	private final ProgramScheduleRepository programScheduleRepository;
 
 	public ProgramService(AptitudeCategoryRepository aptitudeCategoryRepository, RegionCategoryRepository regionCategoryRepository,
 		ProgramRepository programRepository, MemberRepository memberRepository, LocalCreatorRepository localCreatorRepository,
 		FileRepository fileRepository, S3Uploader s3Uploader, FileMappingRepository fileMappingRepository,
-		ReservationRepository reservationRepository) {
+		ReservationRepository reservationRepository, ProgramScheduleRepository programScheduleRepository) {
 		this.aptitudeCategoryRepository = aptitudeCategoryRepository;
 		this.regionCategoryRepository = regionCategoryRepository;
 		this.programRepository = programRepository;
@@ -79,12 +83,11 @@ public class ProgramService {
 		this.s3Uploader = s3Uploader;
 		this.fileMappingRepository = fileMappingRepository;
 		this.reservationRepository = reservationRepository;
+		this.programScheduleRepository = programScheduleRepository;
 	}
 
 	/**
 	 * 체험 프로그램 생성 메서드
-	 * - TODO : 동일한 유저가 중복되는 스케줄 타임 생성시 예외처리
-	 * - TODO : 스케줄 종료시간 - 마지막 스케줄 시간 설정시, 소요시간 더해서 다음 날짜로 넘어가면 안되도록 예외처리
 	 */
 	@Transactional
 	public ProgramCreateResponseDto createProgram(long memberId, @Valid ProgramCreateRequestDto requestDto, List<MultipartFile> files,
@@ -154,7 +157,11 @@ public class ProgramService {
 		requestDto.getProgramScheduleTimes().forEach(scheduleDto -> {
 			Integer scheduleDurationHours = scheduleDto.getScheduleDuration();
 			LocalTime startTime = scheduleDto.getStartTime();
+
 			LocalTime endTime = startTime.plusHours(scheduleDurationHours);
+			if (endTime.isBefore(startTime)) {
+				throw new CustomException(ErrorCode.SCHEDULE_TIME_CANNOT_CROSS_DAY);
+			}
 
 			ProgramScheduleTime scheduleTime = ProgramScheduleTime.createProgramScheduleTime(
 				scheduleDto.getScheduleCount(),
@@ -164,6 +171,8 @@ public class ProgramService {
 			);
 			program.addProgramScheduleTime(scheduleTime);
 		});
+
+		validateDuplicateScheduleTime(memberId, program);
 
 		createProgramSchedulesForProgram(program);
 		programRepository.save(program);
@@ -304,6 +313,73 @@ public class ProgramService {
 	}
 
 	/**
+	 * 기존에 생성한 체험 프로그램 스케줄과 날짜 & 시간이 겹치는지 검증하는 메서드
+	 */
+	private void validateDuplicateScheduleTime(Long memberId, Program program) {
+
+		LocalDate startDate = program.getStartDate();
+		LocalDate endDate = program.getEndDate();
+
+		Set<DayName> programDays = program.getProgramDays().stream()
+			.map(ProgramDay::getDayName)
+			.collect(Collectors.toSet());
+
+		List<ProgramScheduleTime> newProgramScheduleTimes = program.getProgramScheduleTimes();
+
+		Set<LocalDate> newScheduleDates = new HashSet<>();
+		LocalDate currentDate = startDate;
+
+		while (!currentDate.isAfter(endDate)) {
+
+			DayName dayName = DayName.valueOf(currentDate.getDayOfWeek().name());
+			if (programDays.contains(dayName)) {
+				newScheduleDates.add(currentDate);
+			}
+			currentDate = currentDate.plusDays(1);
+		}
+
+		List<ProgramSchedule> existingSchedules = programScheduleRepository.findActiveSchedulesByMemberAndDateRange(
+			memberId,
+			DeletedStatus.DISPLAYED,
+			ProgramScheduleStatus.ACTIVE,
+			startDate,
+			endDate
+		);
+
+		boolean hasConflictScheduleFound = false;
+
+		for (ProgramSchedule existing : existingSchedules) {
+
+			if (!newScheduleDates.contains(existing.getScheduleDate())) {
+				continue;
+			}
+
+			LocalTime existingStartTime = existing.getStartTime();
+			LocalTime existingEndTime = existing.getEndTime();
+
+			for (ProgramScheduleTime newProgramScheduleTime : newProgramScheduleTimes) {
+
+				LocalTime newStartTime = newProgramScheduleTime.getStartTime();
+				boolean startTimeWithinBlockRange =
+					!newStartTime.isBefore(existingStartTime) && !newStartTime.isAfter(existingEndTime);
+
+				if (startTimeWithinBlockRange) {
+					hasConflictScheduleFound = true;
+					break;
+				}
+			}
+
+			if (hasConflictScheduleFound) {
+				break;
+			}
+		}
+
+		if (hasConflictScheduleFound) {
+			throw new CustomException(ErrorCode.DUPLICATE_PROGRAM_SCHEDULE_TIME_FOR_MEMBER);
+		}
+	}
+
+	/**
 	 * 체험 프로그램 검색 메서드
 	 * - 멤버가 체험 프로그램 정렬 조건을 설정하여 검색
 	 */
@@ -318,7 +394,7 @@ public class ProgramService {
 		}
 
 		String normalizedKeyword = normalizationKeyword(requestDto.getKeyword());
-		if(normalizedKeyword == null){
+		if (normalizedKeyword == null) {
 			throw new CustomException(ErrorCode.INVALID_SEARCH_KEYWORD);
 		}
 		requestDto.setKeyword(normalizedKeyword);
