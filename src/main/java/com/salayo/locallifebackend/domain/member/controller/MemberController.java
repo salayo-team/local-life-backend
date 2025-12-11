@@ -35,12 +35,30 @@ public class MemberController {
         this.memberService = memberService;
     }
 
-    @Operation(summary = "비밀번호 변경 - 마이페이지", description = "현재 비밀번호를 확인한 뒤, 새 비밀번호로 변경합니다.")
+    @Operation(
+        summary = "비밀번호 변경 (마이페이지)",
+        description = """
+            사용자가 마이페이지에서 비밀번호를 변경합니다.
+            
+            변경 규칙:
+            - 현재 비밀번호가 일치해야 함
+            - 이전에 사용하던 비밀번호와 동일할 수 없음
+            - 새 비밀번호는 암호화되어 저장됨
+            
+            비밀번호 변경 시 기존 Refresh/Access Token은 유지됩니다.
+            """
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "비밀번호 변경 성공"),
+        @ApiResponse(responseCode = "400", description = "현재 비밀번호 불일치 / 새 비밀번호가 기존과 동일함"),
+        @ApiResponse(responseCode = "401", description = "로그인 필요"),
+        @ApiResponse(responseCode = "404", description = "회원 조회 실패 (탈퇴 포함)")
+    })
     @PatchMapping("/password")
     public ResponseEntity<CommonResponseDto<Void>> updatePassword(
         @AuthenticationPrincipal MemberDetails memberDetails,
         @Valid @RequestBody PasswordUpdateRequestDto updateRequestDto
-        ) {
+    ) {
         String email = memberDetails.getMember().getEmail();
 
         memberService.updatePassword(email, updateRequestDto.getCurrentPassword(), updateRequestDto.getNewPassword());
@@ -48,7 +66,28 @@ public class MemberController {
         return ResponseEntity.ok(CommonResponseDto.success(SuccessCode.UPDATE_SUCCESS, null));
     }
 
-    @Operation(summary = "회원 탈퇴", description = "회원을 탈퇴 처리합니다.")
+    @Operation(
+        summary = "회원 탈퇴",
+        description = """
+            사용자가 자신의 계정을 탈퇴 처리합니다.
+            Soft Delete 방식으로 탈퇴되며, 데이터는 일정 기간 보관됩니다.
+            
+            탈퇴 조건:
+            - 현재 비밀번호가 일치해야 함
+            - 이미 탈퇴한 회원은 다시 탈퇴할 수 없음
+            
+            탈퇴 후 처리:
+            - 해당 회원의 Refresh Token / Access Token이 즉시 삭제됨
+            - 이후 로그인 불가
+            """
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "회원 탈퇴 성공"),
+        @ApiResponse(responseCode = "400", description = "비밀번호 불일치"),
+        @ApiResponse(responseCode = "401", description = "로그인 필요"),
+        @ApiResponse(responseCode = "404", description = "회원 조회 실패"),
+        @ApiResponse(responseCode = "409", description = "이미 탈퇴된 회원")
+    })
     @DeleteMapping
     public ResponseEntity<CommonResponseDto<Void>> withdraw(
         @AuthenticationPrincipal MemberDetails memberDetails,
@@ -104,9 +143,9 @@ public class MemberController {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "내 정보 조회 성공",
             content = @Content(
-            mediaType = "application/json",
-            schema = @Schema(implementation = CommonResponseDto.class)
-        )),
+                mediaType = "application/json",
+                schema = @Schema(implementation = CommonResponseDto.class)
+            )),
         @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
         @ApiResponse(responseCode = "404", description = "회원 조회 실패 (DELETED 포함)")
     })
