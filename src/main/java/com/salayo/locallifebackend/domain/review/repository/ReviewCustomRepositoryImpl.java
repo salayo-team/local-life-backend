@@ -36,7 +36,6 @@ public class ReviewCustomRepositoryImpl implements ReviewCustomRepository {
 		List<BooleanExpression> conditions = new ArrayList<>();
 		conditions.add(review.deletedStatus.eq(DeletedStatus.DISPLAYED));
 
-		// 태그 필터링
 		if (requestDto.getTagIds() != null && !requestDto.getTagIds().isEmpty()) {
 			List<Long> reviewIdsWithTags = jpaQueryFactory
 				.select(tagMapping.review.id)
@@ -51,22 +50,18 @@ public class ReviewCustomRepositoryImpl implements ReviewCustomRepository {
 			}
 		}
 
-		// 적성 카테고리 필터링
 		if (requestDto.getAptitudeIds() != null && !requestDto.getAptitudeIds().isEmpty()) {
 			conditions.add(review.program.aptitudeCategory.id.in(requestDto.getAptitudeIds()));
 		}
 
-		// 지역 카테고리 필터링
 		if (requestDto.getRegionIds() != null && !requestDto.getRegionIds().isEmpty()) {
 			conditions.add(review.program.regionCategory.id.in(requestDto.getRegionIds()));
 		}
 
-		// 프로그램 그룹 필터링
 		if (requestDto.getProgramGroupId() != null) {
 			conditions.add(review.program.programGroup.id.eq(requestDto.getProgramGroupId()));
 		}
 
-		// 키워드 검색 (닉네임 또는 리뷰 본문)
 		if (requestDto.getKeyword() != null && !requestDto.getKeyword().isBlank()) {
 			String keyword = "%" + requestDto.getKeyword().trim() + "%";
 			conditions.add(
