@@ -12,10 +12,10 @@ public class ReviewTagResponseDto {
 	private final Long tagId;
 
 	@Schema(description = "리뷰 태그 이름", example = "로컬 크리에이터가 친절해요")
-	private final String name;
+	private final String tagName;
 
 	public ReviewTagResponseDto(ReviewTag reviewTag) {
 		this.tagId = reviewTag.getId();
-		this.name = reviewTag.getName();
+		this.tagName = reviewTag.getTagName();
 	}
 }

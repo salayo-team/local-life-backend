@@ -61,7 +61,7 @@ public class ReviewResponseDto {
 		this.viewCount = review.getViewCount();
 		this.likeCount = review.getLikeCount();
 		this.likeTags = review.getTagMappings().stream()
-			.map(mapping -> mapping.getReviewTag().getName())
+			.map(mapping -> mapping.getReviewTag().getTagName())
 			.collect(Collectors.toList());
 		this.replies = review.getReplies().stream()
 			.map(ReviewReplyResponseDto::new)

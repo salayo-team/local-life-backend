@@ -183,7 +183,7 @@ public class ReviewService {
 	public List<ReviewTagResponseDto> getAllTags() {
 		log.info("전체 리뷰 태그 조회");
 
-		return reviewTagRepository.findByIsActiveTrueOrderByDisplayOrderAsc().stream()
+		return reviewTagRepository.findByTagIsActiveTrueOrderByDisplayOrderAsc().stream()
 			.map(ReviewTagResponseDto::new)
 			.toList();
 	}

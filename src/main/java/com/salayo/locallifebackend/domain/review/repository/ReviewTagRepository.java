@@ -8,9 +8,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ReviewTagRepository extends JpaRepository<ReviewTag, Long> {
 
-	List<ReviewTag> findByIsActiveTrueOrderByDisplayOrderAsc();
+	List<ReviewTag> findByTagIsActiveTrueOrderByDisplayOrderAsc();
 
 	List<ReviewTag> findByIdIn(List<Long> ids);
 
-	boolean existsByName(String name);
+	boolean existsByTagName(String tagName);
 }
