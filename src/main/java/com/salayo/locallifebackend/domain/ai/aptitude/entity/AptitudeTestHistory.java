@@ -34,7 +34,7 @@ public class AptitudeTestHistory extends BaseEntity {
 	@JoinColumn(name = "member_id", nullable = false)
 	private Member member;
 
-	@Column(nullable = false)
+	@Column(name = "test_step", nullable = false)
 	private Integer step;
 
 	@Column(name = "question_text", columnDefinition = "TEXT", nullable = false)
