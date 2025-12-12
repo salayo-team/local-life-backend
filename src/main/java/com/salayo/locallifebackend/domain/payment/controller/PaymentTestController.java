@@ -15,7 +15,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Payment-Test", description = "결제 테스트 API")
+@Tag(name = "Payment-Test",
+	description = """
+		- 결제 테스트 API
+		- 로컬 테스트 이후 삭제 예정입니다.
+		"""
+)
 @RestController
 public class PaymentTestController {
 

@@ -3,12 +3,11 @@ package com.salayo.locallifebackend.domain.review.entity;
 import com.salayo.locallifebackend.domain.member.entity.Member;
 import com.salayo.locallifebackend.domain.program.entity.Program;
 import com.salayo.locallifebackend.domain.reservation.entity.Reservation;
-import com.salayo.locallifebackend.global.entity.BaseEntity;
-import com.salayo.locallifebackend.global.enums.DeletedStatus;
+import com.salayo.locallifebackend.global.entity.SoftDeletableEntity;
+import com.salayo.locallifebackend.global.error.ErrorCode;
+import com.salayo.locallifebackend.global.error.exception.CustomException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -17,18 +16,22 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Table(name = "review")
 @Getter
 @NoArgsConstructor
-public class Review extends BaseEntity {
+@SQLRestriction("deleted_status = 'DISPLAYED'")
+public class Review extends SoftDeletableEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -47,52 +50,82 @@ public class Review extends BaseEntity {
 	@JoinColumn(name = "reservation_id", nullable = false)
 	private Reservation reservation;
 
-	@Column(columnDefinition = "TEXT", nullable = false)
-	private String content;
-
-	@Enumerated(EnumType.STRING)
-	@Column(name = "deleted_status", nullable = false)
-	private DeletedStatus deletedStatus = DeletedStatus.DISPLAYED;
-
-	@Column(name = "deleted_at")
-	private LocalDateTime deletedAt;
-
 	@OneToMany(mappedBy = "review", fetch = FetchType.LAZY)
+	@BatchSize(size = 100)
 	private List<ReviewReply> replies = new ArrayList<>();
 
+	@OneToMany(mappedBy = "review", fetch = FetchType.LAZY)
+	@BatchSize(size = 100)
+	private List<ReviewTagMapping> tagMappings = new ArrayList<>();
+
+	@Column(name = "review_content", nullable = false)
+	private String content;
+
+	@Column(name = "review_rating", nullable = false, precision = 2, scale = 1)
+	private BigDecimal reviewRating;
+
+	@Column(name = "view_count", nullable = false)
+	private int viewCount = 0;
+
+	@Column(name = "like_count", nullable = false)
+	private int likeCount = 0;
+
 	@Builder
-	public Review(Member member, Program program, Reservation reservation, String content) {
+	public Review(Member member, Program program, Reservation reservation,
+		String content, BigDecimal rating) {
+
+		validateRating(rating);
+
 		this.member = member;
 		this.program = program;
 		this.reservation = reservation;
 		this.content = content;
-		this.deletedStatus = DeletedStatus.DISPLAYED;
+		this.reviewRating = rating;
 	}
 
 	public void updateContent(String content) {
 		this.content = content;
 	}
 
-	public void deleteReview() {
-		this.deletedStatus = DeletedStatus.DELETED;
-		this.deletedAt = LocalDateTime.now();
+	public void updateRating(BigDecimal newRating) {
+		validateRating(newRating);
+		this.reviewRating = newRating;
 	}
 
-	public boolean isModified() {
-		// modifiedAt이 null이면 수정되지 않은 것으로 간주
-		if (getModifiedAt() == null) {
-			return false;
+	public void validateRating(BigDecimal reviewRating) {
+		if (reviewRating == null) {
+			throw new CustomException(ErrorCode.RATING_CANNOT_BE_NULL);
 		}
-
-		// createdAt과 modifiedAt이 정확히 같거나, modifiedAt이 createdAt보다 먼저이면 수정되지 않은 것으로 간주
-		// (BaseEntity의 @CreatedDate, @LastModifiedDate 설정에 따라 createdAt과 modifiedAt이 동일하게 초기화될 수 있음)
-		if (getModifiedAt().isEqual(getCreatedAt()) || getModifiedAt().isBefore(getCreatedAt())) {
-			return false;
+		if (reviewRating.compareTo(BigDecimal.ZERO) < 0 || reviewRating.compareTo(new BigDecimal("5.0")) > 0) {
+			throw new CustomException(ErrorCode.INVALID_RATING_RANGE);
 		}
+		if (reviewRating.multiply(new BigDecimal("2")).stripTrailingZeros().scale() > 0) {
+			throw new CustomException(ErrorCode.INVALID_RATING_UNIT);
+		}
+	}
 
-		// createdAt에 2초의 버퍼 시간을 더한 시간 이후에 modifiedAt이 발생해야 실제 수정으로 간주
-		// 이는 DB 동기화 지연이나 Auditing 초기화로 인한 미세한 시간 차이를 무시하기 위함
-		return !getModifiedAt().isEqual(getCreatedAt()) &&
-			getModifiedAt().isAfter(getCreatedAt().plusSeconds(2));
+	public void incrementViewCount() {
+		this.viewCount++;
+	}
+
+	public void incrementLikeCount() {
+		this.likeCount++;
+	}
+
+	public void decrementLikeCount() {
+		if (this.likeCount > 0) {
+			this.likeCount--;
+		}
+	}
+
+	/**
+	 * 리뷰와 연관된 답글까지 함께 Soft Delete
+	 */
+	@Override
+	public void softDelete() {
+		super.softDelete();
+
+		Optional.ofNullable(this.replies)
+			.ifPresent(theReplies -> theReplies.forEach(ReviewReply::softDelete));
 	}
 }
