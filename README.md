@@ -699,4 +699,4 @@ JPA & Flyway 사용 방식, 로컬 실행 시 주의 사항**은 아래 문서�
 **LocalLife** - 지역과 청년이 함께 성장하는 플랫폼  
 Made by **Salayo Team**
 
-</div>검색을 위한 Full-Text INDEX / Ngram Paser 설정 포함
+</div>
