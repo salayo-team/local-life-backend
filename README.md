@@ -183,7 +183,7 @@ MySQL / Redis
 ```
 
 * Spring Boot 기반 백엔드 서버
-* DB는 MySQL 단일 인스턴스, 검색은 FULLTEXT + Ngram 기반 확장 적용
+* DB는 MySQL 단일 인스턴스, 검색은 Full-Text INDEX + Ngram 기반 확장 적용
 
 ### 3) DDD + 3-Layer 패턴
 
@@ -247,7 +247,7 @@ ERD는 주요 도메인(회원, 로컬 크리에이터, 프로그램, 예약, �
   <tr>
     <td align="center"><b>관리자</b></td>
     <td>
-신청·프로그램 검수  
+로컬 크리에이터 신청·프로그램 검수  
 - 승인 상태 관리  
 - 매거진/콘텐츠 운영   
     </td>
