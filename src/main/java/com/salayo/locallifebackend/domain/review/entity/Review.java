@@ -58,7 +58,7 @@ public class Review extends SoftDeletableEntity {
 	@BatchSize(size = 100)
 	private List<ReviewTagMapping> tagMappings = new ArrayList<>();
 
-	@Column(name = "review_content", nullable = false)
+	@Column(name = "review_content", columnDefinition = "TEXT", nullable = false)
 	private String content;
 
 	@Column(name = "review_rating", nullable = false, precision = 2, scale = 1)
