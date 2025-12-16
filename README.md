@@ -196,15 +196,20 @@ MySQL / Redis
 
 ### 4) 시퀀스 다이어그램
 
+#### 인증·인가 처리 시퀀스 (Spring Security 기반)
+
+<img width="1816" height="1128" alt="Image" src="https://github.com/user-attachments/assets/19214d16-9842-4493-96c0-7793586592a8" />
+
+#### 적성 분석 및 추천 처리 시퀀스 (Spring AI 기반)
+
+<img width="6008" height="5076" alt="Image" src="https://github.com/user-attachments/assets/e5ed7bea-d75d-4416-86ce-d0ee76d50f9d" />
+
+#### 예약·결제 처리 시퀀스 (PortOne 연동)
+
 <img width="1502" height="953" alt="Image" src="https://github.com/user-attachments/assets/99dc9521-2c91-405a-9c35-713c937068bf" />
 
-
-- 인증, AI 적성 추천, 예약·결제 등 핵심 사용자 흐름에서의 요청 처리 과정을 단계별로 표현
-
-- Spring Security, Spring AI, PortOne이 LocalLife의 인증·추천·결제 흐름에 어떻게 적용되는지를 중심으로 구성
-
-- 각 시퀀스는 실제 도메인 분리 구조 및 코드 흐름과 대응되도록 설계하여,
-  기술 선택과 서비스 요구사항 간의 연결 관계가 드러나도록 작성
+- 각 시퀀스는 도메인 구조 및 코드 흐름과 대응되도록 설계하여,
+  서비스 요구사항 간의 연결 관계가 드러나도록 작성
 
 ---
 
@@ -668,10 +673,10 @@ JPA & Flyway 사용 방식, 로컬 실행 시 주의 사항**은 아래 문서�
 **예시**
 
 ```bash
-✨ feat: 회원 가입 API 구현
-🐛 fix: 예약 승인 시 중복 체크 로직 수정
-📝 docs: Swagger 리뷰 도메인 문서화
-♻️ refactor: ProgramService 쿼리 최적화
+✨ feat : 회원 가입 API 구현
+🐛 fix : 예약 승인 시 중복 체크 로직 수정
+📝 docs : Swagger 리뷰 도메인 문서화
+♻️ refactor : ProgramService 쿼리 최적화
 
 ```
 
